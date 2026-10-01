@@ -89,6 +89,8 @@ const ICONS = {
   absent: ["M9.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M3 21a6.5 6.5 0 0 1 13 0", "M16.5 10.5h5"],
   staff:  ["M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z", "M3 20a6 6 0 0 1 12 0", "M16 4.5a3.5 3.5 0 0 1 0 6.5", "M18 14.2A6 6 0 0 1 21 20"],
   trophy: ["M8 21h8", "M12 17v4", "M7 4h10v5a5 5 0 0 1-10 0z", "M7 6H4.5a2.5 2.5 0 0 0 2.6 4", "M17 6h2.5a2.5 2.5 0 0 1-2.6 4"],
+  download: ["M12 4v11", "m7 10 5 5 5-5", "M5 20h14"],
+  star: ["m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"],
   clock:  ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 7.5V12l3 2"],
   crack:  ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "m12.5 3-2 5.5 3 2.5-2.5 4 1 6"],
   edit:   ["M4 20h4L19 9l-4-4L4 16z", "m13.5 6.5 4 4"],
@@ -470,7 +472,7 @@ const photoCache = {};
 const PHOTO_PH = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="3"><rect width="4" height="3" fill="#E6E2DA"/></svg>');
 function sharedKind(key) {
   const m = { [A_KEY]: "list", [B_KEY]: "list", [L_KEY]: "list", [BD_KEY]: "list",
-    [P_KEY]: "single", [STAFF_KEY]: "single", [CL_MASTER_KEY]: "single", [DC_ITEMS_KEY]: "single",
+    [P_KEY]: "single", [STAFF_KEY]: "single", [QSA_KEY]: "single", [CL_MASTER_KEY]: "single", [DC_ITEMS_KEY]: "single",
     [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map" };
   return m[key] || null;
 }
@@ -985,7 +987,7 @@ function LostDetail({ x, onUpdate }) {
       h("button", { type: "button", onClick: () => setAct(null), style: subBtn }, "やめる"),
       h("button", { type: "button", disabled: !canOk, onClick: ok, style: { ...subBtn, border: "none", background: canOk ? C.ink : C.line, color: canOk ? "#fff" : C.subLight, cursor: canOk ? "pointer" : "default" } }, okLabel)));
   return h("div", null,
-    x.photo && h("img", { src: x.photo, alt: titleOf(x), style: { width: "100%", maxHeight: 260, objectFit: "cover", borderRadius: 14, display: "block", marginBottom: 12 } }),
+    x.photo && h(PhotoGrid, { photos: [x.photo] }),
     h("div", { style: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 } },
       h("div", null,
         h("div", { style: { fontSize: 18, fontWeight: 900 } }, titleOf(x)),
@@ -1401,14 +1403,8 @@ function CleanApp() {
   return h("div", { className: "fk-page" },
     h(Header, null,
       h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
-        h(AppTitle, { title: "掃除表" }),
-        h("button", { type: "button", className: "fk-tap", onClick: () => setEditing(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "編集")),
-      h("div", { style: { display: "flex", gap: 3, marginTop: 12, marginBottom: -14 } },
-        [["check", "日次チェック"], ["clean", "掃除表"]].map(([k, l]) => { const on = k === view;
-          const c = k === "check" ? dcCount(dcItems, dcDone, ymd) : clDoneCount(sched, done, ymd); const rem = c.total - c.n;
-          return h("button", { key: k, type: "button", onClick: () => { setView(k); window.scrollTo(0, 0); }, style: { flex: 1, position: "relative", border: "none", cursor: "pointer", background: on ? C.paper : "transparent", color: on ? C.ink : "rgba(255,255,255,.72)", borderRadius: "11px 11px 0 0", padding: "9px 2px 10px", fontWeight: 800, fontSize: 13.5 } },
-            on && h("span", { style: { position: "absolute", top: 0, left: 18, right: 18, height: 3, background: C.cyan, borderRadius: 3 } }), l,
-            c.total > 0 && h("span", { style: { marginLeft: 6, fontSize: 11, fontWeight: 800, color: rem ? (on ? C.cyanDeep : C.cyan) : (on ? C.done : "#8FD3AE") } }, rem ? `残り${rem}` : "✓")); }))),
+        h(AppTitle, { title: "掃除・日次チェック" }),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setEditing(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "編集"))),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(104px + env(safe-area-inset-bottom))" } },
       tab === "day" ? h(React.Fragment, null,
         // 日付
@@ -1420,16 +1416,20 @@ function CleanApp() {
               h("div", { style: { fontSize: 15, fontWeight: 800, lineHeight: 1.1 } }, dn),
               h("div", { style: { fontSize: 10, opacity: .8 } }, WD[clDow(d)]),
               h("div", { style: { height: 6, display: "flex", justifyContent: "center", marginTop: 2 } }, all ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: on ? C.onAccent : C.done } }) : miss ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: C.drop } }) : null)); })),
-        view === "check" ? h(DailyCheckView, { items: dcItems, done: dcDone, ymd, today, onOpen: setDcOpen }) :
-        !day ? h(Empty, { text: "この日の掃除表はありません" }) : h(React.Fragment, null,
-          h("div", { style: { ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, marginBottom: 12 } },
-            h(ProgressRing, { pct }),
-            h("div", { style: { flex: 1 } },
+        (() => { const dc = dcCount(dcItems, dcDone, ymd); const tn = dc.n + n, tt = dc.total + total; const tp = tt ? tn / tt : 0;
+          return h("div", { style: { ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, marginBottom: 4 } },
+            h(ProgressRing, { pct: tp }),
+            h("div", { style: { flex: 1, minWidth: 0 } },
               h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 800 } }, `${ymd === today ? "今日 " : ""}${fmtYMD(ymd)}`),
-              h("div", { style: { fontSize: 20, fontWeight: 800, marginTop: 2, color: pct >= 1 ? C.done : C.ink, fontVariantNumeric: "tabular-nums" } }, pct >= 1 ? "すべて完了" : `${n} / ${total}`, pct < 1 && h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 6 } }, "完了"))),
-            h("button", { type: "button", className: "fk-tap", onClick: () => setRankOpen(true), style: { ...subBtn, flex: "0 0 auto", padding: "8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontSize: 11.5 } }, h(Icon, { name: "trophy", size: 22, color: C.cyanDeep }), "ランキング")),
+              h("div", { style: { fontSize: 20, fontWeight: 800, marginTop: 2, color: tp >= 1 ? C.done : C.ink, fontVariantNumeric: "tabular-nums" } }, tp >= 1 ? "すべて完了" : `${tn} / ${tt}`, tp < 1 && h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 6 } }, "完了")),
+              h("div", { style: { fontSize: 11.5, color: C.sub, fontWeight: 700, marginTop: 2 } }, `日次チェック ${dc.n}/${dc.total}・掃除表 ${n}/${total}`)),
+            h("button", { type: "button", className: "fk-tap", onClick: () => setRankOpen(true), style: { ...subBtn, flex: "0 0 auto", padding: "8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontSize: 11.5 } }, h(Icon, { name: "trophy", size: 22, color: C.cyanDeep }), "ランキング")); })(),
+        h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "日次チェック"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "時間までに")),
+        h(DailyCheckView, { items: dcItems, done: dcDone, ymd, today, onOpen: setDcOpen, hideProgress: true }),
+        h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "掃除表"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "得点つき")),
+        !day ? h(Empty, { text: "この日の掃除表はありません" }) : h(React.Fragment, null,
           section("アイドル"), section("ディナー")),
-        view === "clean" && h("div", { style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
+        h("div", { style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
           h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "11px 14px", background: "#FAF9F6" } },
             h("span", { style: { fontSize: 14, fontWeight: 900 } }, "掃除表以外の掃除"),
             h(Pill, { text: "得点2倍", color: C.cyanDeep, bg: C.cyanSoft }),
@@ -1443,8 +1443,8 @@ function CleanApp() {
               h("div", { style: { fontSize: 10.5, color: C.subLight, fontWeight: 700 } }, `${pad(new Date(x.t).getHours())}:${pad(new Date(x.t).getMinutes())}`, (x.photos || []).length ? `・写真${x.photos.length}` : "")))),
           h("button", { type: "button", onClick: () => setFreeForm(true), style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "13px 0", background: "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, color: C.cyanDeep, fontWeight: 800, fontSize: 14, cursor: "pointer" } },
             h(Icon, { name: "plus", size: 18, sw: 2.2 }), "掃除表以外の場所を掃除した")),
-        view === "clean" && missedPast > 0 && h("div", { style: { fontSize: 12, color: C.drop, fontWeight: 800, padding: "2px 4px" } }, `赤い点の日は、終わっていない掃除があります（${missedPast}日）`),
-        view === "clean" && lastDate && lastDate < ymdOf(new Date(Date.now() + 7 * DAY_MS)) && h("div", { style: { fontSize: 12, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 10, padding: "9px 12px", marginTop: 10, fontWeight: 700 } }, `掃除表は${fmtYMD(lastDate)}までです。右上の「編集」から次の月を追加してください。`))
+        missedPast > 0 && h("div", { style: { fontSize: 12, color: C.drop, fontWeight: 800, padding: "2px 4px" } }, `赤い点の日は、終わっていない掃除があります（${missedPast}日）`),
+        lastDate && lastDate < ymdOf(new Date(Date.now() + 7 * DAY_MS)) && h("div", { style: { fontSize: 12, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 10, padding: "9px 12px", marginTop: 10, fontWeight: 700 } }, `掃除表は${fmtYMD(lastDate)}までです。右上の「編集」から次の月を追加してください。`))
       : h(React.Fragment, null,
         // 週の表
         h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 } },
@@ -1606,15 +1606,41 @@ function MultiPhotoIn({ id, value, onChange }) {
       h(Icon, { name: "camera", size: 22 }), value.length ? "追加" : "写真"),
     h("input", { id, type: "file", accept: "image/*", multiple: true, onChange: pick, style: { display: "none" } }));
 }
+async function savePhoto(src, name) {
+  try {
+    const blob = await (await fetch(src)).blob();
+    const file = new File([blob], name, { type: blob.type || "image/jpeg" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
+    const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  } catch (e) { if (e && e.name !== "AbortError") console.error(e); }
+}
+function PhotoViewer({ photos, start, onClose }) {
+  const [i, setI] = useState(start || 0);
+  const tx = useRef(null);
+  useEffect(() => { const o = document.body.style.overflow; document.body.style.overflow = "hidden"; const k = (e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowRight") setI(v => Math.min(photos.length - 1, v + 1)); if (e.key === "ArrowLeft") setI(v => Math.max(0, v - 1)); }; window.addEventListener("keydown", k); return () => { document.body.style.overflow = o; window.removeEventListener("keydown", k); }; }, []);
+  const btn = { width: 44, height: 44, borderRadius: 99, border: "none", background: "rgba(255,255,255,.16)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" };
+  const d = new Date(); const name = `higobashi_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${i + 1}.jpg`;
+  return ReactDOM.createPortal(h("div", { role: "dialog", "aria-label": "写真", style: { position: "fixed", inset: 0, zIndex: 90, background: "#000", display: "flex", flexDirection: "column" },
+      onTouchStart: (e) => { tx.current = e.touches[0].clientX; },
+      onTouchEnd: (e) => { if (tx.current == null) return; const dx = e.changedTouches[0].clientX - tx.current; tx.current = null; if (dx < -50) setI(v => Math.min(photos.length - 1, v + 1)); if (dx > 50) setI(v => Math.max(0, v - 1)); } },
+    h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "calc(10px + env(safe-area-inset-top, 0px)) 12px 10px", color: "#fff" } },
+      h("button", { type: "button", "aria-label": "閉じる", onClick: onClose, style: btn }, h(Icon, { name: "x", size: 22, sw: 2.2 })),
+      h("span", { style: { fontSize: 14, fontWeight: 800, fontVariantNumeric: "tabular-nums" } }, photos.length > 1 ? `${i + 1} / ${photos.length}` : ""),
+      h("button", { type: "button", onClick: () => savePhoto(photos[i], name), style: { ...btn, width: "auto", padding: "0 16px", fontSize: 13.5, fontWeight: 800, gap: 6, display: "flex", alignItems: "center" } }, h(Icon, { name: "download", size: 19, sw: 2.2 }), "保存")),
+    h("div", { style: { flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" } },
+      h("img", { src: photos[i], alt: `写真${i + 1}`, style: { maxWidth: "100%", maxHeight: "100%", objectFit: "contain", userSelect: "none" } }),
+      photos.length > 1 && i > 0 && h("button", { type: "button", "aria-label": "前の写真", onClick: () => setI(i - 1), style: { ...btn, position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }, h("span", { style: { display: "inline-block", transform: "scaleX(-1)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
+      photos.length > 1 && i < photos.length - 1 && h("button", { type: "button", "aria-label": "次の写真", onClick: () => setI(i + 1), style: { ...btn, position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
+    h("div", { style: { textAlign: "center", color: "rgba(255,255,255,.55)", fontSize: 11.5, fontWeight: 700, padding: "10px 12px calc(14px + env(safe-area-inset-bottom, 0px))" } }, "「保存」から写真アプリに保存できます（写真の長押しでも保存できます）")), document.body);
+}
 function PhotoGrid({ photos }) {
-  const [big, setBig] = useState(null);
+  const [open, setOpen] = useState(null);
   if (!photos.length) return null;
   return h(React.Fragment, null,
     h("div", { style: { display: "grid", gridTemplateColumns: photos.length === 1 ? "1fr" : "repeat(3, 1fr)", gap: 6, marginBottom: 14 } },
-      photos.map((src, i) => h("button", { key: i, type: "button", onClick: () => setBig(src), style: { padding: 0, border: "none", background: "none", cursor: "zoom-in", aspectRatio: photos.length === 1 ? "4 / 3" : "1 / 1", maxWidth: "100%" } },
+      photos.map((src, i) => h("button", { key: i, type: "button", "aria-label": `写真${i + 1}を大きく表示`, onClick: () => setOpen(i), style: { padding: 0, border: "none", background: "none", cursor: "zoom-in", aspectRatio: photos.length === 1 ? "4 / 3" : "1 / 1", maxWidth: "100%" } },
         h("img", { src, alt: `写真${i + 1}`, style: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, display: "block" } })))),
-    big && ReactDOM.createPortal(h("div", { onClick: () => setBig(null), style: { position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,.88)", display: "grid", placeItems: "center", padding: 16, cursor: "zoom-out" } },
-      h("img", { src: big, alt: "拡大した写真", style: { maxWidth: "100%", maxHeight: "100%", borderRadius: 8 } })), document.body));
+    open != null && h(PhotoViewer, { photos, start: open, onClose: () => setOpen(null) }));
 }
 function NamePick({ staff, onPick, action }) {
   const [me, setMe] = useMe();
@@ -1719,7 +1745,7 @@ function DcCheckBody({ item, ymd, rec, staff, onCheck, onUndo }) {
         h(NamePick, { staff, onPick: (n) => onCheck(n) })));
 }
 
-function DailyCheckView({ items, done, ymd, today, onOpen }) {
+function DailyCheckView({ items, done, ymd, today, onOpen, hideProgress }) {
   const dd = done[ymd] || {};
   const times = dcTimes(items);
   const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
@@ -1729,7 +1755,7 @@ function DailyCheckView({ items, done, ymd, today, onOpen }) {
   const { n, total } = dcCount(items, done, ymd);
   const pct = total ? n / total : 0;
   return h(React.Fragment, null,
-    h("div", { style: { ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, marginBottom: 12 } },
+    !hideProgress && h("div", { style: { ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, marginBottom: 12 } },
       h(ProgressRing, { pct }),
       h("div", { style: { flex: 1 } },
         h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 800 } }, `${ymd === today ? "今日 " : ""}${fmtYMD(ymd)}の日次チェック`),
@@ -1793,6 +1819,96 @@ function DailyItemsEditor({ items, saveItems, toast }) {
       form && h(DcItemForm, { key: form.id || "new" + form.time, init: form, times,
         onSave: (f) => { if (f.id) saveItems(items.map(i => i.id === f.id ? f : i)); else saveItems([...items, { ...f, id: newId() }]); setForm(null); toast(f.id ? "変更しました" : "追加しました"); },
         onDelete: () => { saveItems(items.filter(i => i.id !== form.id)); setForm(null); toast("削除しました"); } })));
+}
+const QSA_SEED_ITEMS = [{"id": "q01", "no": 1, "cat": "Q", "group": "料理のクオリティ", "text": "メニュー表の通り規定の分量かつ、見栄えよく綺麗に盛り付けられているか"}, {"id": "q02", "no": 2, "cat": "Q", "group": "料理のクオリティ", "text": "盛り付けた食材が痛んだりしていないか"}, {"id": "q03", "no": 3, "cat": "Q", "group": "料理のクオリティ", "text": "箸やトングを使用して盛り付けているか（手を添えているか） ※神虎のチャーシューは箸を使用して盛り付ける"}, {"id": "q04", "no": 4, "cat": "Q", "group": "料理のクオリティ", "text": "熱い物は熱く、冷たい物は冷たく提供できているか ラーメン＝80度・つけ麺＝85度"}, {"id": "q05", "no": 5, "cat": "Q", "group": "料理のクオリティ", "text": "味に問題はないか"}, {"id": "q06", "no": 6, "cat": "Q", "group": "料理のクオリティ", "text": "調理は迅速に行い、10分以内に提供できているか"}, {"id": "q07", "no": 7, "cat": "Q", "group": "料理のクオリティ", "text": "提供する食器に汚れがないか（指定食器を使用しているか）"}, {"id": "q08", "no": 8, "cat": "S", "group": "基本の姿勢", "text": "ニコニコとした明るい笑顔ができる（上の歯が8本以上見える）"}, {"id": "q09", "no": 9, "cat": "S", "group": "基本の姿勢", "text": "ハキハキとした明るい声で返事・挨拶ができる"}, {"id": "q10", "no": 10, "cat": "S", "group": "基本の姿勢", "text": "キビキビとした行動ができる"}, {"id": "q11", "no": 11, "cat": "S", "group": "基本の姿勢", "text": "名前を呼んでお願いしているか"}, {"id": "q12", "no": 12, "cat": "S", "group": "基本の姿勢", "text": "自分の行動を声に出しているか"}, {"id": "q13", "no": 13, "cat": "S", "group": "基本の姿勢", "text": "胸を張り、背筋を伸ばし、あごを引いているか、すり足をしていないか"}, {"id": "q14", "no": 14, "cat": "S", "group": "基本の姿勢", "text": "分離礼・会釈・中間礼の使い分けができているか"}, {"id": "q15", "no": 15, "cat": "S", "group": "基本の姿勢", "text": "無駄な私語は慎んでいるか"}, {"id": "q16", "no": 16, "cat": "S", "group": "基本の姿勢", "text": "髪や顔を触っていないか"}, {"id": "q17", "no": 17, "cat": "S", "group": "基本の姿勢", "text": "オペレーションに関する発言は全て敬語を使っているか"}, {"id": "q18", "no": 18, "cat": "S", "group": "お出迎え・ご案内", "text": "ご案内の番号をスタッフ全員に伝えているか"}, {"id": "q19", "no": 19, "cat": "S", "group": "お出迎え・ご案内", "text": "お客様を迷わせていないか"}, {"id": "q20", "no": 20, "cat": "S", "group": "お出迎え・ご案内", "text": "お荷物カゴを迅速に準備（説明）ができているか"}, {"id": "q21", "no": 21, "cat": "S", "group": "お出迎え・ご案内", "text": "ウエイティングのお客様への配慮ができている"}, {"id": "q22", "no": 22, "cat": "S", "group": "注文の承り（オーダー受け）", "text": "チケットは両手で受け取っているか（片手の場合は謝罪）"}, {"id": "q23", "no": 23, "cat": "S", "group": "注文の承り（オーダー受け）", "text": "声に出して1枚ずつ確認しているか"}, {"id": "q24", "no": 24, "cat": "S", "group": "注文の承り（オーダー受け）", "text": "提供時間によって伝え方を変えているか"}, {"id": "q25", "no": 25, "cat": "S", "group": "ご退店時", "text": "手を止めてお見送りができているか"}, {"id": "q26", "no": 26, "cat": "S", "group": "ご退店時", "text": "目を見て「ありがとうございます」が言えているか"}, {"id": "q27", "no": 27, "cat": "S", "group": "バッシング", "text": "お客様が完全に退店されてから手をつけているか"}, {"id": "q28", "no": 28, "cat": "S", "group": "バッシング", "text": "忘れ物を確認しているか"}, {"id": "q29", "no": 29, "cat": "S", "group": "バッシング", "text": "おしぼりや箸などのゴミの処理は正しいか（むやみに丼に突っ込んでいないか）"}, {"id": "q30", "no": 30, "cat": "S", "group": "バッシング", "text": "ダスターを毎回畳んで所定の場所に置いているか"}, {"id": "q31", "no": 31, "cat": "S", "group": "バッシング", "text": "アルコールの吹き付け方に問題はないか"}, {"id": "q32", "no": 32, "cat": "S", "group": "バッシング", "text": "テーブルやカウンターの下のゴミを拾っているか"}, {"id": "q33", "no": 33, "cat": "S", "group": "バッシング", "text": "カスターセットに汚れはないか、補充はできているか"}, {"id": "q34", "no": 34, "cat": "S", "group": "バッシング", "text": "仕上がったら声掛けをしているか"}, {"id": "q35", "no": 35, "cat": "S", "group": "視覚", "text": "照明の明るさ（料理・お客様・スタッフを美しく見せるか）"}, {"id": "q36", "no": 36, "cat": "A", "group": "視覚", "text": "メニュー・POP・装飾のトーン（ブランドと合っているか）"}, {"id": "q37", "no": 37, "cat": "A", "group": "聴覚", "text": "BGMの選曲（音量・決められた音楽を流しているか）"}, {"id": "q38", "no": 38, "cat": "A", "group": "聴覚", "text": "接客の声のトーン（明るい・自然）"}, {"id": "q39", "no": 39, "cat": "A", "group": "聴覚", "text": "キッチン音（調理音が“臨場感”になっているか、“騒音”になっていないか）"}, {"id": "q40", "no": 40, "cat": "A", "group": "嗅覚", "text": "店内の香り（油や生ごみ、グリストの匂いがしないか）"}, {"id": "q41", "no": 41, "cat": "A", "group": "触覚", "text": "温度や湿度（快適さ、季節に合っているか）"}, {"id": "q42", "no": 42, "cat": "A", "group": "人", "text": "スタッフ同士の空気感（仲の良さ・チームワークが伝わるか）"}, {"id": "q43", "no": 43, "cat": "A", "group": "人", "text": "ホスピタリティ（お客様目線があるか）"}, {"id": "q44", "no": 44, "cat": "A", "group": "人", "text": "忙しいときの対応（焦りや苛立ちが表に出ていないか）"}];
+
+// ───────── 今月のQSAこだわりポイント ─────────
+const QSA_KEY = "higo_qsa_v2";
+const QSA_MAX = 6;
+const QSA_CATS = [
+  { k: "Q", l: "クオリティ", c: "#B3412F", bg: "#F7E7E3" },
+  { k: "S", l: "サービス", c: "#44548A", bg: "#E7EAF4" },
+  { k: "A", l: "アトモスフィア", c: "#2F7A6E", bg: "#E3F1EE" }
+];
+const qsaCat = (k) => QSA_CATS.find(c => c.k === k) || { k: "", l: "その他", c: C.sub, bg: C.lineSoft };
+const seedQsa = () => ({ items: QSA_SEED_ITEMS.map(i => ({ ...i })), picks: {} });
+function parseQsaLines(text, old) {
+  const byText = {}; (old || []).forEach(i => byText[i.cat + "|" + i.text] = i.id);
+  return text.split(/\r?\n/).map(s => s.trim()).filter(Boolean).map(s => {
+    s = s.replace(/^[0-9０-９]+[\.．、)）\s]*/, "");
+    const m = /^([QSAＱＳＡqsa])[\s　:：．.、\-－]*(.+)$/.exec(s);
+    const cat = m ? ({ "Ｑ": "Q", "Ｓ": "S", "Ａ": "A" }[m[1]] || m[1].toUpperCase()) : "";
+    let t = m ? m[2].trim() : s, group = "";
+    const g = /^【([^】]+)】\s*(.*)$/.exec(t); if (g) { group = g[1].replace(/\s+/g, ""); t = g[2].trim(); }
+    return { id: byText[cat + "|" + t] || newId(), cat, group, text: t };
+  });
+}
+function QsaEditor({ data, save }) {
+  const [tab, setTab] = useState(data.items.length ? "pick" : "list");
+  const [ym, setYm] = useState(ymOf(new Date()));
+  const [text, setText] = useState(() => data.items.map(i => (i.cat ? i.cat + " " : "") + (i.group ? `【${i.group}】` : "") + i.text).join("\n"));
+  const [msg, setMsg] = useState("");
+  const picks = (data.picks || {})[ym] || [];
+  const toggle = (id) => {
+    const on = picks.includes(id);
+    if (!on && picks.length >= QSA_MAX) { setMsg(`選べるのは${QSA_MAX}つまでです。先にどれかを外してください`); return; }
+    setMsg("");
+    save({ ...data, picks: { ...(data.picks || {}), [ym]: on ? picks.filter(x => x !== id) : [...picks, id] } });
+  };
+  const parsed = parseQsaLines(text, data.items);
+  const tabBtn = (k, l) => h("button", { key: k, type: "button", onClick: () => setTab(k), style: { flex: 1, border: "none", borderRadius: 999, padding: "9px 0", fontSize: 13, fontWeight: 800, cursor: "pointer", background: tab === k ? C.ink : C.card, color: tab === k ? "#fff" : C.sub, boxShadow: tab === k ? "none" : `inset 0 0 0 1px ${C.line}` } }, l);
+  return h("div", null,
+    h("div", { style: { display: "flex", gap: 6, marginBottom: 14 } }, tabBtn("pick", `${QSA_MAX}つ選ぶ`), tabBtn("list", `項目リスト（${data.items.length}）`)),
+    tab === "pick" ? (data.items.length === 0
+      ? h(Empty, { text: "先に「項目リスト」で項目を登録してください" })
+      : h(React.Fragment, null,
+          h(MonthNav, { ym, setYm, ahead: 1 }),
+          h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "0 2px 10px" } },
+            h("span", { style: { fontSize: 13, fontWeight: 800, color: C.sub } }, `${Number(ym.slice(5))}月のこだわりポイント`),
+            h("span", { style: { fontSize: 15, fontWeight: 900, color: picks.length === QSA_MAX ? C.done : C.cyanDeep } }, `${picks.length} / ${QSA_MAX}`)),
+          msg && h("div", { role: "alert", style: { fontSize: 12.5, fontWeight: 800, color: C.drop, marginBottom: 10 } }, msg),
+          [...QSA_CATS, { k: "" }].map(cat => { const rows = data.items.filter(i => i.cat === cat.k); if (!rows.length) return null; const cc = qsaCat(cat.k);
+            return h("div", { key: cat.k || "x", style: { marginBottom: 12 } },
+              h("div", { style: { fontSize: 12.5, fontWeight: 900, color: cc.c, margin: "0 4px 6px" } }, cat.k ? `${cat.k}（${cc.l}）` : "分類なし"),
+              h("div", { style: { ...cardStyle, overflow: "hidden" } },
+                rows.map((it, i) => { const on = picks.includes(it.id);
+                  return h("button", { key: it.id, type: "button", onClick: () => toggle(it.id), "aria-pressed": on,
+                    style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", border: "none", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: on ? C.cyanSoft : "transparent", textAlign: "left", cursor: "pointer", color: C.ink } },
+                    h("span", { style: { width: 24, height: 24, borderRadius: 7, flexShrink: 0, display: "grid", placeItems: "center", background: on ? C.ink : "transparent", border: on ? "none" : `1.5px solid ${C.line}`, color: "#fff" } }, on && h(Icon, { name: "check", size: 16, sw: 2.6 })),
+                    h("span", { style: { minWidth: 0 } },
+                      it.group && h("span", { style: { display: "block", fontSize: 11, fontWeight: 800, color: C.subLight } }, `${it.no ? "No." + it.no + "　" : ""}${it.group}`),
+                      h("span", { style: { display: "block", fontSize: 14, fontWeight: on ? 800 : 600, lineHeight: 1.5 } }, it.text))); }))); })))
+    : h(React.Fragment, null,
+        h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 10 } }, "QSAレポート（2026年5月版）の44項目が入っています。項目が変わったときは、1行に1項目ずつ書き換えて保存します。先頭の Q・S・A で分類され、【 】の中は小見出しになります。"),
+        h("textarea", { id: "qsa-list", value: text, onChange: (e) => setText(e.target.value), rows: 14, placeholder: "Q 盛り付けの向きが正しい\nQ 食器のふちが汚れていない\nS 返事が聞こえる大きさ\nA 声のトーンが明るい", style: { ...inStyle, resize: "vertical", lineHeight: 1.7, fontFamily: FONT, fontSize: 15 } }),
+        h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 800, margin: "8px 2px 12px" } },
+          `${parsed.length}項目（Q ${parsed.filter(i => i.cat === "Q").length}・S ${parsed.filter(i => i.cat === "S").length}・A ${parsed.filter(i => i.cat === "A").length}${parsed.some(i => !i.cat) ? `・分類なし ${parsed.filter(i => !i.cat).length}` : ""}）`),
+        h("button", { type: "button", className: "fk-tap", onClick: () => { const ids = new Set(parsed.map(i => i.id)); const pk = {}; Object.entries(data.picks || {}).forEach(([k, v]) => pk[k] = v.filter(id => ids.has(id))); save({ items: parsed, picks: pk }); setTab("pick"); }, style: primaryBtn }, "リストを保存して選ぶ")));
+}
+function QsaCard() {
+  const [data, save] = useStored(QSA_KEY, seedQsa);
+  const [open, setOpen] = useState(false);
+  const ym = ymOf(new Date());
+  const ids = (data.picks || {})[ym] || [];
+  const picks = ids.map(id => data.items.find(i => i.id === id)).filter(Boolean);
+  return h(React.Fragment, null,
+    h("div", { style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
+      h("div", { style: { display: "flex", alignItems: "center", gap: 10, padding: "13px 16px", background: C.ink, color: "#fff" } },
+        h(Icon, { name: "star", size: 20, color: C.cyan, sw: 2 }),
+        h("div", { style: { flex: 1 } },
+          h("div", { style: { fontSize: 10.5, letterSpacing: ".14em", color: C.cyan, fontWeight: 800 } }, `${new Date().getMonth() + 1}月のQSA`),
+          h("div", { style: { fontSize: 15.5, fontWeight: 900, marginTop: 1 } }, "今月のこだわりポイント")),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setOpen(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer" } }, picks.length ? "変更" : "選ぶ")),
+      picks.length === 0
+        ? h("button", { type: "button", onClick: () => setOpen(true), style: { width: "100%", border: "none", background: "transparent", padding: "16px", textAlign: "left", cursor: "pointer", color: C.sub, fontSize: 13, fontWeight: 700, lineHeight: 1.7 } },
+            data.items.length ? `QSAの${data.items.length}項目から、今月力を入れる${QSA_MAX}項目を選んでください。` : `QSAの項目を登録して、今月力を入れる${QSA_MAX}項目を選びましょう。`)
+        : picks.map((it, i) => { const cc = qsaCat(it.cat);
+            return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
+              h("span", { style: { width: 26, height: 26, borderRadius: 8, flexShrink: 0, display: "grid", placeItems: "center", background: cc.bg, color: cc.c, fontSize: 13, fontWeight: 900 } }, it.cat || "・"),
+              h("span", { style: { minWidth: 0 } },
+                it.group && h("span", { style: { display: "block", fontSize: 11, fontWeight: 800, color: C.subLight } }, it.group),
+                h("span", { style: { display: "block", fontSize: 14.5, fontWeight: 800, lineHeight: 1.5 } }, it.text))); })),
+    h(Sheet, { open, onClose: () => setOpen(false), title: "QSAこだわりポイント" }, open && h(QsaEditor, { data, save })));
 }
 
 const PAGES = [
@@ -1895,6 +2011,7 @@ function Home({ go }) {
           h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.sub } }, "着地見込み"),
           h("div", { style: { fontSize: 22, fontWeight: 800, marginTop: 2, fontVariantNumeric: "tabular-nums", color: C.cyanDeep } }, cnt ? yenF(landing) : "—")),
         h("div", { style: { gridColumn: "1 / -1", fontSize: 11, color: C.subLight, fontWeight: 700 } }, `着地見込み＝日平均 × ${days}日（${cnt}日分の実績から計算）`, demo ? "・サンプルの数値です" : "")),
+      h(QsaCard, null),
       // メニュー
       h("div", { style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
         rows.map((r, i) => { const p = P(r.k);
