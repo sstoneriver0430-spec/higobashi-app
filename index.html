@@ -30,7 +30,7 @@ const { useState, useEffect, useRef, useCallback } = React;
 const h = React.createElement;
 const FONT = "'Manrope','Zen Kaku Gothic New','Hiragino Kaku Gothic ProN','Hiragino Sans','Meiryo',system-ui,sans-serif";
 const C = {
-  ink: "#1A1816", inkSoft: "#2A2622",
+  ink: "#1A1816", inkSoft: "#2A2622", head: "#1A1816", headLine: "#2A2622", headAccent: "#D4A03C",
   cyan: "#D4A03C", cyanDeep: "#8A6418", cyanSoft: "#F8F0DF", onAccent: "#1A1816",
   paper: "#F4F2EE", card: "#FFFFFF", line: "#E6E2DA", lineSoft: "#F0EDE7",
   done: "#2F7A55", doneSoft: "#E5F2EA", drop: "#B3412F", sub: "#6A6258", subLight: "#A39B8F"
@@ -91,6 +91,7 @@ const ICONS = {
   trophy: ["M8 21h8", "M12 17v4", "M7 4h10v5a5 5 0 0 1-10 0z", "M7 6H4.5a2.5 2.5 0 0 0 2.6 4", "M17 6h2.5a2.5 2.5 0 0 1-2.6 4"],
   download: ["M12 4v11", "m7 10 5 5 5-5", "M5 20h14"],
   star: ["m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"],
+  calendar: ["M5 5.5h14a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z", "M4 10h16", "M8.5 3.5v4", "M15.5 3.5v4"],
   clock:  ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M12 7.5V12l3 2"],
   crack:  ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "m12.5 3-2 5.5 3 2.5-2.5 4 1 6"],
   edit:   ["M4 20h4L19 9l-4-4L4 16z", "m13.5 6.5 4 4"],
@@ -106,15 +107,15 @@ function Icon({ name, size = 22, color = "currentColor", sw = 1.7 }) {
     ICONS[name].map((d, i) => h("path", { key: i, d })));
 }
 function Seal({ size = 30 }) {
-  return h("div", { style: { width: size, height: size, borderRadius: 7, border: `1.5px solid ${C.cyan}`, color: C.cyan, display: "grid", placeItems: "center", fontSize: size * 0.36, fontWeight: 900, lineHeight: 1.05, letterSpacing: 0, flexShrink: 0, textAlign: "center" } },
+  return h("div", { style: { width: size, height: size, borderRadius: 7, border: `1.5px solid ${C.headAccent || C.cyan}`, color: C.headAccent || C.cyan, display: "grid", placeItems: "center", fontSize: size * 0.36, fontWeight: 900, lineHeight: 1.05, letterSpacing: 0, flexShrink: 0, textAlign: "center" } },
     h("span", null, "神", h("br"), "虎"));
 }
-function AppTitle({ title }) {
+function AppTitle({ title, solo }) {
   return h("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
     h(Seal, null),
     h("div", null,
-      h("div", { style: { fontSize: 10.5, letterSpacing: ".2em", color: C.cyan, fontWeight: 700 } }, "肥後橋店"),
-      h("div", { style: { fontSize: 18, fontWeight: 900, marginTop: 1, letterSpacing: ".02em" } }, title)));
+      !solo && h("div", { style: { fontSize: 10.5, letterSpacing: ".2em", color: C.headAccent || C.cyan, fontWeight: 700 } }, "肥後橋店"),
+      h("div", { style: { fontSize: 18, fontWeight: 900, marginTop: 1, letterSpacing: ".02em", whiteSpace: "nowrap" } }, title)));
 }
 const K_FLOAT_DEFAULT = 3e5;
 const K_CPS_DEFAULT = ["15時", "18時"];
@@ -329,7 +330,7 @@ function KinshuApp() {
     });
     return () => cancelAnimationFrame(id);
   }, [segIdx]);
-  return /* @__PURE__ */ React.createElement("div", { style: { minHeight: "100vh", background: C.paper, fontFamily: FONT, color: C.ink } }, /* @__PURE__ */ React.createElement("div", { className: "fk-appbar", style: { position: "sticky", top: 0, zIndex: 30, background: `linear-gradient(180deg, ${C.ink} 0%, ${C.inkSoft} 100%)`, color: "#fff", boxShadow: "none" } }, /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", padding: "0 14px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { flexShrink: 0 } }, h(AppTitle, { title: "金種管理表" })), /* @__PURE__ */ React.createElement("button", { className: "fk-tap", onClick: () => setShowSettings((v) => !v), style: { background: showSettings ? C.cyan : "rgba(255,255,255,.14)", color: showSettings ? C.onAccent : "#fff", border: `1px solid ${showSettings ? C.cyan : "rgba(255,255,255,.22)"}`, borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "設定")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 3, marginTop: 12 } }, SEG_LABELS.map((c, i) => {
+  return /* @__PURE__ */ React.createElement("div", { style: { minHeight: "100vh", background: C.paper, fontFamily: FONT, color: C.ink } }, /* @__PURE__ */ React.createElement("div", { className: "fk-appbar", style: { position: "sticky", top: 0, zIndex: 30, background: C.head, color: "#fff", boxShadow: "none" } }, /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", padding: "0 14px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { flexShrink: 0 } }, h(AppTitle, { title: "金種管理表" })), /* @__PURE__ */ React.createElement("button", { className: "fk-tap", onClick: () => setShowSettings((v) => !v), style: { background: showSettings ? C.cyan : "rgba(255,255,255,.14)", color: showSettings ? C.onAccent : "#fff", border: `1px solid ${showSettings ? C.cyan : "rgba(255,255,255,.22)"}`, borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "設定")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 3, marginTop: 12 } }, SEG_LABELS.map((c, i) => {
     const on = i === segIdx;
     return /* @__PURE__ */ React.createElement("button", { key: i, onClick: () => setSegIdx(i), style: { flex: 1, position: "relative", border: "none", cursor: "pointer", background: on ? C.paper : "transparent", color: on ? C.ink : "rgba(255,255,255,.72)", borderRadius: "11px 11px 0 0", padding: "9px 2px 10px", fontWeight: 800, fontSize: 13 } }, on && /* @__PURE__ */ React.createElement("span", { style: { position: "absolute", top: 0, left: 18, right: 18, height: 3, background: C.cyan, borderRadius: 3 } }), c);
   })))), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", paddingLeft: 12, paddingRight: 12, paddingTop: 14, paddingBottom: "calc(96px + env(safe-area-inset-bottom))" } }, /* @__PURE__ */ React.createElement(React.Fragment, null, h(MonthNav, { ym: kYm, setYm: setKYm, style: { marginBottom: 6 } }), h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 700, marginBottom: 12, textAlign: "center" } }, cfg ? synced ? "同期中" : "接続中…" : demoFlag ? "デモ表示（サンプル数値）" : "この端末に保存")), showSettings && /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement(KInput, { label: "レジ金（釣銭準備金）", value: String(settings.float), onChange: (v) => saveSettings({ float: kNum(v) }), suffix: "円" }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11.5, color: C.subLight, margin: "8px 0 4px" } }, "時間帯の名前"), [0, 1].map((i) => /* @__PURE__ */ React.createElement(React.Fragment, { key: i }, /* @__PURE__ */ React.createElement(KInput, { label: `時間帯${i + 1}`, value: cps[i], onChange: (v) => {
@@ -472,7 +473,7 @@ const photoCache = {};
 const PHOTO_PH = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="3"><rect width="4" height="3" fill="#E6E2DA"/></svg>');
 function sharedKind(key) {
   const m = { [A_KEY]: "list", [B_KEY]: "list", [L_KEY]: "list", [BD_KEY]: "list",
-    [P_KEY]: "single", [STAFF_KEY]: "single", [QSA_KEY]: "single", [CL_MASTER_KEY]: "single", [DC_ITEMS_KEY]: "single",
+    [P_KEY]: "single", [STAFF_KEY]: "single", [QSA_KEY]: "single", [SHIFT_KEY]: "single", [SHN_KEY]: "single", [CL_MASTER_KEY]: "single", [DC_ITEMS_KEY]: "single",
     [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map" };
   return m[key] || null;
 }
@@ -562,6 +563,44 @@ function useStored(key, seed) {
   useEffect(() => { const f = (nv) => setV(nv); st.listeners.add(f); setV(st.val); return () => st.listeners.delete(f); }, [key]);
   return [v, st.save];
 }
+// ───────── カラーテーマ（端末ごとに保存） ─────────
+const THEME_KEY = "higo_theme_v1";
+const THEMES = [
+  { k: "kin",    l: "金と墨", c: { head: "#1A1816", headLine: "#2A2622", headAccent: "#D4A03C", ink: "#1A1816", inkSoft: "#2A2622", cyan: "#D4A03C", cyanDeep: "#8A6418", cyanSoft: "#F8F0DF", onAccent: "#1A1816", paper: "#F4F2EE" } },
+  { k: "ai",     l: "藍",     c: { head: "#1E4F9C", headLine: "#2C5FAE", headAccent: "#CFE2FA", ink: "#14213D", inkSoft: "#22304F", cyan: "#6FA3DC", cyanDeep: "#1F4E8C", cyanSoft: "#E6EFF8", onAccent: "#0E1A30", paper: "#F1F4F8" } },
+  { k: "matcha", l: "抹茶",   c: { head: "#3E6B2C", headLine: "#4C7B39", headAccent: "#DDEDBE", ink: "#1E2A22", inkSoft: "#2C3A30", cyan: "#9BBF5E", cyanDeep: "#4A6B23", cyanSoft: "#EEF4E3", onAccent: "#1A2410", paper: "#F3F5EF" } },
+  { k: "sakura", l: "桜",     c: { head: "#D2557A", headLine: "#DC6A8B", headAccent: "#FFE6EE", ink: "#3A2230", inkSoft: "#4A2E3E", cyan: "#EC9BB3", cyanDeep: "#A8435F", cyanSoft: "#FBEAF0", onAccent: "#3A1020", paper: "#F8F2F4" } },
+  { k: "orange", l: "オレンジ", c: { head: "#F0650E", headLine: "#F47A2C", headAccent: "#FFE9D4", ink: "#2B1406", inkSoft: "#3D1F0D", cyan: "#FF7A1A", cyanDeep: "#C24A00", cyanSoft: "#FFEEDD", onAccent: "#FFFFFF", paper: "#FAF4EE" } },
+  { k: "shu",    l: "朱",     c: { head: "#C53A22", headLine: "#D04E36", headAccent: "#FFDCD0", ink: "#231615", inkSoft: "#352220", cyan: "#EE7552", cyanDeep: "#A3321C", cyanSoft: "#FBE7E1", onAccent: "#2A0E06", paper: "#F6F1EE" } },
+  { k: "fuji",   l: "藤",     c: { head: "#6B4BB2", headLine: "#7A5CC0", headAccent: "#ECE3FF", ink: "#221A2E", inkSoft: "#30263F", cyan: "#B39BE3", cyanDeep: "#5E3FA0", cyanSoft: "#F0EBF8", onAccent: "#1F1233", paper: "#F4F2F7" } },
+  { k: "sora",   l: "空",     c: { head: "#1688A0", headLine: "#2597AE", headAccent: "#D6F5FA", ink: "#10303A", inkSoft: "#1C404B", cyan: "#5CC6D6", cyanDeep: "#16707F", cyanSoft: "#E2F4F6", onAccent: "#082228", paper: "#F0F5F6" } },
+  { k: "sumi",   l: "白黒",   c: { head: "#1C1C1E", headLine: "#2C2C2E", headAccent: "#C9CCD1", ink: "#1C1C1E", inkSoft: "#2C2C2E", cyan: "#C9CCD1", cyanDeep: "#4A4D52", cyanSoft: "#EEEFF1", onAccent: "#1C1C1E", paper: "#F3F3F4" } }
+];
+const themeOf = (k) => THEMES.find(t => t.k === k) || THEMES[0];
+function applyTheme(k) {
+  const t = themeOf(k);
+  Object.assign(C, t.c);
+  // 先に作っておいた部品の色もそろえる
+  primaryBtn.background = C.head; subBtn.color = C.ink; inStyle.color = C.ink;
+  try { document.body.style.background = C.paper; document.documentElement.style.background = C.paper; } catch (e) {}
+  try { const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute("content", C.head); } catch (e) {}
+}
+const readTheme = () => { try { return localStorage.getItem(THEME_KEY) || "kin"; } catch (e) { return "kin"; } };
+applyTheme(readTheme());
+function ThemePicker() {
+  const [cur, setCur] = useState(readTheme);
+  const pick = (k) => { setCur(k); try { localStorage.setItem(THEME_KEY, k); } catch (e) {} applyTheme(k); emitAll(); };
+  return h("div", { style: { marginBottom: 18 } },
+    h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.sub, marginBottom: 8 } }, "カラー（この端末だけに反映）"),
+    h("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 } },
+      THEMES.map(t => { const on = t.k === cur;
+        return h("button", { key: t.k, type: "button", className: "fk-tap", onClick: () => pick(t.k), "aria-pressed": on,
+          style: { border: on ? `2px solid ${t.c.cyanDeep}` : `1px solid ${C.line}`, background: C.card, borderRadius: 14, padding: on ? "7px 4px 6px" : "8px 5px 7px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 } },
+          h("span", { style: { position: "relative", width: 40, height: 40, borderRadius: 12, background: t.c.head, overflow: "hidden", display: "block" } },
+            h("span", { style: { position: "absolute", right: 0, bottom: 0, width: 22, height: 22, borderTopLeftRadius: 10, background: t.c.cyan } }),
+            on && h("span", { style: { position: "absolute", left: 5, top: 5, color: "#fff", display: "grid" } }, h(Icon, { name: "check", size: 14, sw: 3 }))),
+          h("span", { style: { fontSize: 11.5, fontWeight: 800, color: on ? t.c.cyanDeep : C.ink } }, t.l)); })));
+}
 
 // ───────── この端末を使う人 ─────────
 const ME_KEY = "higo_me_v1";
@@ -578,7 +617,7 @@ function MePicker({ onDone }) {
   const staff = readStored(STAFF_KEY, seedStaff).names;
   return h("div", null,
     h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 14 } }, "この端末を使う人を選ぶと、掃除・日次チェック・掲示板の既読・勤怠の報告で、名前が自動で入ります。"),
-    staff.length === 0 ? h("div", { style: { fontSize: 13, color: C.drop, fontWeight: 700 } }, "従業員名簿が空です。ホームの「従業員名簿」から名前を追加してください")
+    staff.length === 0 ? h("div", { style: { fontSize: 13, color: C.drop, fontWeight: 700 } }, "従業員名簿が空です。ホーム上の「名簿」から名前を追加してください")
     : h("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 } },
         staff.map(n => { const on = n === me;
           return h("button", { key: n, type: "button", className: "fk-tap", onClick: () => { setMe(n); onDone && onDone(n); },
@@ -1192,6 +1231,26 @@ function PostDetail({ p, staff, onUpdate, onEdit, onDelete, toast }) {
       : h("button", { type: "button", onClick: () => setDel(true), style: { border: "none", background: "transparent", color: C.drop, fontSize: 13, fontWeight: 800, width: "100%", padding: 10, cursor: "pointer" } }, "この掲示を削除"));
 }
 
+function LatestPost({ p, staff, onOpen, onRead }) {
+  const [meName] = useMe();
+  const cat = bdCat(p.cat); const u = unreadOf(p, staff);
+  return h("div", { style: { ...cardStyle, padding: "16px 16px 14px", border: `1.5px solid ${C.ink}`, position: "relative" } },
+    h("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 8 } },
+      h("span", { style: { fontSize: 10.5, fontWeight: 900, color: "#fff", background: C.ink, borderRadius: 5, padding: "2px 7px" } }, "最新"),
+      h(Pill, { text: p.cat, color: cat.c, bg: cat.bg }),
+      p.sample && h("span", { style: { fontSize: 10, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例"),
+      h("span", { style: { marginLeft: "auto", fontSize: 11.5, color: C.subLight, fontWeight: 700 } }, ago(p.createdAt))),
+    h("div", { style: { fontSize: 18, fontWeight: 900, lineHeight: 1.45 } }, p.title),
+    h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 700, marginTop: 4 } }, `${p.author}・${fmtDT(p.createdAt)}`),
+    h("div", { style: { fontSize: 15, lineHeight: 1.85, whiteSpace: "pre-wrap", margin: "12px 0", overflowWrap: "anywhere" } }, p.body),
+    h(PhotoGrid, { photos: bdPhotos(p) }),
+    meName && u.includes(meName) && h("button", { type: "button", className: "fk-tap", onClick: () => onRead(meName), style: { ...primaryBtn, background: C.done, minHeight: 50, marginBottom: 10 } }, h(Icon, { name: "check", size: 20, sw: 2.4 }), `${meName}さん：読みました`),
+    h("button", { type: "button", className: "fk-tap", onClick: onOpen, style: { width: "100%", display: "flex", alignItems: "center", gap: 8, border: "none", background: C.lineSoft, borderRadius: 12, padding: "11px 12px", cursor: "pointer", color: C.ink, fontSize: 12.5, fontWeight: 800, textAlign: "left" } },
+      u.length ? h("span", { style: { color: C.drop } }, `未読 ${u.slice(0, 4).join("・")}${u.length > 4 ? ` ほか${u.length - 4}人` : ""}`) : h("span", { style: { color: C.done } }, "全員既読"),
+      h("span", { style: { marginLeft: "auto", color: C.sub, whiteSpace: "nowrap" } }, "既読の確認・編集"),
+      h(Icon, { name: "chev", size: 16, sw: 2, color: C.subLight })));
+}
+
 function BoardApp({ go }) {
   const [list, save] = useStored(BD_KEY, seedBoard);
   const [staffRec, saveStaff] = useStored(STAFF_KEY, seedStaff);
@@ -1221,7 +1280,9 @@ function BoardApp({ go }) {
       h(SampleNote, { show: list.some(p => p.sample) }),
       shown.length === 0 ? h(Empty, { text: filter === "unread" ? "全員が読んだ掲示だけです" : "該当する掲示はありません" }) :
       h("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
-        shown.map(p => { const cat = bdCat(p.cat); const un = isUnread(p) && !expired(p);
+        shown.map((p, idx) => { const cat = bdCat(p.cat); const un = isUnread(p) && !expired(p);
+          if (idx === 0 && filter === "all") return h(LatestPost, { key: p.id, p, staff, onOpen: () => setDetailId(p.id),
+            onRead: (n) => { save(list.map(x => x.id === p.id ? { ...x, reads: [...(x.reads || []), { name: n, t: Date.now() }] } : x)); setMsg(`${n}さん 既読`); } });
           return h("button", { key: p.id, type: "button", className: "fk-tap", onClick: () => setDetailId(p.id),
             style: { ...cardStyle, padding: "14px 16px", textAlign: "left", cursor: "pointer", color: C.ink, width: "100%", position: "relative",
               border: `1px solid ${C.line}` } },
@@ -1303,9 +1364,9 @@ const CL_MASTER_KEY = "higo_clean_master_v1";
 const CL_SLOTS = [
   { k: "im", time: "アイドル", place: "麺場",   tint: "#44548A", soft: "#E7EAF4" },
   { k: "iy", time: "アイドル", place: "焼き場", tint: "#44548A", soft: "#E7EAF4" },
-  { k: "dm", time: "ディナー", place: "麺場",   tint: "#B3412F", soft: "#F7E7E3" },
-  { k: "dy", time: "ディナー", place: "焼き場", tint: "#B3412F", soft: "#F7E7E3" },
-  { k: "dh", time: "ディナー", place: "ホール", tint: "#B3412F", soft: "#F7E7E3" }
+  { k: "dm", time: "ポジション清掃", place: "麺場",   tint: "#B3412F", soft: "#F7E7E3" },
+  { k: "dy", time: "ポジション清掃", place: "焼き場", tint: "#B3412F", soft: "#F7E7E3" },
+  { k: "dh", time: "ポジション清掃", place: "ホール", tint: "#B3412F", soft: "#F7E7E3" }
 ];
 const clSlot = (k) => CL_SLOTS.find(s => s.k === k);
 const ymdOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -1324,7 +1385,7 @@ function ClCheckBody({ ymd, slot, task, rec, staff, master, onCheck, onUndo, onC
     h("div", { style: { display: "flex", gap: 6, marginBottom: 6 } }, h(Pill, { text: `${sl.time}・${sl.place}`, color: sl.tint, bg: sl.soft }), h("span", { style: { fontSize: 12, color: C.sub, fontWeight: 700 } }, fmtYMD(ymd))),
     h("div", { style: { fontSize: 20, fontWeight: 900 } }, task));
   if (changing) return h("div", null, head,
-    h("div", { style: { fontSize: 13, fontWeight: 800, color: C.sub, marginBottom: 8 } }, `この日の${sl.time}${sl.place}の担当を変更`),
+    h("div", { style: { fontSize: 13, fontWeight: 800, color: C.sub, marginBottom: 8 } }, `この日の${sl.time}・${sl.place}の担当を変更`),
     h("div", { style: { display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 12 } },
       (master[slot] || []).map(t => h("button", { key: t, type: "button", onClick: () => onChangeTask(t), style: { border: `1.5px solid ${t === task ? C.ink : C.line}`, background: t === task ? C.ink : C.card, color: t === task ? "#fff" : C.ink, borderRadius: 999, padding: "8px 13px", fontSize: 13, fontWeight: 700, cursor: "pointer" } }, t))),
     h("div", { style: { display: "flex", gap: 8 } },
@@ -1424,11 +1485,11 @@ function CleanApp() {
               h("div", { style: { fontSize: 20, fontWeight: 800, marginTop: 2, color: tp >= 1 ? C.done : C.ink, fontVariantNumeric: "tabular-nums" } }, tp >= 1 ? "すべて完了" : `${tn} / ${tt}`, tp < 1 && h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 6 } }, "完了")),
               h("div", { style: { fontSize: 11.5, color: C.sub, fontWeight: 700, marginTop: 2 } }, `日次チェック ${dc.n}/${dc.total}・掃除表 ${n}/${total}`)),
             h("button", { type: "button", className: "fk-tap", onClick: () => setRankOpen(true), style: { ...subBtn, flex: "0 0 auto", padding: "8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontSize: 11.5 } }, h(Icon, { name: "trophy", size: 22, color: C.cyanDeep }), "ランキング")); })(),
-        h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "日次チェック"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "時間までに")),
+        h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "日次チェック"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "ポジション別・時間までに")),
         h(DailyCheckView, { items: dcItems, done: dcDone, ymd, today, onOpen: setDcOpen, hideProgress: true }),
         h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "掃除表"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "得点つき")),
         !day ? h(Empty, { text: "この日の掃除表はありません" }) : h(React.Fragment, null,
-          section("アイドル"), section("ディナー")),
+          section("アイドル"), section("ポジション清掃")),
         h("div", { style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
           h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "11px 14px", background: "#FAF9F6" } },
             h("span", { style: { fontSize: 14, fontWeight: 900 } }, "掃除表以外の掃除"),
@@ -1454,8 +1515,8 @@ function CleanApp() {
         h("div", { style: { ...cardStyle, overflow: "hidden" } },
           h("div", { style: { overflowX: "auto" } },
             h("table", { style: { borderCollapse: "collapse", minWidth: 640, width: "100%" } },
-              h("thead", null, h("tr", { style: { background: C.ink, color: "#fff" } },
-                h("th", { style: { position: "sticky", left: 0, background: C.ink, padding: "9px 8px", fontSize: 11, textAlign: "left", whiteSpace: "nowrap" } }, ""),
+              h("thead", null, h("tr", { style: { background: C.head, color: "#fff" } },
+                h("th", { style: { position: "sticky", left: 0, background: C.head, padding: "9px 8px", fontSize: 11, textAlign: "left", whiteSpace: "nowrap" } }, ""),
                 weekDates.map(d => h("th", { key: d, style: { padding: "8px 4px", fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap", color: clDow(d) === 6 ? "#9DB8FF" : clDow(d) === 0 ? "#FF9C8F" : "#fff", background: d === today ? C.inkSoft : C.ink } }, `${fmtYMD(d)}`)))),
               h("tbody", null, CL_SLOTS.map(sl => h("tr", { key: sl.k, style: { borderTop: `1px solid ${C.lineSoft}` } },
                 h("td", { style: { position: "sticky", left: 0, background: "#FAF9F6", padding: "8px", fontSize: 11, fontWeight: 800, color: sl.tint, whiteSpace: "nowrap", lineHeight: 1.3 } }, sl.time, h("br"), sl.place),
@@ -1556,12 +1617,12 @@ function CleanEditor({ sched, saveSched, master, saveMaster, dcItems, saveDcItem
         CL_SLOTS.map((s, i) => { const on = s.k === slot; const filled = days.filter(d => sched[d] && sched[d][s.k]).length;
           return h("button", { key: s.k, type: "button", className: "fk-tap", onClick: () => { setSlot(s.k); setFillAsk(false); setRmItem(null); },
             style: { gridColumn: i === CL_SLOTS.length - 1 ? "1 / -1" : "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "10px 10px", borderRadius: 12, cursor: "pointer", border: on ? `2px solid ${s.tint}` : `1px solid ${C.line}`, background: on ? s.soft : C.card, color: C.ink } },
-            h("span", { style: { fontSize: 13, fontWeight: 800, whiteSpace: "nowrap" } }, h("span", { style: { color: s.tint } }, s.time), s.place),
+            h("span", { style: { fontSize: 13, fontWeight: 800, whiteSpace: "nowrap" } }, h("span", { style: { color: s.tint } }, s.time), "・", s.place),
             h("span", { style: { fontSize: 11, fontWeight: 800, whiteSpace: "nowrap", color: filled === nDays ? C.done : C.sub } }, filled === nDays ? "✓" : `${filled}/${nDays}`)); })),
       // 自動で埋める
       empty.length > 0 && list.length > 0 && (fillAsk
         ? h("div", { style: { ...cardStyle, padding: 14, marginBottom: 12 } },
-            h("div", { style: { fontSize: 13, fontWeight: 800, lineHeight: 1.6, marginBottom: 10 } }, `${sl.time}${sl.place}の空いている${empty.length}日を、場所のリストの順番で埋めます。入っている日は変わりません。`),
+            h("div", { style: { fontSize: 13, fontWeight: 800, lineHeight: 1.6, marginBottom: 10 } }, `${sl.time}・${sl.place}の空いている${empty.length}日を、場所のリストの順番で埋めます。入っている日は変わりません。`),
             h("div", { style: { display: "flex", gap: 8 } },
               h("button", { type: "button", onClick: () => setFillAsk(false), style: subBtn }, "やめる"),
               h("button", { type: "button", onClick: autoFill, style: { ...subBtn, background: C.ink, color: "#fff", border: "none" } }, "埋める")))
@@ -1575,7 +1636,7 @@ function CleanEditor({ sched, saveSched, master, saveMaster, dcItems, saveDcItem
             h(Icon, { name: "edit", size: 16, color: C.subLight })); })),
       // 場所のリスト
       h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "22px 4px 8px" } },
-        h("span", { style: { fontSize: 13, fontWeight: 900 } }, `${sl.time}${sl.place}の場所のリスト`),
+        h("span", { style: { fontSize: 13, fontWeight: 900 } }, `${sl.time}・${sl.place}の場所のリスト`),
         h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, `${list.length}か所`)),
       h("div", { style: { ...cardStyle, padding: 14 } },
         h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 } },
@@ -1588,7 +1649,7 @@ function CleanEditor({ sched, saveSched, master, saveMaster, dcItems, saveDcItem
           h("button", { type: "button", disabled: !newItem.trim(), onClick: () => { const t = newItem.trim(); if (list.includes(t)) { setMsg("すでにリストにあります"); return; } saveMaster({ ...master, [slot]: [...list, t] }); setNewItem(""); setMsg("リストに追加しました"); },
             style: { ...subBtn, flex: "0 0 auto", padding: "0 16px", background: newItem.trim() ? C.ink : C.line, color: newItem.trim() ? "#fff" : C.subLight, border: "none" } }, "追加")),
         h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 8 } }, "リストから外しても、すでに表に入っている日はそのまま残ります。"))),
-    h(Sheet, { open: !!pick, onClose: () => setPick(null), title: pick ? `${fmtYMD(pick)}　${sl.time}${sl.place}` : "" },
+    h(Sheet, { open: !!pick, onClose: () => setPick(null), title: pick ? `${fmtYMD(pick)}　${sl.time}・${sl.place}` : "" },
       pick && h(ClTaskPicker, { key: pick + slot, current: sched[pick] && sched[pick][slot], options: list, onPick: (t) => { setTask(pick, t); setPick(null); setMsg(t ? "変更しました" : "なしにしました"); } })),
     h(Toast, { text: msg }));
 }
@@ -1614,24 +1675,32 @@ async function savePhoto(src, name) {
     const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
   } catch (e) { if (e && e.name !== "AbortError") console.error(e); }
 }
-function PhotoViewer({ photos, start, onClose }) {
+function PhotoViewer({ photos, start, onClose, zoomable, name: fname }) {
   const [i, setI] = useState(start || 0);
+  const [z, setZ] = useState(1);
+  useEffect(() => setZ(1), [i]);
+  const lastTap = useRef(0);
   const tx = useRef(null);
   useEffect(() => { const o = document.body.style.overflow; document.body.style.overflow = "hidden"; const k = (e) => { if (e.key === "Escape") onClose(); if (e.key === "ArrowRight") setI(v => Math.min(photos.length - 1, v + 1)); if (e.key === "ArrowLeft") setI(v => Math.max(0, v - 1)); }; window.addEventListener("keydown", k); return () => { document.body.style.overflow = o; window.removeEventListener("keydown", k); }; }, []);
   const btn = { width: 44, height: 44, borderRadius: 99, border: "none", background: "rgba(255,255,255,.16)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" };
-  const d = new Date(); const name = `higobashi_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${i + 1}.jpg`;
+  const d = new Date(); const name = fname || `higobashi_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${i + 1}.jpg`;
   return ReactDOM.createPortal(h("div", { role: "dialog", "aria-label": "写真", style: { position: "fixed", inset: 0, zIndex: 90, background: "#000", display: "flex", flexDirection: "column" },
-      onTouchStart: (e) => { tx.current = e.touches[0].clientX; },
+      onTouchStart: (e) => { tx.current = z > 1 || e.touches.length > 1 ? null : e.touches[0].clientX; },
       onTouchEnd: (e) => { if (tx.current == null) return; const dx = e.changedTouches[0].clientX - tx.current; tx.current = null; if (dx < -50) setI(v => Math.min(photos.length - 1, v + 1)); if (dx > 50) setI(v => Math.max(0, v - 1)); } },
     h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "calc(10px + env(safe-area-inset-top, 0px)) 12px 10px", color: "#fff" } },
       h("button", { type: "button", "aria-label": "閉じる", onClick: onClose, style: btn }, h(Icon, { name: "x", size: 22, sw: 2.2 })),
       h("span", { style: { fontSize: 14, fontWeight: 800, fontVariantNumeric: "tabular-nums" } }, photos.length > 1 ? `${i + 1} / ${photos.length}` : ""),
       h("button", { type: "button", onClick: () => savePhoto(photos[i], name), style: { ...btn, width: "auto", padding: "0 16px", fontSize: 13.5, fontWeight: 800, gap: 6, display: "flex", alignItems: "center" } }, h(Icon, { name: "download", size: 19, sw: 2.2 }), "保存")),
-    h("div", { style: { flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" } },
-      h("img", { src: photos[i], alt: `写真${i + 1}`, style: { maxWidth: "100%", maxHeight: "100%", objectFit: "contain", userSelect: "none" } }),
-      photos.length > 1 && i > 0 && h("button", { type: "button", "aria-label": "前の写真", onClick: () => setI(i - 1), style: { ...btn, position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }, h("span", { style: { display: "inline-block", transform: "scaleX(-1)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
-      photos.length > 1 && i < photos.length - 1 && h("button", { type: "button", "aria-label": "次の写真", onClick: () => setI(i + 1), style: { ...btn, position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
-    h("div", { style: { textAlign: "center", color: "rgba(255,255,255,.55)", fontSize: 11.5, fontWeight: 700, padding: "10px 12px calc(14px + env(safe-area-inset-bottom, 0px))" } }, "「保存」から写真アプリに保存できます（写真の長押しでも保存できます）")), document.body);
+    h("div", { style: { flex: 1, minHeight: 0, position: "relative" } },
+      h("div", { style: { position: "absolute", inset: 0, overflow: z > 1 ? "auto" : "hidden", WebkitOverflowScrolling: "touch", display: z > 1 ? "block" : "flex", alignItems: "center", justifyContent: "center" },
+          onClick: () => { const now = Date.now(); if (now - lastTap.current < 300) setZ(z > 1 ? 1 : 2.5); lastTap.current = now; } },
+        h("img", { src: photos[i], alt: `写真${i + 1}`, draggable: false, style: z > 1 ? { width: `${z * 100}%`, maxWidth: "none", display: "block", userSelect: "none" } : { maxWidth: "100%", maxHeight: "100%", objectFit: "contain", userSelect: "none" } })),
+      h("div", { style: { position: "absolute", right: 12, bottom: 12, display: "flex", gap: 8 } },
+        h("button", { type: "button", "aria-label": "縮小", onClick: () => setZ(Math.max(1, z - 0.75)), style: { ...btn, opacity: z > 1 ? 1 : .4 } }, h("span", { style: { fontSize: 24, fontWeight: 800, lineHeight: 1 } }, "−")),
+        h("button", { type: "button", "aria-label": "拡大", onClick: () => setZ(Math.min(4, z + 0.75)), style: btn }, h("span", { style: { fontSize: 24, fontWeight: 800, lineHeight: 1 } }, "+"))),
+      photos.length > 1 && i > 0 && z === 1 && h("button", { type: "button", "aria-label": "前の写真", onClick: () => setI(i - 1), style: { ...btn, position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }, h("span", { style: { display: "inline-block", transform: "scaleX(-1)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
+      photos.length > 1 && i < photos.length - 1 && z === 1 && h("button", { type: "button", "aria-label": "次の写真", onClick: () => setI(i + 1), style: { ...btn, position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
+    h("div", { style: { textAlign: "center", color: "rgba(255,255,255,.55)", fontSize: 11.5, fontWeight: 700, padding: "10px 12px calc(14px + env(safe-area-inset-bottom, 0px))" } }, "＋で拡大・2回タップで拡大／戻す。「保存」から写真アプリに保存できます")), document.body);
 }
 function PhotoGrid({ photos }) {
   const [open, setOpen] = useState(null);
@@ -1645,7 +1714,7 @@ function PhotoGrid({ photos }) {
 function NamePick({ staff, onPick, action }) {
   const [me, setMe] = useMe();
   const [other, setOther] = useState(false);
-  if (!staff.length) return h("div", { style: { fontSize: 13, color: C.drop, fontWeight: 700 } }, "従業員名簿が空です。ホームの「従業員名簿」から名前を追加してください");
+  if (!staff.length) return h("div", { style: { fontSize: 13, color: C.drop, fontWeight: 700 } }, "従業員名簿が空です。ホーム上の「名簿」から名前を追加してください");
   if (me && !other) return h("div", null,
     h("button", { type: "button", className: "fk-tap", onClick: () => onPick(me), style: { ...primaryBtn, background: C.done, minHeight: 56, fontSize: 16 } }, h(Icon, { name: "check", size: 20, sw: 2.4 }), `${me}さんで${action || "完了にする"}`),
     h("button", { type: "button", onClick: () => setOther(true), style: { border: "none", background: "transparent", color: C.sub, fontSize: 12.5, fontWeight: 800, width: "100%", padding: 12, cursor: "pointer" } }, "ほかの人の名前で記録する"));
@@ -1760,21 +1829,26 @@ function DailyCheckView({ items, done, ymd, today, onOpen, hideProgress }) {
       h("div", { style: { flex: 1 } },
         h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 800 } }, `${ymd === today ? "今日 " : ""}${fmtYMD(ymd)}の日次チェック`),
         h("div", { style: { fontSize: 20, fontWeight: 800, marginTop: 2, color: pct >= 1 ? C.done : C.ink, fontVariantNumeric: "tabular-nums" } }, pct >= 1 ? "すべて完了" : `${n} / ${total}`, pct < 1 && h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 6 } }, "完了")))),
-    times.map((t, ti) => { const rows = items.filter(i => i.time === t).sort((a, b) => DC_POS.findIndex(p => p.k === a.pos) - DC_POS.findIndex(p => p.k === b.pos));
+    DC_POS.map(p => { const rows = items.filter(i => i.pos === p.k).sort((a, b) => dcMin(a.time) - dcMin(b.time)); if (!rows.length) return null;
       const c = rows.filter(i => dd[i.id]).length; const all = c === rows.length;
-      const late = !all && ti < curIdx;
-      const now = ymd === today && ti === curIdx;
-      return h("div", { key: t, style: { ...cardStyle, overflow: "hidden", marginBottom: 12, border: now && !all ? `1.5px solid ${C.cyan}` : cardStyle.border } },
-        h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: now && !all ? C.cyanSoft : "#FAF9F6" } },
-          h("span", { style: { fontSize: 16, fontWeight: 900, fontVariantNumeric: "tabular-nums" } }, t, h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub, marginLeft: 2 } }, "まで")),
-          now && !all && h(Pill, { text: "次の締め切り", color: C.onAccent, bg: C.cyan }),
-          late && h(Pill, { text: "やり残し", color: "#fff", bg: C.drop }),
+      // このポジションで次にやるもの（締め切りがまだ来ていない一番早い未完了）
+      const nextId = ymd === today ? (rows.find(i => !dd[i.id] && dcMin(i.time) >= nowMin) || {}).id : null;
+      const lateN = rows.filter(i => !dd[i.id] && (ymd < today || (ymd === today && dcMin(i.time) < nowMin))).length;
+      return h("div", { key: p.k, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
+        h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: p.soft } },
+          h("span", { style: { width: 8, height: 8, borderRadius: 99, background: p.tint } }),
+          h("span", { style: { fontSize: 16, fontWeight: 900, color: p.tint } }, p.k),
+          lateN > 0 && h(Pill, { text: `やり残し ${lateN}`, color: "#fff", bg: C.drop }),
           h("span", { style: { marginLeft: "auto", fontSize: 12, fontWeight: 800, color: all ? C.done : C.sub } }, all ? "完了" : `${c}/${rows.length}`)),
-        rows.map(i => { const r = dd[i.id]; const p = dcPos(i.pos);
+        rows.map(i => { const r = dd[i.id];
+          const late = !r && (ymd < today || (ymd === today && dcMin(i.time) < nowMin));
+          const next = i.id === nextId;
           return h("button", { key: i.id, type: "button", className: "fk-tap", onClick: () => onOpen(i.id),
-            style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: r ? "#F7FBF8" : "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, textAlign: "left", cursor: "pointer", color: C.ink } },
-            h("span", { style: { width: 28, height: 28, borderRadius: 99, flexShrink: 0, display: "grid", placeItems: "center", background: r ? C.done : "transparent", border: r ? "none" : `2px solid ${C.line}`, color: "#fff" } }, r && h(Icon, { name: "check", size: 17, sw: 2.8 })),
-            h("span", { style: { width: 44, flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: p.tint } }, i.pos),
+            style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: r ? "#F7FBF8" : next ? C.cyanSoft : "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, boxShadow: next ? `inset 3px 0 0 ${C.cyan}` : "none", textAlign: "left", cursor: "pointer", color: C.ink } },
+            h("span", { style: { width: 28, height: 28, borderRadius: 99, flexShrink: 0, display: "grid", placeItems: "center", background: r ? C.done : "transparent", border: r ? "none" : `2px solid ${late ? C.drop : C.line}`, color: "#fff" } }, r && h(Icon, { name: "check", size: 17, sw: 2.8 })),
+            h("span", { style: { width: 62, flexShrink: 0, lineHeight: 1.2 } },
+              h("span", { style: { display: "block", fontSize: 14, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: late ? C.drop : r ? C.sub : C.ink } }, i.time),
+              h("span", { style: { display: "block", fontSize: 10, fontWeight: 800, color: late ? C.drop : next ? C.cyanDeep : C.subLight } }, late ? "過ぎています" : next ? "次はこれ" : "まで")),
             h("span", { style: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, lineHeight: 1.45, color: r ? C.sub : C.ink } }, dcShow(i.text)),
             r && h("div", { style: { textAlign: "right", flexShrink: 0 } },
               h("div", { style: { fontSize: 12, fontWeight: 800, color: C.done } }, r.by),
@@ -1805,18 +1879,16 @@ function DailyItemsEditor({ items, saveItems, toast }) {
   const times = dcTimes(items);
   return h(React.Fragment, null,
     h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, margin: "0 4px 12px" } }, "日次チェックは毎日同じ項目です。項目をタップすると変更・削除ができます。"),
-    times.map(t => { const rows = items.filter(i => i.time === t).sort((a, b) => DC_POS.findIndex(p => p.k === a.pos) - DC_POS.findIndex(p => p.k === b.pos));
-      return h("div", { key: t, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
-        h("div", { style: { padding: "10px 14px", background: "#FAF9F6", fontSize: 15, fontWeight: 900 } }, t),
-        rows.map(i => { const p = dcPos(i.pos);
-          return h("button", { key: i.id, type: "button", onClick: () => setForm(i), style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, textAlign: "left", cursor: "pointer", color: C.ink } },
-            h("span", { style: { width: 44, flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: p.tint } }, i.pos),
+    DC_POS.map(p => { const rows = items.filter(i => i.pos === p.k).sort((a, b) => dcMin(a.time) - dcMin(b.time));
+      return h("div", { key: p.k, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
+        h("div", { style: { padding: "10px 14px", background: p.soft, color: p.tint, fontSize: 15, fontWeight: 900 } }, p.k),
+        rows.map(i => h("button", { key: i.id, type: "button", onClick: () => setForm(i), style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, textAlign: "left", cursor: "pointer", color: C.ink } },
+            h("span", { style: { width: 50, flexShrink: 0, fontSize: 13.5, fontWeight: 900, fontVariantNumeric: "tabular-nums" } }, i.time),
             h("span", { style: { flex: 1, fontSize: 14.5, fontWeight: 700 } }, dcShow(i.text)),
-            h(Icon, { name: "edit", size: 16, color: C.subLight })); }),
-        h("button", { type: "button", onClick: () => setForm({ time: t, pos: "", text: "" }), style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px 0", background: "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, color: C.cyanDeep, fontWeight: 800, fontSize: 13.5, cursor: "pointer" } }, h(Icon, { name: "plus", size: 17, sw: 2.2 }), `${t}に項目を追加`)); }),
-    h("button", { type: "button", className: "fk-tap", onClick: () => setForm({ time: "", pos: "", text: "" }), style: { ...subBtn, width: "100%", borderStyle: "dashed" } }, "新しい時間の項目を追加"),
+            h(Icon, { name: "edit", size: 16, color: C.subLight }))),
+        h("button", { type: "button", onClick: () => setForm({ time: "", pos: p.k, text: "" }), style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "11px 0", background: "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, color: C.cyanDeep, fontWeight: 800, fontSize: 13.5, cursor: "pointer" } }, h(Icon, { name: "plus", size: 17, sw: 2.2 }), `${p.k}に項目を追加`)); }),
     h(Sheet, { open: !!form, onClose: () => setForm(null), title: form && form.id ? "項目を編集" : "項目を追加" },
-      form && h(DcItemForm, { key: form.id || "new" + form.time, init: form, times,
+      form && h(DcItemForm, { key: form.id || "new" + form.pos, init: form, times,
         onSave: (f) => { if (f.id) saveItems(items.map(i => i.id === f.id ? f : i)); else saveItems([...items, { ...f, id: newId() }]); setForm(null); toast(f.id ? "変更しました" : "追加しました"); },
         onDelete: () => { saveItems(items.filter(i => i.id !== form.id)); setForm(null); toast("削除しました"); } })));
 }
@@ -1893,10 +1965,10 @@ function QsaCard() {
   const picks = ids.map(id => data.items.find(i => i.id === id)).filter(Boolean);
   return h(React.Fragment, null,
     h("div", { style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
-      h("div", { style: { display: "flex", alignItems: "center", gap: 10, padding: "13px 16px", background: C.ink, color: "#fff" } },
-        h(Icon, { name: "star", size: 20, color: C.cyan, sw: 2 }),
+      h("div", { style: { display: "flex", alignItems: "center", gap: 10, padding: "13px 16px", background: C.head, color: "#fff" } },
+        h(Icon, { name: "star", size: 20, color: C.headAccent, sw: 2 }),
         h("div", { style: { flex: 1 } },
-          h("div", { style: { fontSize: 10.5, letterSpacing: ".14em", color: C.cyan, fontWeight: 800 } }, `${new Date().getMonth() + 1}月のQSA`),
+          h("div", { style: { fontSize: 10.5, letterSpacing: ".14em", color: C.headAccent, fontWeight: 800 } }, `${new Date().getMonth() + 1}月のQSA`),
           h("div", { style: { fontSize: 15.5, fontWeight: 900, marginTop: 1 } }, "今月のこだわりポイント")),
         h("button", { type: "button", className: "fk-tap", onClick: () => setOpen(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer" } }, picks.length ? "変更" : "選ぶ")),
       picks.length === 0
@@ -1910,9 +1982,534 @@ function QsaCard() {
                 h("span", { style: { display: "block", fontSize: 14.5, fontWeight: 800, lineHeight: 1.5 } }, it.text))); })),
     h(Sheet, { open, onClose: () => setOpen(false), title: "QSAこだわりポイント" }, open && h(QsaEditor, { data, save })));
 }
+const SHIFT_SEED_TEXT = "@2026-10-01\n石川 将吾(社員): 9:30-15:00 肥後橋 / 17:00-19:00 [青]事務 / 19:00-23:30 肥後橋\n安田 桃香(社員): 9:30-13:30 肥後橋 / 14:00-17:00\nNGUYEN VAN MINH(社員): 9:30-14:00 肥後橋 / 15:00-18:00\nPoe Ei Thwe(28h): 18:00-23:30\nリン(28h): 17:00-19:00 / 19:30-23:30\n@2026-10-02\n石川 将吾(社員): 9:30-14:30 肥後橋 / 16:00-16:45 [青]事務\n安田 桃香(社員): 9:30-14:30 肥後橋 / 16:00-16:45 [青]事務\nNGUYEN VAN MINH(社員): 9:30-13:30 肥後橋 / 14:30-18:00\nPoe Ei Thwe(28h): 20:00-23:30 [他]フラン軒\n姜 潤沛(PA,28h): 18:00-23:30\nギュ(28h): 18:00-23:30\nリン(28h): 20:00-23:30\n細田 恵茉(PA): 14:00-18:00 / 18:30-20:00\nオウ(28h): 9:30-13:00 焼き場1 / 13:30-15:00\n@2026-10-03\n内海 瞬(PA): 14:00-17:00 / 18:00-23:00\n加藤 深優(社員): 15:00-18:00 / 19:00-23:30\nPoe Ei Thwe(28h): 9:30-15:00\n藤原 夢里子(PA): 9:30-14:00\n知念 結(PA): 9:30-14:00\nリン(28h): 17:00-19:00 / 19:30-23:30\n細田 恵茉(PA): 9:30-15:00\n@2026-10-04\n石川 将吾(社員): 9:30-13:30 中間 / 14:30-18:00\nNGUYEN VAN MINH(社員): 9:30-13:00 麺場 / 13:30-16:00 / 18:30-23:30 肥後橋\n加藤 深優(社員): 9:30-14:30 トップ / 17:00-18:30 肥後橋 / 19:00-23:30 肥後橋\n姜 潤沛(PA,28h): 18:00-23:30\nオウ(28h): 9:30-15:00 焼き場2\n@2026-10-05\n石川 将吾(社員): 9:30-16:00 肥後橋\n安田 桃香(社員): 9:30-14:00 肥後橋 / 15:00-18:00\n加藤 深優(社員): 9:30-15:00 肥後橋\n姜 潤沛(PA,28h): 16:00-18:30 / 19:30-23:30\nギュ(28h): 18:00-23:30\nリン(28h): 18:30-23:30\n";
+const SHIFT_NAME_SEED = [{"name":"石川 将吾","tags":["社員"],"fp":"000000000000000000000000000000000000000000000000000000000000000000010000010000000000000000000000111111111111100100011000100000000010000001100111111111111000001000010000010000001111111110001100000001000000000100011000100000001010111110000000001000000000010001111100010000001000000010000100000010000000000100011000100000001010000100100011111111110000110000001100010000011111111110000110000010000000000100011000100000001110100101100000110000010000100000001011111110011000000010000010001111111111000100011000100000000010010001000111111111111100100000111000010000011111111110000011111100000001000100011000100000000111111111110000000000000001100001010100010000011111111110000011110100000001000100011000100000001010000001000011111111111000100000010000010000011000000010000011000100000001000100011000100000000010010001000010000000011000100000010000010000011111111110000010000111111111001100011000100000000010001001000010000000011000100000010000010000000110001100000010000100000001001000000000100000000010000111000011111111111000110000010111111110111000000111000110000000000000000000000000000000000000000000000000000000000000011000000000000000000000000000001100","w":94},{"name":"安田 桃香","tags":["社員"],"fp":"000000100000000000000000000000000000000000000000000001110000000000010000010000000000000000000000000000100000000111111111100000000110001010000011111110000000001000010000010000001111111110001100111111111111000100010000100000000110101010010000000100000000010001111100010000001000000010000100110001000001000100010000100000001111101010100111111111111100110000001100010000011111111110000110000011000000000100010000100000000110111011000000111111000000100000001011111110011000000010000010111111111111100111111111100000000111011011001111000100111100100000111000010000011111111110000011000100000100000100010000100000001110111011100011111111111001100001010100010000011111111110000011000110001100000100010000100000010111011010010010000000011000100000010000010000011000000010000011000001111000000100010000100000000110010010000011111111111000100000010000010000011111111110000010000001111100000111111111100000000110110010010010000000011000100000010000010000000110001100000010111110000011000100000000100000000111100011110011111111111000110000010111111110111000000111000110000000000000000000000000000000000000000000000000000000000000011000000000000000000000000000001100","w":94},{"name":"NGUYEN VAN MINH","tags":["社員"],"fp":"000000000000000000000000000000000000000000000000000000000000000000000000000000000010001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011010001000000000110010011110100011100101111011001000110011011001100100001100110111110010100010110111001000000000110010010010100010100101000011001000010010011001110100001100110100110010100010100001001000000000111010100000100010101101000011001000010010011001010100001100110100111010100010100001111110000000111110100000100010011001111011101000010010011101011100001111110100101010111110100011001000101001110110100110100010001001000010101000011110111101001100001011110100101110100010100111001000000000110110100010100010001001000010111000001100100111001100001010110100100110100010100010001000000000110110110010110100001001000010011000001101100011000100001000110100100110100010100010001000000000110010011110011100001001111010001000001001000011000100001000110111100110100010100010001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100011111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000111000000000000000","w":158},{"name":"Poe Ei Thwe","tags":["28h"],"fp":"001000000000000000000000000000000100000100000000000000000000000000000000000000000000000000000000010000000000000100000101000100000100000110000000000000000000000000000000110000000000100000000000010011100011110100000101000100111111110010000000111100000000000000011111000001111110100000000000110010010010010100000100100100100110010010000000100110000000000000010000000000001000100000000000100000010010010101100100110100100110010011000000100010111001110000010000010000001000111100000000100000010010010110110100001100101110010001000000100011101011001000010000010000001000110100000000100000110011110100010100001000101010010001000000100111001110001000011111010000001000100101100101100000100010010100010100101000111011010011000000111101001111111000010000010000001000100100000000110001100110010100010101001000110001110010000000100001001110000000010000010000001000100100000000010010000010010100010110011100100000010010000000100001101011000000010000010000001000100100000000010011111011110100011101100110100000010110000000100000111001111000011111010000001000100100000000001000000000000000000001000010100001110100000000000000000000000000000000000000000000000000000000","w":140},{"name":"リン","tags":["28h"],"fp":"010000000000000000000000000000001000011000000000000000000000000000000000000000000000000000000000010000000000000100000111001000001000001100000000000000000000000000001000000000000000000100000000010011100011100100000101001001111111000100000001111000000000011001101000000000010010000000000000110010010100110100000101001001001101000100000001001100000000011101101000000000010010000000000000100000010100010111000101101001001101000100000001000101110000011101101111011110111110000100000000100000010110100101100100011001011101000100000001000101001000010101101101000011010010000100000000100000110011100100100100010001010101000100000001000101001100010111101001001111010010000101001101100001100100010100100101010001110111000100000001000101001100010011101001011011010010000100000000110001000100010100100111010001100011000100000001000101001100010011101001010011010010000100000000010010000100110100100100111001000001000100000001001101001000010001101001010011010010000100000000010111110011100100111001001101000001001100000001110001110000010001101001011111011111110100000000010000000000000000000011000101000011011000000000000000000000000000000000000000000000000000000000","w":144},{"name":"姜 潤沛","tags":["PA","28h"],"fp":"001000000000000000000000000000000100000100000000001001100000000000000000000000000000000000000000010000000000000100000101000100000100000110000000111111110000101111110100001000001000000000000110010011100011110100000101000100111111110010000000000010000000011011010011111111011011110001100011110010010010010100000100100100100110010010000000111111110000011111110000001000010010011001100001100000010010010101100100110100100110010011000000000010000000101011010101111110110010001001110001100000110011110110110100001100101110010001000000111111110000011111110111001010100010011011010001100000100010010100010100101000111011010011000001111111110000011111110011001010100011110011110001110001100110010100010101001000110001110010000000001000100000011001010011001010100010000110010001010010000010010100010110011100100000010010000000001101000000011111010111001110100010000100011001010011111011110100011101100110100000010110000000000111000000111001010100001000110010000100011001001000000000000000000001000010100001110100000000111100100000101111110100001000010000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000011000000000000111","w":140},{"name":"ギュ","tags":["28h"],"fp":"000000000000000000000000000000000000000000000000000000000000000000011000000000000000011000000000001000000000000000000000000000000010000110000000000000000000000010011000000000000010001100000000010000000000000100000011100100000010000011000000000000110000000010000000000000000010000000000000010011100001110100000010100100111111110001000000000000110000000011111000000000000011111000000000110010010010010100000010010100100010010001000000000110000000011110000000000000000110001000000000100000010010010101100010010100100010010001000000001110000000000010000001111100001100001000000000100000010011010110110010000100100110010001000000001011000000000011000000000100011000001000000000100000110001110100010010000100100101010001000000001001100000000011111000000100010000011001001101100000100010010100010010010100111001110001000000010000100000011111000000000100000000010000000000110001100110010100010011101100110000110001000000100000110000000001000000000100000000100000000000010010000010010100010010011100100000010001000000000000011000000001000000000100000001100000000000011011111001110100011101110110100000110111000000000000001100000001000011111111001111000000000000","w":138},{"name":"細田 恵茉","tags":["PA"],"fp":"000100000000000000000000000000000000000000100000000000100001000000000000000000000000000000000000001000111111100011111111111100000000111111111111110111111111111100000100000000000000000000001100111010100010100011000100000100000000000000100000000000100001000000001000001111100000110000000100001110100010100011000100000100000000011111111111000000001100000000011000001000110000111000000010000100100010100011000100000100000000010000100011000111111111111100010000001000010000101000000010111111111111100011111111111100000000011111111111000111111111111000010000001000110001101100000011000100100010100011000100000100000000011111111111000000011110000000110000001111000011111100000001111111100010100011000100000100000000000000100000000000101111100000010000001000000010000111000011110101100010100011000100000100000000010100010111000011001100110000010000001000000010000011000011110100111111100011111111111100000000110100000101000100001100001100010000001000001110000011100010000100100000100011000000000100000000100111111100110000000000000000011000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000001100000000000000000000001100","w":84},{"name":"オウ","tags":["28h"],"fp":"010000000000000000000000000000001000011000000000000000000000000000000000000000000000000000000000010000000000000100000111001000001000001000000000000000000000000000000000000000000000000000000000010011100011100100000101001011111111001000000010010001001100010001001111000001111001100000000000110010010100110100000101001011001001001000000010010001001100010001011001000011001000100000000000100000010100010111000101101010001001001100000010011011011100011001010000000010001000100000000000100000110111100101100100011010011101000100000011111010010110011101010000000010001100100000101101100001100100010100100101010010100111001100000001101110011110010101010011000010001100100000000000110001000100010100100111110011100011001000000001100100010011010111010001000010001100100000000000010010000100110100100100111010000001001000000001100100110001010111011001000011001000100000000000010111110111100100111001101010000001001000000001000100100001010011001111000001111001100000000000010000000000000000000011001010000011011000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011100000000000000","w":146},{"name":"オウ","tags":["28h"],"fp":"010000000000000000000000000000001000011000000000000000000000000000000000000000000000000000000000010000000000000100000111001000001000001000000000000000000000000000000000000000000000000000000000010011100011100100000101001011111111001000000010010001001100010001001111000001111001100000000000110010010100110100000101001010001001001000000010010001001100010001011001000011001000100000000000100000010100010111000101101010001001001100000010011011011100011001010000000010001000100000000000100000110111100101100100011010011101000100000011111010010110011101010000000010001100100000101101100001100100010100100101010010100111001100000001101110011110010101010011000010001100100000000000110001000100010100100111110011100011001000000001100100010011010111010001000010001100100000000000010010000100110100100100111010000001001000000001100100110001010011011001000011001000100000000000010111110011100100111001001010000001001000000001000100100001010011001111000001111001100000000000010000000000000000000011001010000011011000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011100000000000000","w":146},{"name":"内海 瞬","tags":["PA"],"fp":"000000011000000000000000010000000000000000000000000000011000000000000000000000000000000000000000000000011000000000011001111111111100000000111100111111100000000110000000000000000000000000011100111111111111111000000111100000000000000000110100011010001000000100001111111000000011000000001100110000011100001000100111111111111000000000110100011010001000011000001110000100000011110000001110110000011100001000011001100010001000000000111111111111111110011000001110000111001110110000000010110000111110001000000111111111111100000000110111111111111110111000001110000111001100111000000011110111000011101000011001100010001000000000111111100101101000111000001111111000011111111000000011111110000001111000011001111111111100000000110100011101101000111000001110000000010000001100000011110000000000001000011011100000001000000000111100000111111110011000001110000000110000000100000010110000000000001000100000000001110000000000110000011000001000011000001110000000100000000100000010110000000001111000000000000000000000000000000000100000001000011000000000000000000000000000001110000000000000000000000000000000000000000000000000000000000000000110000000000000000000000000011100","w":71},{"name":"加藤 深優","tags":["社員"],"fp":"000110000000000000100001000000000000000000000000000000000000000000010000010000000000000000000000000110000111100111111111111000000110111111110000111111111100001000010000010000001111111110001100000110000100100000100001000000000011101011010000101000001000010001111100010000001000000010000100001111110100100011101010010000000000011011000001001111111000110000001100010000011111111110000110000110110100100010111111111000000100110001110001001000001000100000001011111110011000000010000010000110110100100011111111111000000010000010000111111111111100100000111000010000011111111110000011000100110100100011101011010000000001111111111001011111111001100001010100010000011111111110000011000100110100100000111111111000000010000111000001000100000100100000010000010000011000000010000011000100100100100100100111100000000110011011100001111111111000100000010000010000011111111110000010001000100111100100111011110000000101100010011001000100110000100000010000010000000110001100000010111011100100100101100110001000000000000010000001111111111100110000010111111110111000000111000110000000000000000000000000000000000000000000000000000000000000011000000000000000000000000000001100","w":95},{"name":"藤原 夢里子","tags":["PA"],"fp":"000100001000000000000000000000000010001000000000000000000000000000000000000000000000000000000000111111111111001111111111100000011111111111100111111111100011111111110000011000000000000000000110000100001000001000010000000000000010001000000100010000100000000000100000110001111100000110000011111101010110001011111111000000001111111111000111111111100000000011000000100001000110001110000001100111111110001010000001000000001001001001000100010000100000000110000001100001000010001011000001111111111111001011111111000000011111111111100111111111100111111111111001000001000110011001000001111101010010001011111111000000000011111110000000010000000000000100000001000001111100011111100001100111011111001000011000000000000101100100001111111111100000000100000001000001000000110000100001100100111100010001011110000000001000111000000000010000000000000100000001000001000000100000110001100111010110010010011011000000000001110000000000010000000000000100000001100001000000100000110001111100110011010100110001100000001111000000001111111111110000111100000000100000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000111000000000000000000111","w":97},{"name":"知念 結","tags":["PA"],"fp":"000100000000000000000000000000000000000000001110000000100000000000000000000000000000000000000000000100000001111100000000001100000000000000001101000000100000000111000000000000000000000000011100000111111111000100000001110011100000000000010010001111111110000100001111111000000011000000001100001100100001000100011110000000011110000000001110000000100000001000001110000100000011110000001110001000100001000100010001111111100010000000001101000000100000001000001110000111001110110000000010001111111111000100001111111111111100000000011111111111111110111000001110000111001100111000000011000011100001000100000000000000110000000000000010001111111100111000001111111000011111111000000011000011100001000100000000001011100000000000010010001000001100111000001110000000010000001100000011000011010001000100001101001100011100000000010010001000001100001000001110000000110000000100000010000100001111111100001101000000101100000000000010001111111100001000001110000000100000000100000010111000000001000100010001111111100010000000000010001000001100001000000000000000000000000000001110000000000000000000000000000000000000000000000000000000000000000111000000000000000000000000011100","w":72}];
+// まかせてネット → アプリ 取り込み用ブックマークレット（mk/bm_src.js から生成）
+const MK_BOOKMARKLET = "javascript:!function()%7Bvar%20t%3D%22higoShiftCollect%22%2Ce%3Ddocument%3Bfunction%20r(t)%7Breturn(t%7C%7C%22%22).replace(%2F%5B%5Cs%C2%A0%5D%2B%2Fg%2C%22%20%22).trim()%7Dfunction%20o(t)%7Breturn(t%3C10%3F%220%22%3A%22%22)%2Bt%7Dvar%20a%3D%22%22%3B%5B%5D.forEach.call(e.querySelectorAll(%22input%23WRKDAY%2Cinput%23LAST_WRKDAY%2Cinput%23SEL_WRKDAY%22)%2Cfunction(t)%7Bvar%20e%3D%2F(%5Cd%7B4%7D)%5C%2F(%5Cd%7B1%2C2%7D)%5C%2F(%5Cd%7B1%2C2%7D)%2F.exec(t.value%7C%7C%22%22)%3Be%26%26!a%26%26(a%3De%5B1%5D%2B%22-%22%2Bo(%2Be%5B2%5D)%2B%22-%22%2Bo(%2Be%5B3%5D))%7D)%3Bvar%20n%3De.querySelectorAll(%22%23ChartLeft%20tr%5Bid%5E%3DHead%5D%22)%3Bif(a%26%26n.length)%7Bvar%20i%3D%5B%5D%2Cl%3D%5B%5D%3B%5B%5D.forEach.call(n%2Cfunction(t)%7Bvar%20o%3Dt.getAttribute(%22data-index%22)%2Ca%3Dt.querySelector(%22td.staff%22)%3Bif(a)%7Bvar%20n%3Da.getAttribute(%22data-name%22)%7C%7Cr(a.textContent)%2Cs%3Da.querySelector(%22span%22)%2Cd%3Ds%26%26s.getAttribute(%22title%22)%7C%7C%22%22%2Cp%3D%5B%5D%3B%2F%E7%A4%BE%E5%93%A1%2F.test(d)%26%26p.push(%22%E7%A4%BE%E5%93%A1%22)%2C%2F28h%2F.test(n)%26%26p.push(%2228h%22)%3Bvar%20c%3Dr(n.replace(%2F%5B%EF%BC%88(%5D%5B%5E%EF%BC%89)%5D*%5B%EF%BC%89)%5D%2Fg%2C%22%22))%2Cu%3De.querySelector(%22%23Detail%22%2Bo)%3Bif(u)%7Bvar%20g%3D%7B%7D%2Cf%3D%5B%5D%3B%5B%5D.forEach.call(u.querySelectorAll(%22td.ui-task-selected%22)%2Cfunction(t)%7Bvar%20e%3Dt.getAttribute(%22data-value%22)%3Bif(e%26%26%2F%5E%5Cd%2B%24%2F.test(e.trim())%26%26(g%5Be%5D%7C%7C(g%5Be%5D%3D%7Bs%3A%2Be%2Cn%3A0%2Clabel%3A%22%22%2Ctype%3A%22work%22%7D%2Cf.push(e))%2Cg%5Be%5D.n%2B%2B%2C%22none%22!%3D%3Dt.style.display))%7Bvar%20o%3Dt.getAttribute(%22title%22)%7C%7Ct.getAttribute(%22data-task%22)%7C%7C%22%22%3Bo%26%26!%2F%5E%5Cd%2B%24%2F.test(o)%26%26(g%5Be%5D.label%3Dr(o))%2Cg%5Be%5D.type%3Dfunction(t)%7Bvar%20e%3D%2Frgba%3F%5C((%5Cd%2B)%2C%5Cs*(%5Cd%2B)%2C%5Cs*(%5Cd%2B)%2F.exec(t%7C%7C%22%22)%3Bif(!e)return%22work%22%3Bvar%20r%3D%2Be%5B1%5D%2Co%3D%2Be%5B2%5D%2Ca%3D%2Be%5B3%5D%3Breturn%20a%3E180%26%26r%3C120%26%26o%3C160%3F%22blue%22%3AMath.abs(r-o)%3C25%26%26Math.abs(o-a)%3C25%3F%22other%22%3A%22work%22%7D(t.style.background%7C%7Ct.style.backgroundColor%7C%7CgetComputedStyle(t).backgroundColor)%7D%7D)%3Bvar%20h%3Df.map(function(t)%7Bvar%20e%3Dg%5Bt%5D%3Breturn%7Bs%3Ae.s%2Ce%3Ae.s%2B15*e.n%2Clabel%3Ae.label%2Ctype%3Ae.type%7D%7D).sort(function(t%2Ce)%7Breturn%20t.s-e.s%7D)%3Bif(h.length)%7Bvar%20v%3Dh.filter(function(t)%7Breturn%22other%22!%3D%3Dt.type%7D).reduce(function(t%2Ce)%7Breturn%20t%2B(e.e-e.s)%7D%2C0)%2F60%2Cy%3Dt.querySelector(%22td.times%22)%2Cb%3Dy%3FparseFloat(r(y.textContent))%3ANaN%3B!isNaN(b)%26%26Math.abs(b-v)%3E.01%26%26l.push(c%2B%22%EF%BC%88%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0%22%2Bb%2B%22h%EF%BC%8F%E8%AA%AD%E3%81%BF%E5%8F%96%E3%82%8A%22%2Bv%2B%22h%EF%BC%89%22)%2Ci.push(%7Bname%3Ac%2Ctags%3Ap%2Csegs%3Ah%7D)%7D%7D%7D%7D)%3Bvar%20s%3D%7B%7D%3Btry%7Bs%3DJSON.parse(localStorage.getItem(t)%7C%7C%22%7B%7D%22)%7Dcatch(t)%7B%7Ds%5Ba%5D%3Di%3Btry%7BlocalStorage.setItem(t%2CJSON.stringify(s))%7Dcatch(t)%7B%7Dvar%20d%3DObject.keys(s).sort()%2Cp%3De.getElementById(%22higoBox%22)%3Bp%26%26p.remove()%3Bvar%20c%3De.createElement(%22div%22)%3Bc.id%3D%22higoBox%22%2Cc.style.cssText%3D%22position%3Afixed%3Bright%3A16px%3Bbottom%3A16px%3Bz-index%3A2147483647%3Bbackground%3A%231A1816%3Bcolor%3A%23fff%3Bborder-radius%3A14px%3Bpadding%3A14px%2016px%3Bfont%3A14px%2F1.6%20sans-serif%3Bbox-shadow%3A0%2010px%2030px%20rgba(0%2C0%2C0%2C.35)%3Bwidth%3A300px%22%3Bvar%20u%3Dfunction(t)%7Bvar%20e%3Dt.split(%22-%22)%3Breturn%2Be%5B1%5D%2B%22%2F%22%2B%20%2Be%5B2%5D%7D%3Bc.innerHTML%3D%22%3Cdiv%20style%3D%27font-weight%3A900%3Bfont-size%3A15px%27%3E%E8%82%A5%E5%BE%8C%E6%A9%8B%E3%82%A2%E3%83%97%E3%83%AA%E3%81%B8%E9%80%81%E3%82%8B%3C%2Fdiv%3E%3Cdiv%20style%3D%27margin-top%3A4px%27%3E%22%2Bu(a)%2B%22%EF%BC%9A%22%2Bi.length%2B%22%E4%BA%BA%E3%82%92%E8%AA%AD%E3%81%BF%E5%8F%96%E3%82%8A%E3%81%BE%E3%81%97%E3%81%9F%3C%2Fdiv%3E%22%2B(l.length%3F%22%3Cdiv%20style%3D%27color%3A%23FFB4A6%3Bfont-size%3A12px%3Bmargin-top%3A4px%27%3E%E6%99%82%E6%95%B0%E3%81%8C%E5%90%88%E3%82%8F%E3%81%AA%E3%81%84%E4%BA%BA%EF%BC%9A%22%2Bl.join(%22%E3%80%81%22)%2B%22%3C%2Fdiv%3E%22%3A%22%22)%2B%22%3Cdiv%20style%3D%27font-size%3A12px%3Bopacity%3A.75%3Bmargin-top%3A6px%27%3E%E3%81%9F%E3%82%81%E3%81%A6%E3%81%84%E3%82%8B%E6%97%A5%EF%BC%9A%22%2Bd.map(u).join(%22%E3%83%BB%22)%2B%22%3C%2Fdiv%3E%3Cdiv%20style%3D%27font-size%3A12px%3Bopacity%3A.75%27%3E%E3%81%BB%E3%81%8B%E3%81%AE%E6%97%A5%E3%82%82%E5%85%A5%E3%82%8C%E3%82%8B%E3%81%A8%E3%81%8D%E3%81%AF%E3%80%81%E6%97%A5%E4%BB%98%E3%82%92%E5%A4%89%E3%81%88%E3%81%A6%E3%82%82%E3%81%86%E4%B8%80%E5%BA%A6%E3%83%96%E3%83%83%E3%82%AF%E3%83%9E%E3%83%BC%E3%82%AF%E3%82%92%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%3C%2Fdiv%3E%3Cdiv%20style%3D%27display%3Aflex%3Bgap%3A8px%3Bmargin-top%3A10px%27%3E%3Cbutton%20id%3D%27higoSend%27%20style%3D%27flex%3A1%3Bbackground%3A%23D9A441%3Bcolor%3A%231A1816%3Bborder%3A0%3Bborder-radius%3A10px%3Bpadding%3A9px%3Bfont-weight%3A900%3Bcursor%3Apointer%27%3E%22%2Bd.length%2B%22%E6%97%A5%E5%88%86%E3%82%92%E9%80%81%E3%82%8B%3C%2Fbutton%3E%3Cbutton%20id%3D%27higoClear%27%20style%3D%27background%3Atransparent%3Bcolor%3A%23fff%3Bborder%3A1px%20solid%20rgba(255%2C255%2C255%2C.3)%3Bborder-radius%3A10px%3Bpadding%3A9px%2010px%3Bcursor%3Apointer%27%3E%E3%82%84%E3%82%8A%E7%9B%B4%E3%81%99%3C%2Fbutton%3E%3C%2Fdiv%3E%22%2Ce.body.appendChild(c)%2Ce.getElementById(%22higoSend%22).onclick%3Dfunction()%7Bvar%20e%3DJSON.stringify(%7Bv%3A1%2Cdays%3As%7D)%2Cr%3Dbtoa(unescape(encodeURIComponent(e))).replace(%2F%5C%2B%2Fg%2C%22-%22).replace(%2F%5C%2F%2Fg%2C%22_%22).replace(%2F%3D%2B%24%2F%2C%22%22)%3Bwindow.open(%22https%3A%2F%2Fsstoneriver0430-spec.github.io%2Fhigobashi-app%2F%3Ft%3D%22%2BDate.now()%2B%22%23mk%3D%22%2Br%2C%22higoApp%22)%3Btry%7BlocalStorage.removeItem(t)%7Dcatch(t)%7B%7Dc.remove()%7D%2Ce.getElementById(%22higoClear%22).onclick%3Dfunction()%7Btry%7BlocalStorage.removeItem(t)%7Dcatch(t)%7B%7Dc.remove()%7D%7Delse%20alert(%22%E6%97%A5%E6%AC%A1%E3%82%B7%E3%83%95%E3%83%88%E7%99%BB%E9%8C%B2%E3%81%AE%E7%94%BB%E9%9D%A2%E3%81%A7%E6%8A%BC%E3%81%97%E3%81%A6%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%22)%7D()%3B";
+
+// ───────── シフト（システムの画面から読み取った内容を表示） ─────────
+const SHIFT_KEY = "higo_shift_v2";
+const SH_START = 9, SH_END = 24;
+const shMin = (t) => { const [a, b] = t.split(":").map(Number); return a * 60 + b; };
+const shFmt = (m) => `${Math.floor(m / 60)}:${pad(m % 60)}`;
+const addDays = (ymd, n) => { const [y, m, d] = ymd.split("-").map(Number); return ymdOf(new Date(y, m - 1, d + n)); };
+// 書式： @2026-10-01 ／ 名前(社員,28h): 9:30-15:00 肥後橋 / 17:00-19:00 [青] / 20:00-23:30 [他]フラン軒
+function parseShiftText(text) {
+  const days = {}; let cur = null; const errors = [];
+  text.split(/\r?\n/).forEach((raw, ln) => {
+    const l = raw.trim(); if (!l) return;
+    const dm = /^@?\s*(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s*$/.exec(l);
+    if (dm) { cur = `${dm[1]}-${pad(+dm[2])}-${pad(+dm[3])}`; days[cur] = []; return; }
+    if (!cur) { errors.push(`${ln + 1}行目：先に日付（@2026-10-01）を書いてください`); return; }
+    const pm = /^(.+?)[:：]\s*(.*)$/.exec(l);
+    if (!pm) { errors.push(`${ln + 1}行目：「名前: 時間」の形になっていません`); return; }
+    let name = pm[1].trim(), tags = [];
+    const tm = /^(.*?)[(（]([^)）]*)[)）]\s*$/.exec(name); if (tm) { name = tm[1].trim(); tags = tm[2].split(/[,，、\s]+/).filter(Boolean); }
+    const segs = [];
+    pm[2].split(/[\/／]/).forEach(sg => {
+      const m = /(\d{1,2}:\d{2})\s*[-〜~ー－]\s*(\d{1,2}:\d{2})\s*(.*)$/.exec(sg.trim()); if (!m) return;
+      let label = m[3].trim(), type = "work";
+      if (/^\[青\]/.test(label)) { type = "blue"; label = label.replace(/^\[青\]/, "").trim() || "事務"; }
+      if (/^\[他\]/.test(label)) { type = "other"; label = label.replace(/^\[他\]/, "").trim(); }
+      segs.push({ s: shMin(m[1]), e: shMin(m[2]), label, type });
+    });
+    if (!segs.length) { errors.push(`${ln + 1}行目：時間（9:30-15:00）が読み取れません`); return; }
+    days[cur].push({ name, tags, segs });
+  });
+  return { days, errors };
+}
+const shHours = (p) => p.segs.filter(s => s.type !== "other").reduce((a, s) => a + (s.e - s.s), 0) / 60;
+const shSpan = (p) => { const w = p.segs.filter(s => s.type !== "other"); if (!w.length) return null; return [Math.min(...w.map(s => s.s)), Math.max(...w.map(s => s.e))]; };
+const shNorm = (s) => (s || "").replace(/[\s　]/g, "").toLowerCase();
+const shIsMe = (name, me) => { if (!me) return false; const a = shNorm(name), b = shNorm(me); return !!b && (a.includes(b) || b.includes(a)); };
+const SH_COLOR = { work: "#E8772E", blue: "#3B5BDB", other: "#A39B8F" };
+const seedShift = () => ({ days: parseShiftText(SHIFT_SEED_TEXT).days });
+
+function shBreaks(p) { const w = p.segs.filter(s => s.type !== "other").sort((a, b) => a.s - b.s); const out = []; for (let i = 1; i < w.length; i++) if (w[i].s > w[i - 1].e) out.push([w[i - 1].e, w[i].s]); return out; }
+const shTag = (t) => h("span", { key: t, style: { fontSize: 10.5, fontWeight: 800, color: t === "社員" ? C.cyanDeep : t === "28h" ? "#B3412F" : C.sub, background: t === "社員" ? C.cyanSoft : t === "28h" ? "#F7E7E3" : C.lineSoft, borderRadius: 5, padding: "1px 6px" } }, t);
+const shSortFn = (a, b) => { const sa = shSpan(a), sb = shSpan(b); return (sa ? sa[0] : 9999) - (sb ? sb[0] : 9999) || (sa ? sa[1] : 0) - (sb ? sb[1] : 0); };
+
+
+// 個人のシフト一覧（名前をタップで開く）
+function PersonShift({ name }) {
+  const days = (readStored(SHIFT_KEY, seedShift).days || {});
+  const today = todayYMD();
+  const [cm, setCm] = useState(ymOf(new Date()));
+  const same = (a) => shNorm(a) === shNorm(name);
+  const rows = Object.keys(days).filter(d => d.startsWith(cm)).sort()
+    .map(d => ({ d, p: days[d].find(x => same(x.name)) })).filter(x => x.p && shSpan(x.p));
+  const tot = rows.reduce((a, x) => a + shHours(x.p), 0);
+  const rest = rows.filter(x => x.d >= today);
+  const hm = (h_) => { const t = Math.round(h_ * 60); return `${Math.floor(t / 60)}時間${t % 60 ? (t % 60) + "分" : ""}`; };
+  const tags = (rows[0] && rows[0].p.tags) || [];
+  return h("div", null,
+    h("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 10 } },
+      h("span", { style: { fontSize: 20, fontWeight: 900 } }, name), tags.map(shTag)),
+    h(MonthNav, { ym: cm, setYm: setCm, ahead: 2 }),
+    h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "4px 0 12px" } },
+      [["出勤", `${rows.length}日`], ["合計", hm(tot)], ["これから", `${rest.length}日`]].map(([l, v]) =>
+        h("div", { key: l, style: { ...cardStyle, padding: "9px 10px", textAlign: "center" } },
+          h("div", { style: { fontSize: 11, fontWeight: 800, color: C.sub } }, l),
+          h("div", { style: { fontSize: 15.5, fontWeight: 900, marginTop: 2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, v)))),
+    rows.length === 0 ? h(Empty, { text: "この月のシフトはまだ入っていません" }) :
+    h("div", { style: { ...cardStyle, overflow: "hidden" } },
+      rows.map((x, i) => { const sp = shSpan(x.p); const past = x.d < today; const isT = x.d === today; const br = shBreaks(x.p);
+        const blue = x.p.segs.filter(s => s.type === "blue"); const other = x.p.segs.filter(s => s.type === "other");
+        return h("div", { key: x.d, style: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: isT ? C.cyanSoft : "transparent", opacity: past ? .5 : 1 } },
+          h("div", { style: { width: 76, flexShrink: 0 } },
+            h("div", { style: { fontSize: 14, fontWeight: 900, color: clDowColor(x.d), whiteSpace: "nowrap" } }, fmtYMD(x.d)),
+            isT && h("div", { style: { fontSize: 10.5, fontWeight: 900, color: C.cyanDeep } }, "今日")),
+          h("div", { style: { flex: 1, minWidth: 0 } },
+            h("div", { style: { fontSize: 16, fontWeight: 900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, `${shFmt(sp[0])}–${shFmt(sp[1])}`),
+            (br.length > 0 || blue.length > 0 || other.length > 0) && h("div", { style: { display: "flex", flexWrap: "wrap", gap: "1px 8px", fontSize: 11.5, fontWeight: 700, color: C.sub, marginTop: 1 } },
+              br.map((b, k) => h("span", { key: "b" + k, style: { whiteSpace: "nowrap" } }, `休憩 ${shFmt(b[0])}–${shFmt(b[1])}`)),
+              blue.map((b, k) => h("span", { key: "u" + k, style: { color: SH_COLOR.blue, whiteSpace: "nowrap" } }, `${b.label || "事務"} ${shFmt(b.s)}–${shFmt(b.e)}`)),
+              other.map((b, k) => h("span", { key: "o" + k, style: { whiteSpace: "nowrap" } }, `${b.label || "他店舗"} ${shFmt(b.s)}–${shFmt(b.e)}`)))),
+          h("div", { style: { fontSize: 12, fontWeight: 800, color: C.subLight, flexShrink: 0, fontVariantNumeric: "tabular-nums" } }, (() => { const t = Math.round(shHours(x.p) * 60); return `${Math.floor(t / 60)}h${t % 60 ? pad(t % 60) : ""}`; })())); })));
+}
+// 名前ボタン（タップで個人の一覧）
+const shNameBtn = (name, onName, style) => onName
+  ? h("button", { type: "button", onClick: (e) => { e.stopPropagation(); onName(name); }, style: { border: "none", background: "transparent", padding: 0, margin: 0, cursor: "pointer", font: "inherit", textAlign: "left", textDecoration: "underline", textDecorationColor: "rgba(0,0,0,.18)", textUnderlineOffset: 3, ...style } }, name)
+  : h("span", { style }, name);
+
+// 一覧（スマホで読みやすい形）
+function ShiftList({ people, me, onName }) {
+  const groups = [
+    { k: "lunch", l: "ランチ", sub: "14時より前に入る人", f: (m) => m < 14 * 60 },
+    { k: "idle", l: "アイドル", sub: "14時〜17時に入る人", f: (m) => m >= 14 * 60 && m < 17 * 60 },
+    { k: "dinner", l: "ディナー", sub: "17時以降に入る人", f: (m) => m >= 17 * 60 }
+  ];
+  const work = people.filter(p => shSpan(p)).sort(shSortFn);
+  const away = people.filter(p => !shSpan(p));
+  const row = (p, i) => { const sp = shSpan(p); const mine = shIsMe(p.name, me); const br = shBreaks(p);
+    const labels = [...new Set(p.segs.filter(s => s.type === "work" && s.label).map(s => s.label))];
+    const blue = p.segs.filter(s => s.type === "blue"); const other = p.segs.filter(s => s.type === "other");
+    return h("div", { key: p.name + i, style: { display: "flex", gap: 12, padding: "12px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: mine ? C.cyanSoft : "transparent" } },
+      h("div", { style: { flex: 1, minWidth: 0 } },
+        h("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } },
+          shNameBtn(p.name, mine ? onName : null, { fontSize: 16, fontWeight: 900, color: mine ? C.cyanDeep : C.ink }),
+          mine && h("span", { style: { fontSize: 10.5, fontWeight: 900, color: "#fff", background: C.cyanDeep, borderRadius: 5, padding: "1px 6px" } }, "自分"),
+          p.tags.map(shTag)),
+        (br.length > 0 || labels.length > 0 || blue.length > 0 || other.length > 0) && h("div", { style: { display: "flex", flexWrap: "wrap", gap: "4px 10px", marginTop: 5, fontSize: 12.5, fontWeight: 700, color: C.sub } },
+          br.map((b, k) => h("span", { key: "b" + k }, `休憩 ${shFmt(b[0])}–${shFmt(b[1])}`)),
+          blue.map((b, k) => h("span", { key: "u" + k, style: { color: SH_COLOR.blue } }, `${b.label || "事務"} ${shFmt(b.s)}–${shFmt(b.e)}`)),
+          other.map((b, k) => h("span", { key: "o" + k }, `${b.label || "他店舗"} ${shFmt(b.s)}–${shFmt(b.e)}`)),
+          labels.length > 0 && h("span", { style: { color: C.ink } }, labels.join("・")))),
+      h("div", { style: { textAlign: "right", flexShrink: 0 } },
+        h("div", { style: { fontSize: 18, fontWeight: 900, fontVariantNumeric: "tabular-nums", letterSpacing: "-.01em", color: sp ? C.ink : C.subLight } }, sp ? `${shFmt(sp[0])}–${shFmt(sp[1])}` : "—"),
+        h("div", { style: { fontSize: 12, fontWeight: 800, color: C.subLight, marginTop: 2 } }, (() => { const t = Math.round(shHours(p) * 60); return `${Math.floor(t / 60)}時間${t % 60 ? (t % 60) + "分" : ""}`; })())));
+  };
+  return h(React.Fragment, null,
+    groups.map(g => { const ps = work.filter(p => g.f(shSpan(p)[0])); if (!ps.length) return null;
+      return h("div", { key: g.k, style: { marginBottom: 12 } },
+        h("div", { style: { display: "flex", alignItems: "baseline", gap: 8, margin: "4px 4px 8px" } },
+          h("span", { style: { fontSize: 15, fontWeight: 900 } }, g.l), h("span", { style: { fontSize: 11.5, fontWeight: 700, color: C.subLight } }, g.sub),
+          h("span", { style: { marginLeft: "auto", fontSize: 12, fontWeight: 800, color: C.sub } }, `${ps.length}人`)),
+        h("div", { style: { ...cardStyle, overflow: "hidden" } }, ps.map(row))); }),
+    away.length > 0 && h("div", { style: { marginBottom: 12 } },
+      h("div", { style: { fontSize: 15, fontWeight: 900, margin: "4px 4px 8px" } }, "肥後橋以外"),
+      h("div", { style: { ...cardStyle, overflow: "hidden" } }, away.map(row))));
+}
+
+// 時間の表（横にスクロール）
+function ShiftTimeline({ people, me, onName }) {
+  const HW = 44, NW = 92;
+  const w = people.filter(p => shSpan(p));
+  const st = Math.min(SH_START, ...w.map(p => Math.floor(shSpan(p)[0] / 60)));
+  const en = Math.max(st + 1, ...w.map(p => Math.ceil(shSpan(p)[1] / 60)));
+  const hours = Array.from({ length: en - st }, (_, i) => st + i);
+  const X = (m) => (m - st * 60) / 60 * HW;
+  const cnt = (hr) => { let mx = 0; for (let t = hr * 60 + 1; t < hr * 60 + 60; t += 15) mx = Math.max(mx, w.filter(p => p.segs.some(s => s.type !== "other" && s.s <= t && t < s.e)).length); return mx; };
+  const sorted = people.slice().sort(shSortFn);
+  const gridW = hours.length * HW;
+  const cell = { position: "sticky", left: 0, zIndex: 2, width: NW, flexShrink: 0, background: C.card, borderRight: `1px solid ${C.line}` };
+  return h("div", { style: { ...cardStyle, overflow: "hidden" } },
+    h("div", { style: { overflowX: "auto", WebkitOverflowScrolling: "touch" } },
+      h("div", { style: { width: NW + gridW + 8 } },
+        h("div", { style: { display: "flex", background: "#FAF9F6", borderBottom: `1px solid ${C.line}` } },
+          h("div", { style: { ...cell, background: "#FAF9F6", fontSize: 11, fontWeight: 800, color: C.sub, padding: "8px 10px" } }, "時刻"),
+          hours.map(hr => h("div", { key: hr, style: { width: HW, flexShrink: 0, fontSize: 12.5, fontWeight: 900, padding: "7px 0 7px 4px", borderLeft: `1px solid ${C.lineSoft}`, fontVariantNumeric: "tabular-nums" } }, hr))),
+        h("div", { style: { display: "flex", borderBottom: `1px solid ${C.line}` } },
+          h("div", { style: { ...cell, fontSize: 11, fontWeight: 800, color: C.sub, padding: "7px 10px" } }, "人数"),
+          hours.map(hr => { const n = cnt(hr); return h("div", { key: hr, style: { width: HW, flexShrink: 0, textAlign: "center", padding: "5px 0", borderLeft: `1px solid ${C.lineSoft}` } },
+            h("span", { style: { display: "inline-block", minWidth: 22, borderRadius: 6, fontSize: 12.5, fontWeight: 900, padding: "1px 0", background: n ? C.cyanSoft : "transparent", color: n ? C.cyanDeep : C.subLight } }, n || "–")); })),
+        sorted.map((p, i) => { const mine = shIsMe(p.name, me); const bg = mine ? C.cyanSoft : C.card;
+          return h("div", { key: p.name + i, style: { display: "flex", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: bg } },
+            h("div", { style: { ...cell, background: bg, padding: "8px 8px 8px 10px" } },
+              h("div", { style: { fontSize: 13, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: mine ? C.cyanDeep : C.ink } }, shNameBtn(p.name, mine ? onName : null, { fontSize: 13, fontWeight: 900, color: mine ? C.cyanDeep : C.ink })),
+              h("div", { style: { fontSize: 11, color: C.sub, fontWeight: 800 } }, `${shHours(p)}h`)),
+            h("div", { style: { position: "relative", width: gridW, flexShrink: 0, minHeight: 46 } },
+              hours.map((hr, k) => h("span", { key: hr, style: { position: "absolute", left: k * HW, top: 0, bottom: 0, width: 1, background: C.lineSoft } })),
+              shBreaks(p).map((b, k) => h("div", { key: "g" + k, style: { position: "absolute", left: X(b[0]), width: X(b[1]) - X(b[0]), top: "50%", height: 2, marginTop: -1, background: `repeating-linear-gradient(90deg, ${C.subLight} 0 4px, transparent 4px 8px)` } })),
+              p.segs.map((s, k) => h("div", { key: k, style: { position: "absolute", left: X(s.s), width: X(s.e) - X(s.s), top: "50%", height: 26, marginTop: -13, borderRadius: 7, background: SH_COLOR[s.type], overflow: "hidden", display: "flex", alignItems: "center", padding: "0 6px", gap: 6 } },
+                h("span", { style: { fontSize: 11, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } }, `${shFmt(s.s)}–${shFmt(s.e)}`),
+                s.label && h("span", { style: { fontSize: 10.5, fontWeight: 800, color: "rgba(255,255,255,.85)", whiteSpace: "nowrap" } }, s.label)))));
+        }))),
+    h("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", padding: "9px 12px", borderTop: `1px solid ${C.line}`, fontSize: 11, fontWeight: 700, color: C.sub } },
+      [["work", "勤務"], ["blue", "事務"], ["other", "他店舗"]].map(([k, l]) => h("span", { key: k, style: { display: "flex", alignItems: "center", gap: 4 } }, h("span", { style: { width: 14, height: 8, borderRadius: 2, background: SH_COLOR[k] } }), l)),
+      h("span", { style: { display: "flex", alignItems: "center", gap: 4 } }, h("span", { style: { width: 14, height: 2, background: `repeating-linear-gradient(90deg, ${C.subLight} 0 3px, transparent 3px 6px)` } }), "休憩"),
+      h("span", { style: { marginLeft: "auto" } }, "← 横にスクロールできます")));
+}
+
+function ShiftImport({ onSave }) {
+  const [text, setText] = useState("");
+  const r = parseShiftText(text);
+  const ks = Object.keys(r.days).sort();
+  return h("div", null,
+    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 10 } }, "シフト管理の画面のスクリーンショットをClaudeに送ると、この形の文章に変換して返します。それをここに貼り付けてください。"),
+    h("textarea", { id: "sh-text", value: text, onChange: (e) => setText(e.target.value), rows: 12, placeholder: "@2026-10-06\n石川 将吾(社員): 9:30-14:00 肥後橋 / 15:00-18:00\nPoe Ei Thwe(28h): 18:00-23:30", style: { ...inStyle, resize: "vertical", lineHeight: 1.6, fontFamily: FONT, fontSize: 14 } }),
+    h("div", { style: { fontSize: 12.5, fontWeight: 800, color: ks.length ? C.done : C.sub, margin: "8px 2px" } }, ks.length ? `${fmtYMD(ks[0])}〜${fmtYMD(ks[ks.length - 1])}　${ks.length}日分・${ks.reduce((a, k) => a + r.days[k].length, 0)}人分を読み取りました` : "まだ読み取れていません"),
+    r.errors.length > 0 && h("div", { style: { fontSize: 12, fontWeight: 700, color: C.drop, background: "#FBEAE6", borderRadius: 10, padding: "8px 12px", marginBottom: 8, lineHeight: 1.6 } }, r.errors.slice(0, 4).map((e, i) => h("div", { key: i }, e))),
+    h("button", { type: "button", className: "fk-tap", disabled: !ks.length, onClick: () => onSave(r.days), style: { ...primaryBtn, background: ks.length ? C.ink : C.line, color: ks.length ? "#fff" : C.subLight } }, h(Icon, { name: "check", size: 20, sw: 2.2 }), "シフトを取り込む"),
+    h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 8 } }, "同じ日付のシフトは、新しい内容で置き換わります。"));
+}
+
+const SHIFT_NAME_FIX = { "Do Nhat Linh": "リン", "ベ ギュグ": "ギュ", "WANG QI": "オウ" };
+// まかせてネットの登録名 → アプリでの呼び名（スペース・大文字小文字は無視、前方一致）
+const SHIFT_ALIAS = [["donhatlinh", "リン"], ["wangqi", "オウ"], ["ベギュグ", "ギュ"], ["baegyu", "ギュ"]];
+const shFixName = (n) => { if (SHIFT_NAME_FIX[n]) return SHIFT_NAME_FIX[n]; const k = shNorm(n); const a = SHIFT_ALIAS.find(([p]) => k.startsWith(p)); return a ? a[1] : n; };
+// アプリのURL（#mk=...）で届いたデータを読む
+function mkDecode(b64) {
+  try {
+    const s = decodeURIComponent(escape(atob(b64.replace(/-/g, "+").replace(/_/g, "/"))));
+    const j = JSON.parse(s); const out = {};
+    Object.entries(j.days || {}).forEach(([d, ps]) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || !Array.isArray(ps)) return;
+      out[d] = ps.filter(p => p && p.name && Array.isArray(p.segs)).map(p => ({
+        name: shFixName(String(p.name).slice(0, 40)),
+        tags: (p.tags || []).filter(t => t === "社員" || t === "28h"),
+        segs: p.segs.filter(x => Number.isFinite(x.s) && Number.isFinite(x.e) && x.e > x.s).map(x => ({ s: x.s, e: x.e, label: String(x.label || "").slice(0, 20), type: ["work", "blue", "other"].includes(x.type) ? x.type : "work" }))
+      })).filter(p => p.segs.length);
+    });
+    return Object.keys(out).length ? out : null;
+  } catch (e) { return null; }
+}
+
+function MkConfirm({ add, existing, onSave, onCancel }) {
+  const ks = Object.keys(add).sort();
+  return h("div", null,
+    h("div", { style: { fontSize: 13, color: C.sub, fontWeight: 700, lineHeight: 1.7, marginBottom: 12 } }, "まかせてネットから届いたシフトです。内容を確かめて取り込んでください。"),
+    ks.map(d => h("div", { key: d, style: { ...cardStyle, overflow: "hidden", marginBottom: 10 } },
+      h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", background: "#FAF9F6" } },
+        h("span", { style: { fontSize: 15, fontWeight: 900, color: clDowColor(d) } }, fmtYMD(d)),
+        h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, `${add[d].length}人・${add[d].reduce((a, p) => a + shHours(p), 0)}時間`),
+        existing[d] && h("span", { style: { marginLeft: "auto", fontSize: 11, fontWeight: 800, color: C.drop } }, "今の内容と置き換え")),
+      add[d].slice().sort(shSortFn).map((p, i) => { const sp = shSpan(p);
+        return h("div", { key: i, style: { display: "flex", gap: 8, alignItems: "baseline", padding: "7px 14px", borderTop: `1px solid ${C.lineSoft}` } },
+          h("span", { style: { fontSize: 14, fontWeight: 900, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.name),
+          h("span", { style: { marginLeft: "auto", fontSize: 14, fontWeight: 800, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, sp ? `${shFmt(sp[0])}–${shFmt(sp[1])}` : "—"),
+          h("span", { style: { width: 34, textAlign: "right", fontSize: 11.5, fontWeight: 800, color: C.subLight } }, `${shHours(p)}h`)); }))),
+    h("button", { type: "button", className: "fk-tap", onClick: onSave, style: { ...primaryBtn, marginTop: 4 } }, h(Icon, { name: "check", size: 20, sw: 2.2 }), `${ks.length}日分を取り込む`),
+    h("button", { type: "button", onClick: onCancel, style: { border: "none", background: "transparent", color: C.sub, fontSize: 13, fontWeight: 800, width: "100%", padding: 12, cursor: "pointer" } }, "取り込まない"));
+}
+
+// ブックマークの登録案内
+function MkInstall() {
+  const ref = useRef(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { if (ref.current) ref.current.setAttribute("href", MK_BOOKMARKLET); }, []);
+  const copy = () => { try { navigator.clipboard.writeText(MK_BOOKMARKLET).then(() => setCopied(true)); } catch (e) {} };
+  const step = (n, t, sub) => h("div", { style: { display: "flex", gap: 10, marginBottom: 12 } },
+    h("span", { style: { flexShrink: 0, width: 22, height: 22, borderRadius: 99, background: C.ink, color: "#fff", fontSize: 12, fontWeight: 900, display: "grid", placeItems: "center" } }, n),
+    h("div", null, h("div", { style: { fontSize: 14, fontWeight: 800, lineHeight: 1.5 } }, t), sub && h("div", { style: { fontSize: 12, color: C.sub, lineHeight: 1.6, marginTop: 2 } }, sub)));
+  return h("div", null,
+    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 14 } }, "パソコンのChromeで使います。最初に一度だけブックマークを登録すれば、あとはまかせてネットでボタンを押すだけです。"),
+    h("div", { style: { ...cardStyle, padding: 14, marginBottom: 14 } },
+      h("div", { style: { fontSize: 13, fontWeight: 900, marginBottom: 10 } }, "最初に1回だけ"),
+      step(1, "下の黄色いボタンを、ブックマークバーへドラッグ", "ブックマークバーが出ていないときは Ctrl＋Shift＋B（Macは⌘＋Shift＋B）"),
+      h("div", { style: { textAlign: "center", margin: "4px 0 12px" } },
+        h("a", { ref, onClick: (e) => e.preventDefault(), draggable: true, style: { display: "inline-flex", alignItems: "center", gap: 6, background: C.cyan, color: C.onAccent, borderRadius: 999, padding: "10px 18px", fontSize: 14, fontWeight: 900, textDecoration: "none", cursor: "grab" } }, "肥後橋アプリへ送る")),
+      h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.6 } }, "ドラッグできないときは「コードをコピー」→ ブックマークを新しく作り、URL欄に貼り付けてください。"),
+      h("button", { type: "button", onClick: copy, style: { ...subBtn, width: "100%", marginTop: 8 } }, copied ? "コピーしました" : "コードをコピー")),
+    h("div", { style: { ...cardStyle, padding: 14 } },
+      h("div", { style: { fontSize: 13, fontWeight: 900, marginBottom: 10 } }, "毎回の使い方"),
+      step(1, "まかせてネットで「日次シフト登録」を開く"),
+      step(2, "ブックマーク「肥後橋アプリへ送る」を押す", "右下に読み取った人数が出ます。ほかの日も送るときは、日付を変えてもう一度押すと日数がたまります"),
+      step(3, "「〇日分を送る」を押す", "アプリが開くので、内容を確かめて「取り込む」")));
+}
+
+function ShiftApp({ incoming, onIncomingDone }) {
+  const [data, save] = useStored(SHIFT_KEY, seedShift);
+  const [nd, saveNd] = useStored(SHN_KEY, seedShiftNames);
+  // 名前の表記をそろえる（すでに保存された分も直す）
+  useEffect(() => {
+    const fix = (n) => SHIFT_NAME_FIX[n] || n;
+    const ds = data.days || {}; let ch = false; const nds = {};
+    Object.keys(ds).forEach(k => { nds[k] = ds[k].map(p => { const f = fix(p.name); if (f !== p.name) ch = true; return f === p.name ? p : { ...p, name: f }; }); });
+    if (ch) save({ ...data, days: nds });
+    const L = nd.list || []; if (L.some(e => SHIFT_NAME_FIX[e.name])) saveNd({ list: L.map(e => ({ ...e, name: fix(e.name) })) });
+  }, [data, nd]);
+  const days = data.days || {};
+  const [me] = useMe();
+  const today = todayYMD();
+  const [cm, setCmRaw] = useState(ymOf(new Date()));
+  const [ymd, setYmd] = useState(today);
+  const setCm = (v) => { setCmRaw(v); setYmd(today.startsWith(v) ? today : `${v}-01`); };
+  const [imp, setImp] = useState(false);
+  const [person, setPerson] = useState(null);
+  const [mode, setMode] = useState(() => { try { return localStorage.getItem("higo_shift_view") || "list"; } catch (e) { return "list"; } });
+  const setModeP = (v) => { setMode(v); try { localStorage.setItem("higo_shift_view", v); } catch (e) {} };
+  const [msg, setMsg] = useState("");
+  useEffect(() => { if (!msg) return; const id = setTimeout(() => setMsg(""), 2200); return () => clearTimeout(id); }, [msg]);
+  const rowRef = useRef(null);
+  useEffect(() => { const id = requestAnimationFrame(() => { const r = rowRef.current; if (!r) return; const b = r.querySelector(`[data-d="${ymd}"]`); if (b) r.scrollLeft = Math.max(0, b.offsetLeft - 12); }); return () => cancelAnimationFrame(id); }, [cm]);
+  const [yy, mm] = cm.split("-").map(Number);
+  const monthDays = Array.from({ length: new Date(yy, mm, 0).getDate() }, (_, i) => `${cm}-${pad(i + 1)}`);
+  const people = days[ymd] || [];
+  const here = people.filter(p => shHours(p) > 0);
+  const totalH = here.reduce((a, p) => a + shHours(p), 0);
+  const go = (n) => { const d = addDays(ymd, n); setYmd(d); if (!d.startsWith(cm)) setCmRaw(d.slice(0, 7)); };
+  const lastDay = Object.keys(days).sort().pop();
+  // 自分の予定（今日から7日）
+  const mine = me ? Array.from({ length: 7 }, (_, i) => addDays(today, i)).map(d => ({ d, p: (days[d] || []).find(x => shIsMe(x.name, me)) })).filter(x => days[x.d]) : [];
+  return h("div", { className: "fk-page" },
+    h(Header, null,
+      h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
+        h(AppTitle, { title: "シフト" }),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setImp(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "取り込む"))),
+    h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(104px + env(safe-area-inset-bottom))" } },
+      me && mine.length > 0 && h("div", { style: { ...cardStyle, padding: "12px 14px", marginBottom: 14 } },
+        h("div", { style: { display: "flex", alignItems: "center", marginBottom: 8 } },
+          h("span", { style: { fontSize: 12, fontWeight: 900, color: C.cyanDeep } }, `${me}さんの予定`),
+          (() => { const f = mine.find(x => x.p); return f && h("button", { type: "button", onClick: () => setPerson(f.p.name), style: { marginLeft: "auto", border: "none", background: "transparent", color: C.cyanDeep, fontSize: 12, fontWeight: 800, cursor: "pointer", padding: 0 } }, "1か月の一覧 ›"); })()),
+        h("div", { style: { display: "flex", gap: 6, overflowX: "auto" } },
+          mine.map(x => { const sp = x.p && shSpan(x.p);
+            return h("button", { key: x.d, type: "button", onClick: () => { setYmd(x.d); setCmRaw(x.d.slice(0, 7)); }, style: { flexShrink: 0, minWidth: 78, borderRadius: 12, padding: "7px 8px", cursor: "pointer", textAlign: "center", border: x.d === ymd ? `1.5px solid ${C.ink}` : `1px solid ${C.line}`, background: sp ? C.card : C.lineSoft, color: C.ink } },
+              h("div", { style: { fontSize: 11, fontWeight: 800, color: clDowColor(x.d) } }, x.d === today ? "今日" : fmtYMD(x.d)),
+              h("div", { style: { fontSize: 12.5, fontWeight: 900, marginTop: 2, fontVariantNumeric: "tabular-nums", color: sp ? C.ink : C.subLight } }, sp ? `${shFmt(sp[0])}–${shFmt(sp[1])}` : "休み")); }))),
+      h(MonthNav, { ym: cm, setYm: setCm, ahead: 2 }),
+      h("div", { ref: rowRef, style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10 } },
+        monthDays.map(d => { const on = d === ymd; const has = !!days[d]; const [, , dn] = d.split("-").map(Number); const meIn = me && has && days[d].some(x => shIsMe(x.name, me) && shHours(x) > 0);
+          return h("button", { key: d, "data-d": d, type: "button", onClick: () => setYmd(d), style: { flexShrink: 0, width: 50, padding: "6px 0 5px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: on ? C.cyan : "#fff", border: on ? "none" : d === today ? `1.5px solid ${C.ink}` : `1px solid ${C.line}`, color: on ? C.onAccent : clDowColor(d), opacity: has || on ? 1 : .5 } },
+            h("div", { style: { fontSize: 9.5, opacity: .7, fontWeight: 700 } }, d === today ? "今日" : " "),
+            h("div", { style: { fontSize: 15, fontWeight: 800, lineHeight: 1.1 } }, dn),
+            h("div", { style: { fontSize: 10, opacity: .8 } }, WD[clDow(d)]),
+            h("div", { style: { height: 6, display: "flex", justifyContent: "center", marginTop: 2 } }, meIn ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: on ? C.onAccent : C.drop } }) : has ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: on ? C.onAccent : C.cyanDeep } }) : null)); })),
+      h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } },
+        h("button", { type: "button", "aria-label": "前の日", onClick: () => go(-1), style: { ...subBtn, flex: "0 0 auto", width: 40, padding: "8px 0" } }, "‹"),
+        h("div", { style: { flex: 1, textAlign: "center" } },
+          h("div", { style: { fontSize: 17, fontWeight: 900, color: clDowColor(ymd) } }, `${ymd === today ? "今日 " : ""}${fmtYMD(ymd)}`),
+          people.length > 0 && h("div", { style: { fontSize: 11.5, color: C.sub, fontWeight: 800 } }, `${here.length}人・合計${totalH}時間`)),
+        h("button", { type: "button", "aria-label": "次の日", onClick: () => go(1), style: { ...subBtn, flex: "0 0 auto", width: 40, padding: "8px 0" } }, "›")),
+      people.length > 0 && h("div", { style: { display: "flex", gap: 6, marginBottom: 12 } },
+        [["list", "一覧"], ["time", "時間の表"]].map(([k, l]) => h("button", { key: k, type: "button", onClick: () => setModeP(k), style: { flex: 1, border: "none", borderRadius: 999, padding: "9px 0", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: mode === k ? C.ink : C.card, color: mode === k ? "#fff" : C.sub, boxShadow: mode === k ? "none" : `inset 0 0 0 1px ${C.line}` } }, l))),
+      people.length ? (mode === "time" ? h(ShiftTimeline, { people, me, onName: setPerson }) : h(ShiftList, { people, me, onName: setPerson })) : h(Empty, { text: "この日のシフトはまだ取り込まれていません" }),
+      lastDay && h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 700, marginTop: 10, padding: "0 4px" } }, `シフトは${fmtYMD(lastDay)}まで入っています`)),
+    h(Sheet, { open: !!incoming, onClose: onIncomingDone, title: "まかせてネットから取り込み" },
+      incoming && h(MkConfirm, { add: incoming, existing: days, onCancel: onIncomingDone,
+        onSave: () => { save({ ...data, days: { ...days, ...incoming } }); const ks = Object.keys(incoming).sort(); setYmd(ks[0]); setCmRaw(ks[0].slice(0, 7)); setMsg(`${ks.length}日分を取り込みました`); onIncomingDone(); } })),
+    h(Sheet, { open: !!person, onClose: () => setPerson(null), title: "個人のシフト" }, person && h(PersonShift, { key: person, name: person })),
+    h(Sheet, { open: imp, onClose: () => setImp(false), title: "シフトを取り込む" },
+      imp && h(ImportTabs, { onSave: (add) => { save({ ...data, days: { ...days, ...add } }); setImp(false); const ks = Object.keys(add).sort(); setYmd(ks[0]); setCmRaw(ks[0].slice(0, 7)); setMsg(`${ks.length}日分を取り込みました`); } })),
+    h(Toast, { text: msg }));
+}
+
+function ImportTabs({ onSave }) {
+  const [t, setT] = useState("mk");
+  const b = (k, l) => h("button", { key: k, type: "button", onClick: () => setT(k), style: { flex: 1, border: "none", borderRadius: 999, padding: "9px 0", fontSize: 13, fontWeight: 800, cursor: "pointer", background: t === k ? C.ink : C.card, color: t === k ? "#fff" : C.sub, boxShadow: t === k ? "none" : `inset 0 0 0 1px ${C.line}` } }, l);
+  return h("div", null,
+    h("div", { style: { display: "flex", gap: 6, marginBottom: 14 } }, b("mk", "まかせてネット"), b("shot", "スクショ"), b("text", "文章")),
+    t === "mk" ? h(MkInstall, null) : t === "shot" ? h(ShotImport, { onSave }) : h(ShiftImport, { onSave }));
+}
+
+// ───────── シフト管理のスクショから読み取る ─────────
+const SHN_KEY = "higo_shift_names_v1";
+const TESS = {
+  script: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js",
+  worker: "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js",
+  core: "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1",
+  lang: "https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int"
+};
+let _tessP = null;
+function getOcr() {
+  if (_tessP) return _tessP;
+  _tessP = new Promise((res, rej) => {
+    const go = () => window.Tesseract.createWorker("eng", 1, { workerPath: TESS.worker, corePath: TESS.core, langPath: TESS.lang })
+      .then(w => w.setParameters({ tessedit_char_whitelist: "0123456789/.", tessedit_pageseg_mode: "7" }).then(() => res(w))).catch(rej);
+    if (window.Tesseract) return go();
+    const s = document.createElement("script"); s.src = TESS.script; s.onload = go; s.onerror = () => rej(new Error("文字認識の部品を読み込めませんでした")); document.head.appendChild(s);
+  });
+  _tessP.catch(() => { _tessP = null; });
+  return _tessP;
+}
+const HDR = [57, 162, 255], NAMEBG = [187, 216, 247];
+function loadImageData(file) {
+  return new Promise((res, rej) => { const url = URL.createObjectURL(file); const img = new Image();
+    img.onload = () => { const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext("2d"); g.drawImage(img, 0, 0); URL.revokeObjectURL(url); res({ canvas: c, data: g.getImageData(0, 0, c.width, c.height) }); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("画像を開けませんでした")); }; img.src = url; });
+}
+function shotAnalyze(id) {
+  const W = id.width, H = id.height, d = id.data;
+  const P = (x, y) => { const i = (y * W + x) * 4; return [d[i], d[i + 1], d[i + 2]]; };
+  const eq = (p, q, t = 8) => Math.abs(p[0] - q[0]) <= t && Math.abs(p[1] - q[1]) <= t && Math.abs(p[2] - q[2]) <= t;
+  // 時刻の見出し（青い帯）
+  let hy = -1;
+  for (let y = Math.floor(H * 0.15); y < H * 0.7 && hy < 0; y++) { let n = 0; for (let x = 0; x < W; x += 4) if (eq(P(x, y), HDR)) n++; if (n > W / 16) hy = y; }
+  if (hy < 0) throw new Error("シフト表の時刻の行が見つかりません");
+  let x0 = -1, x1 = -1; for (let x = 0; x < W; x++) if (eq(P(x, hy + 3), HDR)) { if (x0 < 0) x0 = x; x1 = x; }
+  const hw = (x1 - x0 + 1) / 15, z = hw / 68.4667;
+  let yb = hy; while (yb < H - 2 && (eq(P(x0 + 5, yb), HDR) || eq(P(x0 + 5, yb + 1), HDR))) yb++;
+  // 名前の列（水色）から行を探す
+  const nx0 = Math.max(0, Math.round(x0 - 438 * z)), nx1 = Math.max(nx0 + 10, Math.round(x0 - 272 * z));
+  const rows = []; let s = -1;
+  for (let y = yb + 1; y < H * 0.85; y++) {
+    let n = 0, tot = 0; for (let x = nx0; x < nx1; x += 3) { tot++; if (eq(P(x, y), NAMEBG, 10)) n++; }
+    const on = n > tot * 0.25;
+    if (on && s < 0) s = y;
+    if (!on && s >= 0) { if (y - s >= 8 * z) rows.push([s, y - 1]); s = -1; if (rows.length && y - rows[rows.length - 1][1] > 40 * z) break; }
+  }
+  const cls = (p) => { const [r, g, b] = p;
+    if (r > 200 && g > 60 && g < 160 && b < 70) return "work";
+    if (b > 180 && r < 70 && g < 70) return "blue";
+    if (r >= 150 && r <= 185 && Math.abs(r - g) < 6 && Math.abs(g - b) < 6) return "other";
+    return null; };
+  const out = rows.map(([a, b]) => {
+    const mid = (a + b) >> 1, ys = [-4, -2, 0, 2, 4].map(k => mid + Math.round(k * z));
+    const line = [];
+    for (let x = x0; x < Math.min(W, x0 + Math.round(hw * 16)); x++) {
+      const cs = ys.map(y => cls(P(x, y))).filter(Boolean);
+      if (!cs.length) { line.push(null); continue; }
+      const cnt = {}; cs.forEach(c => cnt[c] = (cnt[c] || 0) + 1); line.push(Object.keys(cnt).sort((p, q) => cnt[q] - cnt[p])[0]);
+    }
+    let runs = [], cur = null;
+    line.forEach((c, i) => { if (c !== (cur ? cur.c : null)) { if (cur) runs.push(cur); cur = c ? { c, s: i, e: i } : null; } else if (cur) cur.e = i; });
+    if (cur) runs.push(cur);
+    const m = [];
+    runs.forEach(r => { const L = m[m.length - 1]; if (L && L.c === r.c && r.s - L.e <= 6 * z) L.e = r.e; else m.push({ ...r }); });
+    const q = (px) => Math.round((9 * 60 + px / hw * 60) / 15) * 15;
+    const segs = m.filter(r => r.e - r.s >= 6 * z).map(r => ({ s: q(r.s), e: q(r.e + 1), type: r.c, label: r.c === "blue" ? "事務" : r.c === "other" ? "他店舗" : "" }));
+    return { a, b, segs };
+  });
+  return { W, H, hy, x0, hw, z, nx0, nx1, rows: out };
+}
+// 名前の「見た目」（文字の形を小さな白黒の点にしたもの）
+function nameFp(id, an, row) {
+  const W = id.width, d = id.data;
+  const lum = (x, y) => { const i = (y * W + x) * 4; return 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]; };
+  let bx0 = 1e9, bx1 = -1, by0 = 1e9, by1 = -1;
+  for (let y = row.a; y <= row.b; y++) for (let x = an.nx0; x < an.nx1; x++) if (lum(x, y) < 140) { if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y; }
+  if (bx1 < 0) return null;
+  const GW = 96, GH = 12; let bits = "";
+  for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) {
+    const xa = bx0 + Math.floor((bx1 - bx0 + 1) * gx / GW), xb = bx0 + Math.floor((bx1 - bx0 + 1) * (gx + 1) / GW);
+    const ya = by0 + Math.floor((by1 - by0 + 1) * gy / GH), yb = by0 + Math.floor((by1 - by0 + 1) * (gy + 1) / GH);
+    let n = 0, t = 0; for (let y = ya; y < Math.max(yb, ya + 1); y++) for (let x = xa; x < Math.max(xb, xa + 1); x++) { t++; if (lum(x, y) < 140) n++; }
+    bits += n / t > 0.2 ? "1" : "0";
+  }
+  return { bits, w: Math.round((bx1 - bx0 + 1) / an.z) };
+}
+function fpMatch(fp, dict) {
+  if (!fp) return null;
+  let best = null;
+  dict.forEach(e => { if (!e.fp || Math.abs(e.w - fp.w) > Math.max(6, e.w * 0.12)) return;
+    let dd = 0; for (let i = 0; i < fp.bits.length; i++) if (fp.bits[i] !== e.fp[i]) dd++;
+    const r = dd / fp.bits.length; if (!best || r < best.r) best = { e, r }; });
+  return best && best.r < 0.05 ? best.e : null;
+}
+function binarize(c) { const g = c.getContext("2d"); const im = g.getImageData(0, 0, c.width, c.height); const d = im.data;
+  for (let i = 0; i < d.length; i += 4) { const v = 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2] < 150 ? 0 : 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+  g.putImageData(im, 0, 0); return c; }
+function padCanvas(c, p = 16) { const o = document.createElement("canvas"); o.width = c.width + p * 2; o.height = c.height + p * 2; const g = o.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, o.width, o.height); g.drawImage(c, p, p); return o; }
+function cropUrl(canvas, x, y, w, h, scale = 1) { const c = document.createElement("canvas"); c.width = Math.round(w * scale); c.height = Math.round(h * scale); const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(canvas, x, y, w, h, 0, 0, c.width, c.height); return c; }
+async function readShot(file, dict) {
+  const { canvas, data } = await loadImageData(file);
+  const an = shotAnalyze(data);
+  const ocr = await getOcr();
+  const z = an.z;
+  // 勤務日の入力欄の内側（枠線を除く）
+  const dc = padCanvas(binarize(cropUrl(canvas, Math.round(an.x0 - 135 * z), Math.round(an.hy - 236 * z), Math.round(108 * z), Math.round(14 * z), 3 / z)));
+  const dt = (await ocr.recognize(dc)).data.text.trim();
+  const dm = /(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(dt.replace(/\s/g, ""));
+  const date = dm ? `${dm[1]}-${pad(+dm[2])}-${pad(+dm[3])}` : "";
+  const people = [];
+  for (const r of an.rows) {
+    const hc = padCanvas(binarize(cropUrl(canvas, Math.round(an.x0 - 50 * z), r.a + 2, Math.round(44 * z), Math.max(4, r.b - r.a - 3), 4 / z)));
+    const ht = (await ocr.recognize(hc)).data.text.trim();
+    const sysH = /^\d+(\.\d+)?$/.test(ht) ? Number(ht) : null;
+    const fp = nameFp(data, an, r);
+    const hit = fpMatch(fp, dict);
+    const img = cropUrl(canvas, an.nx0, r.a, an.nx1 - an.nx0, r.b - r.a + 1, 1).toDataURL("image/png");
+    people.push({ segs: r.segs, sysH, fp, img, name: hit ? hit.name : "", tags: hit ? (hit.tags || []) : [], known: !!hit });
+  }
+  return { file: file.name, date, dateRaw: dt, people };
+}
+function seedShiftNames() { return { list: (typeof SHIFT_NAME_SEED !== "undefined" ? SHIFT_NAME_SEED : []).map(e => ({ ...e })) }; }
+
+function ShotImport({ onSave }) {
+  const [dictRec, saveDict] = useStored(SHN_KEY, seedShiftNames);
+  const dict = dictRec.list || [];
+  const [shots, setShots] = useState([]);
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const knownNames = [...new Set(dict.map(e => e.name))].sort();
+  const pick = async (e) => {
+    const fs = Array.from(e.target.files || []); e.target.value = ""; if (!fs.length) return;
+    setErr(""); const res = [];
+    for (let i = 0; i < fs.length; i++) {
+      setBusy(`読み取り中… ${i + 1} / ${fs.length}枚${i === 0 ? "（初回は準備に少し時間がかかります）" : ""}`);
+      try { res.push(await readShot(fs[i], dict)); } catch (ex) { res.push({ file: fs[i].name, error: ex.message || String(ex), people: [] }); }
+    }
+    setBusy(""); setShots(v => [...v, ...res].sort((a, b) => (a.date || "9").localeCompare(b.date || "9")));
+  };
+  const upd = (si, pi, patch) => setShots(v => v.map((s, i) => i !== si ? s : { ...s, people: s.people.map((p, j) => j !== pi ? p : { ...p, ...patch }) }));
+  const setDate = (si, d) => setShots(v => v.map((s, i) => i !== si ? s : { ...s, date: d }));
+  const ok = shots.filter(s => !s.error);
+  const missingName = ok.some(s => s.people.some(p => p.segs.length && !p.name.trim()));
+  const missingDate = ok.some(s => !s.date);
+  const dup = (() => { const c = {}; ok.forEach(s => { if (s.date) c[s.date] = (c[s.date] || 0) + 1; }); return Object.keys(c).filter(k => c[k] > 1); })();
+  const save = () => {
+    const days = {}; const newDict = dict.slice();
+    ok.forEach(s => {
+      days[s.date] = s.people.filter(p => p.segs.length && p.name.trim()).map(p => ({ name: p.name.trim(), tags: p.tags, segs: p.segs }));
+      s.people.forEach(p => { if (!p.known && p.fp && p.name.trim()) newDict.push({ name: p.name.trim(), tags: p.tags, fp: p.fp.bits, w: p.fp.w }); });
+    });
+    if (newDict.length !== dict.length) saveDict({ list: newDict });
+    onSave(days);
+  };
+  return h("div", null,
+    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 12 } }, "シフト管理の「日次シフト登録」の画面のスクショを、何枚でもまとめて選んでください。日付は画像から読み取るので、順番はばらばらで大丈夫です。"),
+    h("label", { htmlFor: "shot-files", className: "fk-tap", style: { ...primaryBtn, cursor: busy ? "default" : "pointer", opacity: busy ? .6 : 1 } }, h(Icon, { name: "camera", size: 20 }), shots.length ? "スクショを追加する" : "スクショを選ぶ"),
+    h("input", { id: "shot-files", type: "file", accept: "image/*", multiple: true, disabled: !!busy, onChange: pick, style: { display: "none" } }),
+    busy && h("div", { style: { fontSize: 13, fontWeight: 800, color: C.cyanDeep, textAlign: "center", padding: "14px 0" } }, busy),
+    err && h("div", { role: "alert", style: { fontSize: 12.5, fontWeight: 800, color: C.drop, marginTop: 10 } }, err),
+    shots.map((s, si) => h("div", { key: si, style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
+      h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#FAF9F6", borderBottom: `1px solid ${C.line}` } },
+        s.error ? h("span", { style: { fontSize: 13, fontWeight: 800, color: C.drop } }, `${s.file}：${s.error}`)
+        : h(React.Fragment, null,
+            h("span", { style: { fontSize: 15, fontWeight: 900, color: s.date ? clDowColor(s.date) : C.drop } }, s.date ? fmtYMD(s.date) : "日付を読み取れませんでした"),
+            dup.includes(s.date) && h(Pill, { text: "同じ日付が2枚", color: "#fff", bg: C.drop }),
+            h("div", { style: { marginLeft: "auto", width: 150 } }, h(TextIn, { id: `sd-${si}`, type: "date", value: s.date, onChange: (v) => setDate(si, v) })),
+            h("button", { type: "button", "aria-label": "この画像を外す", onClick: () => setShots(v => v.filter((_, i) => i !== si)), style: { ...subBtn, flex: "0 0 auto", padding: "8px 10px", color: C.drop } }, "×"))),
+      !s.error && s.people.map((p, pi) => { const hrs = p.segs.filter(x => x.type !== "other").reduce((a, x) => a + x.e - x.s, 0) / 60; const sp = shSpan(p);
+        const bad = p.sysH != null && Math.abs(p.sysH - hrs) > 0.01;
+        return h("div", { key: pi, style: { padding: "10px 12px", borderTop: pi ? `1px solid ${C.lineSoft}` : "none", background: !p.name.trim() && p.segs.length ? "#FFF8EC" : "transparent" } },
+          h("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+            h("img", { src: p.img, alt: "名前の部分", style: { height: 20, maxWidth: 150, borderRadius: 3, border: `1px solid ${C.line}` } }),
+            h("span", { style: { marginLeft: "auto", fontSize: 14, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: sp ? C.ink : C.subLight } }, sp ? `${shFmt(sp[0])}–${shFmt(sp[1])}` : p.segs.length ? "他店舗のみ" : "勤務なし"),
+            h("span", { style: { fontSize: 11.5, fontWeight: 800, color: bad ? C.drop : C.done } }, bad ? `⚠ ${hrs}h（表は${p.sysH}h）` : `${hrs}h ✓`)),
+          p.segs.length > 0 && (p.known
+            ? h("div", { style: { display: "flex", alignItems: "center", gap: 6, marginTop: 6 } },
+                h("span", { style: { fontSize: 14.5, fontWeight: 900 } }, p.name), p.tags.map(shTag),
+                h("button", { type: "button", onClick: () => upd(si, pi, { known: false }), style: { marginLeft: "auto", border: "none", background: "transparent", color: C.sub, fontSize: 12, fontWeight: 800, cursor: "pointer" } }, "違う人"))
+            : h("div", { style: { marginTop: 8 } },
+                h("div", { style: { fontSize: 12, fontWeight: 800, color: "#8A4B06", marginBottom: 6 } }, "初めての人です。上の画像の名前を選ぶか入力してください（次回から自動で見分けます）"),
+                knownNames.length > 0 && h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 } },
+                  knownNames.map(n => h("button", { key: n, type: "button", onClick: () => { const e = dict.find(x => x.name === n); upd(si, pi, { name: n, tags: e ? e.tags || [] : [] }); }, style: { border: `1.5px solid ${p.name === n ? C.ink : C.line}`, background: p.name === n ? C.ink : C.card, color: p.name === n ? "#fff" : C.ink, borderRadius: 999, padding: "6px 11px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" } }, n))),
+                h("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
+                  h("div", { style: { flex: 1 } }, h(TextIn, { id: `pn-${si}-${pi}`, value: p.name, onChange: (v) => upd(si, pi, { name: v }), placeholder: "名前を入力" })),
+                  ["社員", "PA", "28h"].map(t => { const on = p.tags.includes(t); return h("button", { key: t, type: "button", onClick: () => upd(si, pi, { tags: on ? p.tags.filter(x => x !== t) : [...p.tags, t] }), style: { border: `1.5px solid ${on ? C.ink : C.line}`, background: on ? C.ink : C.card, color: on ? "#fff" : C.ink, borderRadius: 8, padding: "9px 8px", fontSize: 12, fontWeight: 800, cursor: "pointer" } }, t); })))));
+      }))),
+    ok.length > 0 && h("div", { style: { marginTop: 16 } },
+      missingDate && h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.drop, marginBottom: 8 } }, "日付が入っていない画像があります"),
+      dup.length > 0 && h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.drop, marginBottom: 8 } }, "同じ日付の画像が2枚あります。どちらかを外してください"),
+      missingName && h("div", { style: { fontSize: 12.5, fontWeight: 800, color: "#8A4B06", marginBottom: 8 } }, "名前が決まっていない人がいます"),
+      h("button", { type: "button", className: "fk-tap", disabled: missingDate || missingName || dup.length > 0, onClick: save,
+        style: { ...primaryBtn, background: missingDate || missingName || dup.length ? C.line : C.ink, color: missingDate || missingName || dup.length ? C.subLight : "#fff" } },
+        h(Icon, { name: "check", size: 20, sw: 2.2 }), `${ok.length}日分を取り込む`)));
+}
 
 const PAGES = [
-  { k: "report", icon: "report", nav: "勤怠・破損", title: "勤怠・破損", tile: "勤怠・破損", tint: "#B3412F", soft: "#F7E7E3", ready: true,
+  { k: "report", icon: "report", nav: "勤怠", title: "勤怠・破損", tile: "勤怠・破損", tint: "#B3412F", soft: "#F7E7E3", ready: true,
     lead: "遅刻、備品の破損、打刻漏れの修正をスマホから報告します。",
     rows: [["報告の種類を選ぶ", "遅刻／破損／勤怠修正"], ["日時と内容を入力", "写真も添付できる"], ["店長の確認状況を表示", "確認済み・差し戻し"]] },
   { k: "recipe", icon: "recipe", nav: "レシピ", title: "レシピ", tint: "#B7791F", soft: "#FAF0DC",
@@ -1921,6 +2518,7 @@ const PAGES = [
   { k: "clean",  icon: "clean",  nav: "掃除",   title: "掃除表", tile: "掃除表", tint: "#2F7A6E", soft: "#E3F1EE", ready: true,
     lead: "日次・締め・週次・月次の掃除と、毎日の確認項目をチェックします。",
     rows: [["頻度ごとのチェックリスト", "日次／締め／週次／月次"], ["担当者と完了時刻を記録", "タップするだけ"], ["写真で完了報告", "週次・月次の掃除"]] },
+  { k: "shift",  icon: "calendar", nav: "シフト", title: "シフト", tint: "#2563A8", soft: "#E3ECF7", ready: true },
   { k: "kinshu", icon: "kinshu", nav: "金種",   title: "金種管理表", tint: "#8A6418", soft: "#F8F0DF", ready: true },
   { k: "board",  icon: "board",  nav: "掲示板", title: "共有事項掲示板", tile: "共有事項\n掲示板", tint: "#44548A", soft: "#E7EAF4", ready: true,
     lead: "店長とスタッフの連絡事項を、流れないように残しておきます。",
@@ -1932,12 +2530,12 @@ const PAGES = [
     lead: "お客様の忘れ物を見つけた時点で登録し、保管から返却・処分までを記録します。",
     rows: [["見つけたらすぐ登録", "日時・席・品名・写真"], ["保管場所と保管期限を表示", "期限が近いものは色で知らせる"], ["返却・警察への届出を記録", "受け取った人と日時を残す"], ["処分は店長の承認制", "誤って捨てるのを防ぐ"]] }
 ];
-const NAV = ["home", "kinshu", "clean", "report", "board"];
+const NAV = ["home", "shift", "clean", "kinshu", "report", "board"];
 
 const cardStyle = { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18 };
 
 function Header({ children, tall }) {
-  return h("div", { className: "fk-appbar", style: { position: tall ? "relative" : "sticky", top: 0, zIndex: 30, background: C.ink, color: "#fff", borderBottom: `1px solid ${C.inkSoft}` } },
+  return h("div", { className: "fk-appbar", style: { position: tall ? "relative" : "sticky", top: 0, zIndex: 30, background: C.head, color: "#fff", borderBottom: `1px solid ${C.headLine}` } },
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: tall ? "2px 16px 22px" : "0 16px 14px" } }, children));
 }
 
@@ -1961,71 +2559,152 @@ function MenuRow({ icon, tint, soft, title, badge, badgeWarn, onClick }) {
     h(Icon, { name: "chev", size: 18, sw: 2, color: C.subLight }));
 }
 
+// あいさつ（時間帯ごとに、開くたびに入れ替わる）　{n} は名前
+const GREETS = {
+  morning: [
+    "おはようございます、{n}さん",
+    "{n}さん、おはようございます。今日もよろしくお願いします",
+    "おはようございます。今日も一日がんばりましょう",
+    "{n}さん、朝早くからありがとうございます",
+    "おはようございます。まずは仕込みからいきましょう",
+    "今日もおいしい一杯を出しましょう、{n}さん",
+    "おはようございます。今日も笑顔でいきましょう"
+  ],
+  day: [
+    "おつかれさまです、{n}さん",
+    "{n}さん、ランチおつかれさまです",
+    "ピークもあと少し、がんばりましょう",
+    "おつかれさまです。休憩はしっかりとってくださいね",
+    "{n}さん、今日も来てくれてありがとうございます",
+    "アイドルタイムに掃除表もチェックしましょう",
+    "水分補給を忘れずに、{n}さん"
+  ],
+  night: [
+    "こんばんは、{n}さん",
+    "{n}さん、ディナーもよろしくお願いします",
+    "おつかれさまです。夜もがんばりましょう",
+    "ラストまであと少し、{n}さん",
+    "今日も一日ありがとうございました",
+    "締め作業までよろしくお願いします、{n}さん"
+  ]
+};
+function pickGreet(hr) {
+  const set = hr < 11 ? GREETS.morning : hr < 17 ? GREETS.day : GREETS.night;
+  return set[Math.floor(Math.random() * set.length)];
+}
+const greetText = (g, me) => me ? g.replace(/\{n\}/g, me) : g.replace(/^\{n\}さん、|、\{n\}さん$/g, "");
+
+// QSAの項目文（〜できているか）を、意識する一文の形にする
+const qsaGoal = (t) => (t || "").split(/\s*※/)[0].trim()
+  .replace(/(いないか|いるか|はないか|がないか|しないか|正しいか|わるか|あるか|るか|か)(?=[\s　（）、]|$)/g, (m) => ({ "いないか": "いませんか？", "いるか": "いますか？", "はないか": "はありませんか？", "がないか": "がありませんか？", "しないか": "しませんか？", "正しいか": "正しいですか？", "わるか": "わりますか？", "あるか": "ありますか？", "るか": "ますか？", "か": "か？" })[m] || m)
+  .replace(/？）/g, "）").replace(/？、/g, "、");
+
+function HomeStat({ label, value, sub, color, big }) {
+  return h("div", { style: { minWidth: 0 } },
+    h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.sub, whiteSpace: "nowrap" } }, label),
+    h("div", { style: { fontSize: big ? "clamp(16px, 5.3vw, 22px)" : "clamp(15px, 4.9vw, 19px)", fontWeight: 800, marginTop: 2, fontVariantNumeric: "tabular-nums", color: color || C.ink, whiteSpace: "nowrap", letterSpacing: "-.01em" } }, value),
+    sub && h("div", { style: { fontSize: 10.5, fontWeight: 700, color: C.subLight, marginTop: 1 } }, sub));
+}
+
+// 今日のシフト（ホーム用の短い一覧）
+function HomeShift({ people, me, go, onName }) {
+  const work = people.filter(p => shSpan(p) && shHours(p) > 0).sort(shSortFn);
+  const groups = [
+    { l: "ランチ", f: (m) => m < 14 * 60 },
+    { l: "アイドル", f: (m) => m >= 14 * 60 && m < 17 * 60 },
+    { l: "ディナー", f: (m) => m >= 17 * 60 }
+  ];
+  const hm = (p) => { const t = Math.round(shHours(p) * 60); return `${Math.floor(t / 60)}h${t % 60 ? pad(t % 60) : ""}`; };
+  return h("div", { style: { ...cardStyle, marginTop: 10, overflow: "hidden" } },
+    h("button", { type: "button", className: "fk-tap", onClick: () => go("shift"), style: { width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "13px 14px", background: "#FAF9F6", border: "none", cursor: "pointer", color: C.ink, textAlign: "left" } },
+      h(Icon, { name: "calendar", size: 20, color: "#2563A8" }),
+      h("span", { style: { fontSize: 15, fontWeight: 900 } }, "今日のシフト"),
+      work.length > 0 && h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, `${work.length}人`),
+      h("span", { style: { marginLeft: "auto", fontSize: 12, fontWeight: 800, color: C.sub } }, "すべて見る"),
+      h(Icon, { name: "chev", size: 16, sw: 2, color: C.subLight })),
+    work.length === 0
+      ? h("div", { style: { padding: "16px 14px", fontSize: 13, color: C.sub, fontWeight: 700, borderTop: `1px solid ${C.lineSoft}` } }, "今日のシフトはまだ登録されていません")
+      : groups.map(g => { const ps = work.filter(p => g.f(shSpan(p)[0])); if (!ps.length) return null;
+          return h("div", { key: g.l, style: { borderTop: `1px solid ${C.lineSoft}`, padding: "8px 14px 6px" } },
+            h("div", { style: { fontSize: 11, fontWeight: 900, color: C.subLight, letterSpacing: ".06em", marginBottom: 2 } }, g.l),
+            ps.map((p, i) => { const sp = shSpan(p); const mine = shIsMe(p.name, me); const blue = p.segs.some(s => s.type === "blue");
+              return h("div", { key: p.name + i, style: { display: "flex", alignItems: "center", gap: 8, padding: "5px 0", margin: mine ? "0 -8px" : 0, paddingLeft: mine ? 8 : 0, paddingRight: mine ? 8 : 0, borderRadius: 8, background: mine ? C.cyanSoft : "transparent" } },
+                shNameBtn(p.name, mine ? onName : null, { fontSize: 15, fontWeight: 900, color: mine ? C.cyanDeep : C.ink, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
+                p.tags.includes("社員") && h("span", { style: { flexShrink: 0, whiteSpace: "nowrap", fontSize: 10, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 5, padding: "0 5px" } }, "社員"),
+                h("span", { style: { marginLeft: "auto", flexShrink: 0, fontSize: 14.5, fontWeight: 800, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, `${shFmt(sp[0])}–${shFmt(sp[1])}`),
+                h("span", { style: { width: 36, flexShrink: 0, textAlign: "right", fontSize: 11.5, fontWeight: 800, color: C.subLight, fontVariantNumeric: "tabular-nums" } }, hm(p))); })); }));
+}
+
 function Home({ go }) {
   const [me] = useMe();
   const [meOpen, setMeOpen] = useState(false);
+  const [person, setPerson] = useState(null);
   const now = new Date(), hr = now.getHours();
-  const greet = hr < 11 ? "おはようございます" : hr < 17 ? "おつかれさまです" : "こんばんは";
+  const [greet] = useState(() => pickGreet(hr));
+  const [qsaSeed] = useState(() => Math.random());
+  const qsaData = readStored(QSA_KEY, seedQsa);
+  const qsaPicks = ((qsaData.picks || {})[ymOf(now)] || []).map(id => qsaData.items.find(i => i.id === id)).filter(Boolean);
+  const qsaToday = qsaPicks.length ? qsaPicks[Math.floor(qsaSeed * qsaPicks.length)] : null;
   const { data, demo } = loadMonth();
-  const today = data[String(now.getDate())] || {};
-  let total = 0, cnt = 0;
-  Object.values(data).forEach(e => { if (e.uday !== "" && e.uday != null) { total += Number(e.uday) || 0; cnt++; } });
-  const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const y = now.getFullYear(), mo = now.getMonth() + 1;
+  const shDays = readStored(SHIFT_KEY, seedShift).days || {};
+  // 売上・硬貨端数・人時生産性
+  let total = 0, cnt = 0, hasu = 0, pSales = 0, pHours = 0, pDays = 0;
+  Object.entries(data).forEach(([d, e]) => {
+    if (!e) return;
+    if (e.genkin !== "" && e.genkin != null) hasu += kEndOf(e.genkin);
+    if (e.uday === "" || e.uday == null) return;
+    const u = Number(e.uday) || 0; total += u; cnt++;
+    const hrs = (shDays[`${y}-${pad(mo)}-${pad(Number(d))}`] || []).reduce((a, p) => a + shHours(p), 0);
+    if (hrs > 0) { pSales += u; pHours += hrs; pDays++; }
+  });
+  const days = new Date(y, mo, 0).getDate();
   const landing = cnt ? total / cnt * days : 0;
   const yenF = (n) => "¥" + Math.round(n).toLocaleString("ja-JP");
-  // バッジ用の件数
-  const attOpen = readStored(A_KEY, seedAtt).filter(r => r.status === "open").length;
+  const prod = pHours ? pSales / pHours : 0;
   const lost = readStored(L_KEY, seedLost).filter(isOpenLost);
   const lostNear = lost.filter(x => daysLeft(x) <= 2).length;
   const staff = readStored(STAFF_KEY, seedStaff).names;
-  const boardUn = readStored(BD_KEY, seedBoard).filter(p => !expired(p) && unreadOf(p, staff).length > 0).length;
-  const P = (k) => PAGES.find(p => p.k === k);
-  const clS = readStored(CL_SCHED_KEY, () => CL_SEED_SCHED), clD = readStored(CL_DONE_KEY, () => ({}));
-  const clC = clDoneCount(clS, clD, todayYMD()); const dcC = dcCount(readStored(DC_ITEMS_KEY, seedDaily), readStored(DC_DONE_KEY, () => ({})), todayYMD());
-  const clRem = clC.total - clC.n + dcC.total - dcC.n; clC.total += dcC.total;
-  const rows = [
-    { k: "kinshu", badge: "" },
-    { k: "clean", badge: clC.total ? (clRem ? `今日の残り ${clRem}` : "今日は完了") : "" },
-    { k: "report", badge: attOpen ? `確認待ち ${attOpen}` : "" },
-    { k: "lost", badge: lostNear ? `期限間近 ${lostNear}` : lost.length ? `保管中 ${lost.length}` : "", warn: lostNear > 0 },
-    { k: "board", badge: boardUn ? `未読あり ${boardUn}` : "" }
-  ];
+  const shDay = shDays[todayYMD()] || [];
   const soon = PAGES.filter(p => !p.ready);
-  const divider = h("div", { style: { height: 1, background: C.lineSoft, marginLeft: 70 } });
   return h("div", { className: "fk-page" },
     h(Header, { tall: true },
       h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
-        h(AppTitle, { title: "神虎" }),
-        h("div", { style: { fontSize: 12, color: "rgba(255,255,255,.62)", fontWeight: 700 } }, `${now.getMonth() + 1}月${now.getDate()}日（${WD[now.getDay()]}）`)),
+        h("div", { style: { display: "flex", alignItems: "center", gap: 10, minWidth: 0 } },
+          h(AppTitle, { title: "肥後橋店", solo: true }),
+          h("button", { type: "button", className: "fk-tap", onClick: () => go("staff"), style: { display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,.10)", color: "rgba(255,255,255,.85)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 999, padding: "4px 10px 4px 8px", fontSize: 11.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" } },
+            h(Icon, { name: "staff", size: 14, sw: 2 }), `名簿 ${staff.length}人`)),
+        h("div", { style: { fontSize: 12, color: "rgba(255,255,255,.62)", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 } }, `${mo}/${now.getDate()}（${WD[now.getDay()]}）`)),
       h("div", { style: { marginTop: 18, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 } },
-        h("div", { style: { fontSize: me ? 17 : 21, fontWeight: 900, letterSpacing: ".02em", minWidth: 0 } }, me ? `${greet}、${me}さん` : greet),
-        h("button", { type: "button", className: "fk-tap", onClick: () => setMeOpen(true), style: { flexShrink: 0, background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer" } }, me ? "名前を変更" : "名前を選ぶ"))),
+        h("div", { style: { fontSize: 17, fontWeight: 900, letterSpacing: ".02em", lineHeight: 1.45, minWidth: 0, textWrap: "pretty" } }, greetText(greet, me)),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setMeOpen(true), style: { flexShrink: 0, background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer" } }, me ? "設定" : "名前を選ぶ")),
+      qsaToday && (() => { const cc = qsaCat(qsaToday.cat);
+        return h("div", { style: { marginTop: 12, display: "flex", gap: 10, alignItems: "flex-start", background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "10px 12px" } },
+          h("span", { style: { flexShrink: 0, width: 24, height: 24, borderRadius: 7, display: "grid", placeItems: "center", background: cc.bg, color: cc.c, fontSize: 13, fontWeight: 900 } }, qsaToday.cat),
+          h("div", { style: { minWidth: 0 } },
+            h("div", { style: { fontSize: 10.5, fontWeight: 800, color: C.headAccent, letterSpacing: ".08em" } }, "今日はここを意識しましょう"),
+            h("div", { style: { fontSize: 13.5, fontWeight: 700, lineHeight: 1.55, marginTop: 2, color: "rgba(255,255,255,.92)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, qsaGoal(qsaToday.text)))); })()),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "0 14px calc(104px + env(safe-area-inset-bottom))" } },
       fbAuthError && h("div", { style: { position: "relative", zIndex: 32, marginTop: -12, marginBottom: 20, background: "#FBEAE6", color: C.drop, borderRadius: 12, padding: "10px 14px", fontSize: 12.5, fontWeight: 800, lineHeight: 1.6 } }, `サーバーに接続できません（${fbAuthError}）。入力はこの端末に一時保存され、つながったときに送られます。`),
       // 売上
-      h("button", { type: "button", className: "fk-tap", onClick: () => go("kinshu"), style: { ...cardStyle, width: "100%", textAlign: "left", marginTop: -12, padding: "16px 18px", cursor: "pointer", position: "relative", zIndex: 31, boxShadow: "0 10px 30px rgba(26,24,22,.10)", color: C.ink, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } },
-        h("div", null,
-          h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.sub } }, `${now.getMonth() + 1}月の売上`),
-          h("div", { style: { fontSize: 22, fontWeight: 800, marginTop: 2, fontVariantNumeric: "tabular-nums" } }, yenF(total))),
-        h("div", { style: { borderLeft: `1px solid ${C.lineSoft}`, paddingLeft: 14 } },
-          h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.sub } }, "着地見込み"),
-          h("div", { style: { fontSize: 22, fontWeight: 800, marginTop: 2, fontVariantNumeric: "tabular-nums", color: C.cyanDeep } }, cnt ? yenF(landing) : "—")),
-        h("div", { style: { gridColumn: "1 / -1", fontSize: 11, color: C.subLight, fontWeight: 700 } }, `着地見込み＝日平均 × ${days}日（${cnt}日分の実績から計算）`, demo ? "・サンプルの数値です" : "")),
+      h("button", { type: "button", className: "fk-tap", onClick: () => go("kinshu"), style: { ...cardStyle, width: "100%", textAlign: "left", marginTop: -12, cursor: "pointer", position: "relative", zIndex: 31, boxShadow: "0 10px 30px rgba(26,24,22,.10)", color: C.ink, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px 12px", padding: "16px clamp(12px, 4vw, 18px)" } },
+        h(HomeStat, { label: `${mo}月の売上（累計）`, value: yenF(total), big: true }),
+        h("div", { style: { borderLeft: `1px solid ${C.lineSoft}`, paddingLeft: 12, minWidth: 0 } }, h(HomeStat, { label: "硬貨端数（累計）", value: yenF(hasu), big: true })),
+        h("div", { style: { borderTop: `1px solid ${C.lineSoft}`, paddingTop: 12, minWidth: 0 } }, h(HomeStat, { label: "人時生産性", value: prod ? yenF(prod) : "—", sub: prod ? `売上÷シフト時間（${pDays}日分）` : "シフトが入った日がまだありません" })),
+        h("div", { style: { borderTop: `1px solid ${C.lineSoft}`, borderLeft: `1px solid ${C.lineSoft}`, paddingTop: 12, paddingLeft: 12, minWidth: 0 } }, h(HomeStat, { label: "着地見込み", value: cnt ? yenF(landing) : "—", color: C.cyanDeep, sub: `日平均×${days}日（${cnt}日分）` })),
+        demo && h("div", { style: { gridColumn: "1 / -1", fontSize: 11, color: C.subLight, fontWeight: 700 } }, "サンプルの数値です")),
       h(QsaCard, null),
-      // メニュー
+      h(HomeShift, { people: shDay, me, go, onName: setPerson }),
+      // 下のタブにないもの
       h("div", { style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
-        rows.map((r, i) => { const p = P(r.k);
-          return h(React.Fragment, { key: r.k }, i > 0 && divider,
-            h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: p.title, badge: r.badge, badgeWarn: r.warn, onClick: () => go(r.k) })); })),
-      // 設定
-      h("div", { style: { ...cardStyle, marginTop: 10, overflow: "hidden" } },
-        h(MenuRow, { icon: "staff", tint: C.ink, soft: C.lineSoft, title: "従業員名簿", badge: `${staff.length}人`, onClick: () => go("staff") })),
-      // 準備中
+        (() => { const p = PAGES.find(x => x.k === "lost");
+          return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: p.title, badge: lostNear ? `期限間近 ${lostNear}` : lost.length ? `保管中 ${lost.length}` : "", badgeWarn: lostNear > 0, onClick: () => go("lost") }); })()),
       soon.length > 0 && h("div", { style: { marginTop: 18, padding: "0 4px" } },
         h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.subLight, marginBottom: 8 } }, "準備中"),
         h("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
           soon.map(p => h("button", { key: p.k, type: "button", onClick: () => go(p.k), style: { border: `1px dashed ${C.line}`, background: "transparent", color: C.sub, borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" } }, p.tile ? p.tile.replace("\n", "・") : p.title))))),
-    h(Sheet, { open: meOpen, onClose: () => setMeOpen(false), title: "この端末を使う人" }, meOpen && h(MePicker, { onDone: () => setMeOpen(false) })));
+    h(Sheet, { open: !!person, onClose: () => setPerson(null), title: "個人のシフト" }, person && h(PersonShift, { key: person, name: person })),
+    h(Sheet, { open: meOpen, onClose: () => setMeOpen(false), title: "この端末の設定" }, meOpen && h(React.Fragment, null, h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.sub, marginBottom: 8 } }, "使う人"), h(MePicker, null), h("div", { style: { height: 1, background: C.line, margin: "18px 0 16px" } }), h(ThemePicker, null))));
 }
 
 function Placeholder({ page }) {
@@ -2051,16 +2730,24 @@ function App() {
   const [, setTick] = useState(0);
   useEffect(() => { const f = () => setTick(t => t + 1); storeBus.add(f); return () => storeBus.delete(f); }, []);
   const valid = ["home", "staff", ...PAGES.map(p => p.k)];
-  const init = (() => { const s = (location.hash || "").slice(1); return valid.includes(s) ? s : "home"; })();
+  const [mkIn, setMkIn] = useState(() => { const m = /^#mk=([A-Za-z0-9_-]+)/.exec(location.hash || ""); if (!m) return null; const d = mkDecode(m[1]); try { history.replaceState(null, "", location.pathname + location.search + "#shift"); } catch (e) {} return d; });
+  const init = (() => { if (mkIn) return "shift"; const s = (location.hash || "").slice(1); return valid.includes(s) ? s : "home"; })();
   const [mode, setMode] = useState(init);
   const go = (k) => { setMode(k); window.scrollTo(0, 0); };
   const page = PAGES.find(p => p.k === mode);
   const navFor = NAV.includes(mode) ? mode : "home";
+  const navDot = {};
+  try {
+    const st = readStored(STAFF_KEY, seedStaff).names;
+    navDot.report = readStored(A_KEY, seedAtt).filter(r => r.status === "open").length > 0;
+    navDot.board = readStored(BD_KEY, seedBoard).filter(p => !expired(p) && unreadOf(p, st).length > 0).length > 0;
+  } catch (e) {}
   return h("div", { style: { minHeight: "100vh", background: C.paper, fontFamily: FONT, color: C.ink } },
     h("style", null, `
       *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
       html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;}
-      button,input{font-family:inherit;}
+      body{font-family:${FONT};color:${C.ink};}
+      button,input,textarea,select{font-family:inherit;}
       button{touch-action:manipulation;}
       .fk-appbar{padding-top:calc(12px + env(safe-area-inset-top, 0px));}
       .fk-tap{transition:transform .12s ease, box-shadow .12s ease;}
@@ -2076,14 +2763,15 @@ function App() {
       button:focus-visible{outline:2px solid ${C.cyan};outline-offset:2px;}
       @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
     `),
-    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r" }) : mode === "lost" ? h(LostApp, null) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : h(Placeholder, { page, key: mode }),
+    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r" }) : mode === "lost" ? h(LostApp, null) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : h(Placeholder, { page, key: mode }),
     h("nav", { style: { position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 45, background: "rgba(255,255,255,.94)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: `1px solid ${C.line}`, paddingBottom: "env(safe-area-inset-bottom, 0px)" } },
       h("div", { style: { maxWidth: 640, margin: "0 auto", display: "flex", padding: "6px 6px 4px" } },
         NAV.map(k => { const on = k === navFor; const p = PAGES.find(x => x.k === k);
           return h("button", { key: k, onClick: () => go(k), className: "fk-tap", "aria-current": on ? "page" : undefined,
             style: { flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", padding: "2px 0 6px", color: on ? C.ink : C.subLight, fontWeight: 800, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 } },
-            h("span", { style: { width: 54, height: 30, borderRadius: 999, display: "grid", placeItems: "center", background: on ? C.cyanSoft : "transparent", color: on ? C.cyanDeep : C.subLight } },
-              h(Icon, { name: p ? p.icon : "home", size: 22, sw: on ? 2 : 1.7 })),
+            h("span", { style: { position: "relative", width: 48, maxWidth: "100%", height: 30, borderRadius: 999, display: "grid", placeItems: "center", background: on ? C.cyanSoft : "transparent", color: on ? C.cyanDeep : C.subLight } },
+              h(Icon, { name: p ? p.icon : "home", size: 22, sw: on ? 2 : 1.7 }),
+              navDot[k] && h("span", { "aria-label": "お知らせあり", style: { position: "absolute", top: 3, right: "calc(50% - 15px)", width: 8, height: 8, borderRadius: 99, background: C.drop, border: "1.5px solid #fff" } })),
             h("span", { style: { fontSize: 10.5, whiteSpace: "nowrap" } }, p ? p.nav : "ホーム")); }))));
 }
 (function boot() {
