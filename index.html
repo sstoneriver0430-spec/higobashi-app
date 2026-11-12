@@ -33,7 +33,7 @@ const C = {
   ink: "#1A1816", inkSoft: "#2A2622", head: "#1A1816", headLine: "#2A2622", headAccent: "#D4A03C",
   cyan: "#D4A03C", cyanDeep: "#8A6418", cyanSoft: "#F8F0DF", onAccent: "#1A1816",
   paper: "#F4F2EE", card: "#FFFFFF", line: "#E6E2DA", lineSoft: "#F0EDE7",
-  done: "#2F7A55", doneSoft: "#E5F2EA", drop: "#B3412F", sub: "#6A6258", subLight: "#A39B8F"
+  done: "#2F7A55", doneSoft: "#E5F2EA", drop: "#B3412F", sub: "#6A6258", subLight: "#7F776D"
 };
 const WD = ["日", "月", "火", "水", "木", "金", "土"];
 const pad = (n) => String(n).padStart(2, "0");
@@ -114,7 +114,7 @@ function AppTitle({ title, solo }) {
   return h("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
     h(Seal, null),
     h("div", null,
-      !solo && h("div", { style: { fontSize: 10.5, letterSpacing: ".2em", color: C.headAccent || C.cyan, fontWeight: 700 } }, "肥後橋店"),
+      !solo && h("div", { style: { fontSize: 11.5, letterSpacing: ".2em", color: C.headAccent || C.cyan, fontWeight: 700 } }, "肥後橋店"),
       h("div", { style: { fontSize: 18, fontWeight: 900, marginTop: 1, letterSpacing: ".02em", whiteSpace: "nowrap" } }, title)));
 }
 const K_FLOAT_DEFAULT = 3e5;
@@ -134,24 +134,60 @@ function KRow({ label, value, strong }) {
   return /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13.5, color: C.sub } }, label), /* @__PURE__ */ React.createElement("span", { style: { fontSize: strong ? 16 : 13.5, fontWeight: strong ? 800 : 700, color: C.ink, fontVariantNumeric: "tabular-nums" } }, value));
 }
 function KInput({ label, value, onChange, onFocus, onBlur, suffix, align, placeholder }) {
+  const [kFoc, setKFoc] = useState(false);
+  const kIsNum = align !== "left";
+  const kFmt = (v) => { const t = String(v == null ? "" : v); return /^-?\d{4,}$/.test(t) ? Number(t).toLocaleString("ja-JP") : t; };
+  const kClean = (t) => t.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 65248)).replace(/[,，\s円]/g, "");
   return /* @__PURE__ */ React.createElement("label", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 0" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13.5, color: C.sub, flexShrink: 0 } }, label), /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement(
     "input",
     {
       inputMode: align === "left" ? void 0 : "numeric",
-      value,
-      placeholder: placeholder || "",
-      onChange: (e) => onChange(e.target.value),
-      onFocus,
-      onBlur,
+      value: kIsNum && !kFoc ? kFmt(value) : value,
+      placeholder: kIsNum ? kFmt(placeholder || "") : placeholder || "",
+      onChange: (e) => onChange(kIsNum ? kClean(e.target.value) : e.target.value),
+      onFocus: (e) => { setKFoc(true); onFocus && onFocus(e); },
+      onBlur: (e) => { setKFoc(false); onBlur && onBlur(e); },
       style: { width: 130, borderRadius: 11, border: `1.5px solid ${C.line}`, padding: "9px 11px", fontSize: 16, color: C.ink, outline: "none", textAlign: align === "left" ? "left" : "right", fontVariantNumeric: "tabular-nums" }
     }
-  ), suffix && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, color: C.subLight, width: 18 } }, suffix)));
+  ), suffix && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: C.subLight, width: 18 } }, suffix)));
 }
 function KDivider() {
   return /* @__PURE__ */ React.createElement("div", { style: { borderTop: `1px solid ${C.lineSoft}` } });
 }
 function KPanel({ children, style }) {
   return /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 2px rgba(28,26,23,.04)", ...style || {} } }, children);
+}
+// ツナグの日報用：数字の右端をそろえる（全角スペースで埋める）
+const tnLine = (label, n) => { const s = Math.round(Number(n) || 0).toLocaleString("ja-JP"); const w = 11.5 - label.length - s.length / 2; const full = Math.max(1, Math.floor(w)); return label + "\u3000".repeat(full) + (w - Math.floor(w) >= 0.5 && w >= 1 ? " " : "") + s; };
+const tnText = (total, cashless, nyukin, name) => [tnLine("累計", total), tnLine("キャッシュレス", cashless), tnLine("入金額", nyukin), "入金\u3000" + (name || "")].join("\n");
+const tnUrlOk = (u) => { const m = /^([a-z][a-z0-9+.-]*):\/\//i.exec((u || "").trim()); return !!m && !["javascript", "data", "vbscript", "file", "blob"].includes(m[1].toLowerCase()); };
+function copyText(t) {
+  const legacy = () => { const ta = document.createElement("textarea"); ta.value = t; ta.setAttribute("readonly", ""); ta.style.cssText = "position:fixed;left:-9999px;top:0;font-size:16px;"; document.body.appendChild(ta); ta.select(); try { ta.setSelectionRange(0, t.length); } catch (e) {} let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); return ok; };
+  try { if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(() => true, () => legacy()); } catch (e) {}
+  return Promise.resolve(legacy());
+}
+const TN_DEFAULT_URL = "https://tunag.jp/m/home";
+function TunagCard({ dayLabel, total, cashless, nyukin, name, defName, onName, onFocus, onBlur, url, onSetup, missing }) {
+  const [state, setState] = useState("");
+  useEffect(() => { if (!state) return; const id = setTimeout(() => setState(""), 2200); return () => clearTimeout(id); }, [state]);
+  const who = (name || "").trim() || defName || "";
+  const text = tnText(total, cashless, nyukin, who);
+  const copy = () => copyText(text).then(ok => setState(ok ? "ok" : "ng"));
+  const urlOk = tnUrlOk(url);
+  const btn = { flex: 1, whiteSpace: "nowrap", minHeight: 52, borderRadius: 14, fontSize: 14.5, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, textDecoration: "none" };
+  return h(KPanel, { style: { border: `1.5px solid ${C.cyan}` } },
+    h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 8 } },
+      h("span", { style: { fontSize: 13.5, fontWeight: 900, color: C.cyanDeep } }, "ツナグの日報用"),
+      h("span", { style: { fontSize: 12, color: C.subLight, fontWeight: 700 } }, dayLabel)),
+    h("pre", { style: { margin: 0, background: C.paper, border: `1px solid ${C.line}`, borderRadius: 12, padding: "12px 14px", fontFamily: FONT, fontSize: 15, lineHeight: 1.75, fontWeight: 700, whiteSpace: "pre-wrap", color: C.ink, fontVariantNumeric: "tabular-nums" } }, text),
+    missing && h("div", { style: { fontSize: 12, color: C.drop, fontWeight: 800, marginTop: 8 } }, missing),
+    h(KInput, { label: "入金した人", value: name || "", placeholder: defName || "名前", onChange: onName, onFocus, onBlur, align: "left" }),
+    h("div", { style: { display: "flex", gap: 8, marginTop: 4 } },
+      h("button", { type: "button", className: "fk-tap", onClick: copy, style: { ...btn, border: `1.5px solid ${C.line}`, background: C.card, color: C.ink } }, state === "ok" ? h(Icon, { name: "check", size: 18, sw: 2.4, color: C.done }) : null, state === "ok" ? "コピー済み" : state === "ng" ? "失敗" : "コピー"),
+      urlOk
+        ? h("a", { href: url.trim(), target: "_blank", rel: "noopener noreferrer", className: "fk-tap", onClick: () => { copy(); }, style: { ...btn, flex: 1.5, border: "none", background: C.head, color: "#fff" } }, "コピーしてツナグを開く")
+        : h("button", { type: "button", className: "fk-tap", onClick: onSetup, style: { ...btn, flex: 1.5, border: `1.5px dashed ${C.line}`, background: "transparent", color: C.cyanDeep, fontSize: 13 } }, "ツナグのリンクを設定")),
+    h("div", { style: { fontSize: 12, color: C.subLight, marginTop: 8, lineHeight: 1.6 } }, urlOk ? (url === TN_DEFAULT_URL ? "ツナグのホームが開いたら、日報を開いて貼り付けてください。" : "ツナグが開いたら、日報の入力欄に貼り付けてください。") : "「設定」にツナグのリンクを入れると、コピーと同時にツナグを開けます。"));
 }
 function KinshuApp() {
   const realNow = new Date();
@@ -170,7 +206,8 @@ function KinshuApp() {
   const rowTint = (d) => wdOfDay(d) === 0 ? "#FCEFEF" : wdOfDay(d) === 6 ? "#EEF4FD" : "#fff";
   const [store, setStore] = useState(() => (configured && db) ? {} : makeDemo(year, month0, now.getDate()));
   const [demoFlag, setDemoFlag] = useState(!(configured && db));
-  const [settings, setSettings] = useState({ float: K_FLOAT_DEFAULT, cps: K_CPS_DEFAULT.slice() });
+  const [settings, setSettings] = useState({ float: K_FLOAT_DEFAULT, cps: K_CPS_DEFAULT.slice(), tunag: "" });
+  const [meK] = useMe();
   const [dayIdx, setDayIdx] = useState(Math.min(now.getDate() - 1, daysInMonth - 1));
   useEffect(() => { setDayIdx(Math.min(now.getDate() - 1, daysInMonth - 1)); }, [kYm]);
   const [segIdx, setSegIdx] = useState(0);
@@ -196,7 +233,7 @@ function KinshuApp() {
       const u2 = setRef().onSnapshot((snap) => {
         if (snap.exists) {
           const d = snap.data();
-          setSettings({ float: d.float != null ? d.float : K_FLOAT_DEFAULT, cps: d.cps && d.cps.length >= 2 ? d.cps.slice(0, 2) : K_CPS_DEFAULT.slice() });
+          setSettings({ float: d.float != null ? d.float : K_FLOAT_DEFAULT, cps: d.cps && d.cps.length >= 2 ? d.cps.slice(0, 2) : K_CPS_DEFAULT.slice(), tunag: d.tunag || "" });
         } else {
           setRef().set({ float: K_FLOAT_DEFAULT, cps: K_CPS_DEFAULT.slice() }).catch(() => {
           });
@@ -317,7 +354,7 @@ function KinshuApp() {
   const mAvg = kAvg(A.day, A.dayc) || 0;
   const mChakuchi = mAvg * daysInMonth;
   const lAvg = kAvg(A.l, A.lc), iAvg = kAvg(A.i, A.ic), dAvg = kAvg(A.d, A.dc);
-  const th = { padding: "10px 10px", fontWeight: 700, whiteSpace: "nowrap", fontSize: 11.5 };
+  const th = { padding: "10px 10px", fontWeight: 700, whiteSpace: "nowrap", fontSize: 12 };
   const td = { padding: "8px 10px", textAlign: "right", fontVariantNumeric: "tabular-nums", fontSize: 12 };
   const SEG_LABELS = ["日次", "月次"];
   useEffect(() => {
@@ -333,17 +370,17 @@ function KinshuApp() {
   return /* @__PURE__ */ React.createElement("div", { style: { minHeight: "100vh", background: C.paper, fontFamily: FONT, color: C.ink } }, /* @__PURE__ */ React.createElement("div", { className: "fk-appbar", style: { position: "sticky", top: 0, zIndex: 30, background: C.head, color: "#fff", boxShadow: "none" } }, /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", padding: "0 14px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { flexShrink: 0 } }, h(AppTitle, { title: "金種管理表" })), /* @__PURE__ */ React.createElement("button", { className: "fk-tap", onClick: () => setShowSettings((v) => !v), style: { background: showSettings ? C.cyan : "rgba(255,255,255,.14)", color: showSettings ? C.onAccent : "#fff", border: `1px solid ${showSettings ? C.cyan : "rgba(255,255,255,.22)"}`, borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "設定")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 3, marginTop: 12 } }, SEG_LABELS.map((c, i) => {
     const on = i === segIdx;
     return /* @__PURE__ */ React.createElement("button", { key: i, onClick: () => setSegIdx(i), style: { flex: 1, position: "relative", border: "none", cursor: "pointer", background: on ? C.paper : "transparent", color: on ? C.ink : "rgba(255,255,255,.72)", borderRadius: "11px 11px 0 0", padding: "9px 2px 10px", fontWeight: 800, fontSize: 13 } }, on && /* @__PURE__ */ React.createElement("span", { style: { position: "absolute", top: 0, left: 18, right: 18, height: 3, background: C.cyan, borderRadius: 3 } }), c);
-  })))), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", paddingLeft: 12, paddingRight: 12, paddingTop: 14, paddingBottom: "calc(96px + env(safe-area-inset-bottom))" } }, /* @__PURE__ */ React.createElement(React.Fragment, null, h(MonthNav, { ym: kYm, setYm: setKYm, style: { marginBottom: 6 } }), h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 700, marginBottom: 12, textAlign: "center" } }, cfg ? synced ? "同期中" : "接続中…" : demoFlag ? "デモ表示（サンプル数値）" : "この端末に保存")), showSettings && /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement(KInput, { label: "レジ金（釣銭準備金）", value: String(settings.float), onChange: (v) => saveSettings({ float: kNum(v) }), suffix: "円" }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11.5, color: C.subLight, margin: "8px 0 4px" } }, "時間帯の名前"), [0, 1].map((i) => /* @__PURE__ */ React.createElement(React.Fragment, { key: i }, /* @__PURE__ */ React.createElement(KInput, { label: `時間帯${i + 1}`, value: cps[i], onChange: (v) => {
+  })))), /* @__PURE__ */ React.createElement("div", { style: { maxWidth: 640, margin: "0 auto", paddingLeft: 12, paddingRight: 12, paddingTop: 14, paddingBottom: "calc(96px + env(safe-area-inset-bottom))" } }, /* @__PURE__ */ React.createElement(React.Fragment, null, h(MonthNav, { ym: kYm, setYm: setKYm, style: { marginBottom: 6 } }), h("div", { style: { fontSize: 12, color: C.subLight, fontWeight: 700, marginBottom: 12, textAlign: "center" } }, cfg ? synced ? "同期中" : "接続中…" : demoFlag ? "デモ表示（サンプル数値）" : "この端末に保存", !isMonth && h("span", { style: { marginLeft: 10 } }, h("span", { style: { display: "inline-block", width: 6, height: 6, borderRadius: 99, background: C.done, marginRight: 3, verticalAlign: 1 } }), "入力済み", h("span", { style: { display: "inline-block", width: 6, height: 6, borderRadius: 99, background: C.drop, margin: "0 3px 0 8px", verticalAlign: 1 } }), "未入力"))), showSettings && /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement(KInput, { label: "レジ金（釣銭準備金）", value: String(settings.float), onChange: (v) => saveSettings({ float: kNum(v) }), suffix: "円" }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.subLight, margin: "8px 0 4px" } }, "時間帯の名前"), [0, 1].map((i) => /* @__PURE__ */ React.createElement(React.Fragment, { key: i }, /* @__PURE__ */ React.createElement(KInput, { label: `時間帯${i + 1}`, value: cps[i], onChange: (v) => {
     const n = cps.slice();
     n[i] = v;
     saveSettings({ cps: n });
-  }, align: "left" }), i < 1 && /* @__PURE__ */ React.createElement(KDivider, null))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.subLight, marginTop: 8, lineHeight: 1.6 } }, "※ 変更は全員に共有されます。入力済みの数字はそのまま残ります。")), !isMonth && /* @__PURE__ */ React.createElement("div", { ref: dayRowRef, style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 12 } }, rows.map((r) => {
+  }, align: "left" }), i < 1 && /* @__PURE__ */ React.createElement(KDivider, null))), /* @__PURE__ */ React.createElement(KDivider, null), h("label", { style: { display: "block", padding: "10px 0 2px" } }, h("span", { style: { display: "block", fontSize: 13.5, color: C.sub, marginBottom: 6 } }, "ツナグのリンク（空欄ならツナグのホームを開きます）"), h("input", { type: "url", inputMode: "url", autoCapitalize: "off", autoCorrect: "off", value: settings.tunag || "", placeholder: TN_DEFAULT_URL, onChange: (e) => saveSettings({ tunag: e.target.value }), style: { width: "100%", borderRadius: 11, border: `1.5px solid ${settings.tunag && !tnUrlOk(settings.tunag) ? C.drop : C.line}`, padding: "9px 11px", fontSize: 16, color: C.ink, outline: "none" } }), settings.tunag && !tnUrlOk(settings.tunag) ? h("span", { style: { display: "block", fontSize: 12, color: C.drop, fontWeight: 700, marginTop: 4 } }, "https:// から始まるリンクを入れてください") : null), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.subLight, marginTop: 8, lineHeight: 1.6 } }, "※ 変更は全員に共有されます。入力済みの数字はそのまま残ります。")), !isMonth && /* @__PURE__ */ React.createElement("div", { ref: dayRowRef, style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 12 } }, rows.map((r) => {
     const on = r.d - 1 === dayIdx;
-    return /* @__PURE__ */ React.createElement("button", { key: r.d, "data-day": r.d, onClick: () => setDayIdx(r.d - 1), style: { flexShrink: 0, width: 48, padding: "6px 0", borderRadius: 12, textAlign: "center", cursor: "pointer", background: on ? C.cyan : "#fff", border: on ? "none" : `1px solid ${C.line}` } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 800, lineHeight: 1, color: on ? C.onAccent : wkColor(r.d), fontVariantNumeric: "tabular-nums" } }, r.d), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, lineHeight: 1, marginTop: 3, color: on ? C.onAccent : wkColor(r.d), opacity: on ? 0.9 : 0.7 } }, WD[wdOfDay(r.d)]));
-  })), isMonth ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden", marginBottom: 12, boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr" } }, [{ n: "ランチ", v: lAvg, c: "#C58A2E", s: "〜" + cps[0] }, { n: "アイドル", v: iAvg, c: "#5b6472", s: cps[0] + "–" + cps[1] }, { n: "ディナー", v: dAvg, c: "#3b4a7a", s: cps[1] + "〜" }].map((x, i) => /* @__PURE__ */ React.createElement("div", { key: x.n, style: { padding: 12, textAlign: "center", borderLeft: i ? `1px solid ${C.lineSoft}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 5 } }, /* @__PURE__ */ React.createElement("span", { style: { width: 6, height: 6, borderRadius: 999, background: x.c } }), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: C.ink } }, x.n)), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.subLight, margin: "1px 0 2px" } }, x.s), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15.5, fontWeight: 800, color: x.c, fontVariantNumeric: "tabular-nums" } }, kNn(x.v))))), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", fontSize: 10, padding: "5px 0", background: "#F7F9FB", color: C.sub } }, "1日あたり平均売上")), /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", marginBottom: 14, boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, [{ l: "合計売上", v: kYen(A.day) }, { l: `日平均（${A.dayc}日）`, v: kYen(mAvg) }, { l: "着地見込み", v: kYen(mChakuchi) }].map((x, i) => /* @__PURE__ */ React.createElement("div", { key: x.l, style: { padding: 12, borderLeft: i ? `1px solid ${C.lineSoft}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.sub, marginBottom: 1 } }, x.l), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" } }, x.v)))), /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: C.ink, color: "#fff" } }, /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "left", position: "sticky", left: 0, background: C.ink } }, "日"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "ランチ"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "アイドル"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "ディナー"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "当日"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "累計"))), /* @__PURE__ */ React.createElement("tbody", null, rows.map((r) => {
+    return /* @__PURE__ */ React.createElement("button", { key: r.d, "data-day": r.d, onClick: () => setDayIdx(r.d - 1), style: { flexShrink: 0, width: 50, padding: "7px 0 5px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: on ? C.cyan : "#fff", border: on ? "none" : isCurM && r.d === realNow.getDate() ? `1.5px solid ${C.ink}` : `1px solid ${C.line}` } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 800, lineHeight: 1, color: on ? C.onAccent : wkColor(r.d), fontVariantNumeric: "tabular-nums" } }, r.d), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, lineHeight: 1, marginTop: 3, color: on ? C.onAccent : wkColor(r.d), opacity: on ? 0.9 : 0.7 } }, WD[wdOfDay(r.d)]), /* @__PURE__ */ React.createElement("div", { style: { height: 6, display: "flex", justifyContent: "center", marginTop: 3 } }, r.day != null ? /* @__PURE__ */ React.createElement("span", { style: { width: 6, height: 6, borderRadius: 99, background: on ? C.onAccent : C.done } }) : (!isCurM || r.d < realNow.getDate()) ? /* @__PURE__ */ React.createElement("span", { style: { width: 6, height: 6, borderRadius: 99, background: C.drop } }) : null));
+  })), isMonth ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden", marginBottom: 12, boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr" } }, [{ n: "ランチ", v: lAvg, c: "#C58A2E", s: "〜" + cps[0] }, { n: "アイドル", v: iAvg, c: "#5b6472", s: cps[0] + "–" + cps[1] }, { n: "ディナー", v: dAvg, c: "#3b4a7a", s: cps[1] + "〜" }].map((x, i) => /* @__PURE__ */ React.createElement("div", { key: x.n, style: { padding: 12, textAlign: "center", borderLeft: i ? `1px solid ${C.lineSoft}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "center", gap: 5 } }, /* @__PURE__ */ React.createElement("span", { style: { width: 6, height: 6, borderRadius: 999, background: x.c } }), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: C.ink } }, x.n)), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.subLight, margin: "1px 0 2px" } }, x.s), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15.5, fontWeight: 800, color: x.c, fontVariantNumeric: "tabular-nums" } }, kNn(x.v))))), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", fontSize: 11, padding: "5px 0", background: "#F7F9FB", color: C.sub } }, "1日あたり平均売上")), /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", marginBottom: 14, boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, [{ l: "合計売上", v: kYen(A.day) }, { l: `日平均（${A.dayc}日）`, v: kYen(mAvg) }, { l: "着地見込み", v: kYen(mChakuchi) }].map((x, i) => /* @__PURE__ */ React.createElement("div", { key: x.l, style: { padding: 12, borderLeft: i ? `1px solid ${C.lineSoft}` : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.sub, marginBottom: 1 } }, x.l), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: C.ink, fontVariantNumeric: "tabular-nums" } }, x.v)))), /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: C.ink, color: "#fff" } }, /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "left", position: "sticky", left: 0, background: C.ink } }, "日"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "ランチ"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "アイドル"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "ディナー"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "当日"), /* @__PURE__ */ React.createElement("th", { style: { ...th, textAlign: "right" } }, "累計"))), /* @__PURE__ */ React.createElement("tbody", null, rows.map((r) => {
     const bg = rowTint(r.d), has = r.day != null;
-    return /* @__PURE__ */ React.createElement("tr", { key: r.d, style: { borderTop: `1px solid ${C.lineSoft}`, color: has ? C.ink : C.subLight } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: bg, whiteSpace: "nowrap" } }, /* @__PURE__ */ React.createElement("span", { style: { fontWeight: 800, color: wkColor(r.d), fontVariantNumeric: "tabular-nums" } }, r.d), /* @__PURE__ */ React.createElement("span", { style: { marginLeft: 4, fontSize: 10, color: wkColor(r.d) } }, WD[wdOfDay(r.d)])), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg } }, kNn(r.lunch)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg } }, kNn(r.idle)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg } }, kNn(r.dinner)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg, fontWeight: 700 } }, kNn(r.day)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg, color: C.subLight } }, kNn(r.cum)));
-  })), /* @__PURE__ */ React.createElement("tfoot", null, [{ label: "平均", l: lAvg, i: iAvg, d: dAvg, day: mAvg, top: true, lc: C.ink }, { label: "平日平均", l: kAvg(WDg.l, WDg.lc), i: kAvg(WDg.i, WDg.ic), d: kAvg(WDg.d, WDg.dc), day: kAvg(WDg.day, WDg.dayc), lc: C.ink }, { label: "土日平均", l: kAvg(WEg.l, WEg.lc), i: kAvg(WEg.i, WEg.ic), d: kAvg(WEg.d, WEg.dc), day: kAvg(WEg.day, WEg.dayc), lc: C.drop }].map((f, i) => /* @__PURE__ */ React.createElement("tr", { key: i, style: { background: f.top ? C.cyanSoft : "#fff", color: C.ink, borderTop: f.top ? `2px solid ${C.cyan}` : `1px solid ${C.lineSoft}` } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "8px 10px", textAlign: "left", fontWeight: 800, position: "sticky", left: 0, background: f.top ? C.cyanSoft : "#fff", color: f.lc, whiteSpace: "nowrap" } }, f.label), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.l)), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.i)), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.d)), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.day)), /* @__PURE__ */ React.createElement("td", { style: { ...td } }))))))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.7, marginTop: 12, padding: "0 2px" } }, "ランチ=", cps[0], "売上／アイドル=", cps[1], "売上−", cps[0], "売上／ディナー=当日売上−", cps[1], "売上。", /* @__PURE__ */ React.createElement("br", null), "土日＝土曜・日曜（祝日の自動判定はしていません）。")) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { background: "#fff", border: `1.5px solid ${saSt.c}`, borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: saSt.c } }, "締めの誤差 \xB7 ", saSt.t), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 30, fontWeight: 800, color: saSt.c, marginTop: 3, fontVariantNumeric: "tabular-nums" } }, noInput ? "—" : kYen(sa)), !noInput && sa < 0 && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.drop, marginTop: 3 } }, "店長に連絡してください")), /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement(KInput, { label: cps[0] + "売上", value: eff("u15"), onChange: (v) => setField("u15", v), onFocus: () => focusedRef.current = dk, onBlur: () => {
+    return /* @__PURE__ */ React.createElement("tr", { key: r.d, style: { borderTop: `1px solid ${C.lineSoft}`, color: has ? C.ink : C.subLight } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: bg, whiteSpace: "nowrap" } }, /* @__PURE__ */ React.createElement("span", { style: { fontWeight: 800, color: wkColor(r.d), fontVariantNumeric: "tabular-nums" } }, r.d), /* @__PURE__ */ React.createElement("span", { style: { marginLeft: 4, fontSize: 11, color: wkColor(r.d) } }, WD[wdOfDay(r.d)])), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg } }, kNn(r.lunch)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg } }, kNn(r.idle)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg } }, kNn(r.dinner)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg, fontWeight: 700 } }, kNn(r.day)), /* @__PURE__ */ React.createElement("td", { style: { ...td, background: bg, color: C.subLight } }, kNn(r.cum)));
+  })), /* @__PURE__ */ React.createElement("tfoot", null, [{ label: "平均", l: lAvg, i: iAvg, d: dAvg, day: mAvg, top: true, lc: C.ink }, { label: "平日平均", l: kAvg(WDg.l, WDg.lc), i: kAvg(WDg.i, WDg.ic), d: kAvg(WDg.d, WDg.dc), day: kAvg(WDg.day, WDg.dayc), lc: C.ink }, { label: "土日平均", l: kAvg(WEg.l, WEg.lc), i: kAvg(WEg.i, WEg.ic), d: kAvg(WEg.d, WEg.dc), day: kAvg(WEg.day, WEg.dayc), lc: C.drop }].map((f, i) => /* @__PURE__ */ React.createElement("tr", { key: i, style: { background: f.top ? C.cyanSoft : "#fff", color: C.ink, borderTop: f.top ? `2px solid ${C.cyan}` : `1px solid ${C.lineSoft}` } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "8px 10px", textAlign: "left", fontWeight: 800, position: "sticky", left: 0, background: f.top ? C.cyanSoft : "#fff", color: f.lc, whiteSpace: "nowrap" } }, f.label), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.l)), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.i)), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.d)), /* @__PURE__ */ React.createElement("td", { style: { ...td, fontWeight: 800 } }, kNn(f.day)), /* @__PURE__ */ React.createElement("td", { style: { ...td } }))))))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.subLight, lineHeight: 1.7, marginTop: 12, padding: "0 2px" } }, "ランチ=", cps[0], "売上／アイドル=", cps[1], "売上−", cps[0], "売上／ディナー=当日売上−", cps[1], "売上。", /* @__PURE__ */ React.createElement("br", null), "土日＝土曜・日曜（祝日の自動判定はしていません）。")) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { background: "#fff", border: `1.5px solid ${saSt.c}`, borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 2px rgba(28,26,23,.04)" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: saSt.c } }, "締めの誤差 \xB7 ", saSt.t), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 30, fontWeight: 800, color: saSt.c, marginTop: 3, fontVariantNumeric: "tabular-nums" } }, noInput ? "—" : kYen(sa)), !noInput && sa < 0 && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.drop, marginTop: 3 } }, "店長に連絡してください")), /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement(KInput, { label: cps[0] + "売上", value: eff("u15"), onChange: (v) => setField("u15", v), onFocus: () => focusedRef.current = dk, onBlur: () => {
     focusedRef.current = null;
     commit();
   }, suffix: "円" }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement(KInput, { label: cps[1] + "売上", value: eff("u18"), onChange: (v) => setField("u18", v), onFocus: () => focusedRef.current = dk, onBlur: () => {
@@ -358,13 +395,13 @@ function KinshuApp() {
   }, suffix: "円" }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement(KInput, { label: "券売機金額", value: eff("kenbaiki"), onChange: (v) => setField("kenbaiki", v), onFocus: () => focusedRef.current = dk, onBlur: () => {
     focusedRef.current = null;
     commit();
-  }, suffix: "円" })), /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: C.cyanDeep } }, "金種"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, color: C.subLight } }, "前回のまま・変わった時だけ入力")), KIN.map((kk, i) => /* @__PURE__ */ React.createElement(React.Fragment, { key: kk }, /* @__PURE__ */ React.createElement(KInput, { label: KIN_LABEL[kk], value: entry[kk] != null ? entry[kk] : "", placeholder: carry(kk) !== "" ? String(carry(kk)) : "", onChange: (v) => setField(kk, v), onFocus: () => focusedRef.current = dk, onBlur: () => {
+  }, suffix: "円" })), /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontWeight: 800, color: C.cyanDeep } }, "金種"), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: C.subLight } }, "前回のまま・変わった時だけ入力")), KIN.map((kk, i) => /* @__PURE__ */ React.createElement(React.Fragment, { key: kk }, /* @__PURE__ */ React.createElement(KInput, { label: KIN_LABEL[kk], value: entry[kk] != null ? entry[kk] : "", placeholder: carry(kk) !== "" ? String(carry(kk)) : "", onChange: (v) => setField(kk, v), onFocus: () => focusedRef.current = dk, onBlur: () => {
     focusedRef.current = null;
     commit();
   }, suffix: KIN_UNIT[kk] }), i < KIN.length - 1 && /* @__PURE__ */ React.createElement(KDivider, null))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, textAlign: "right", fontSize: 12, color: C.subLight, fontVariantNumeric: "tabular-nums" } }, "金種合計 ", kYen(kinsyu))), /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement(KRow, { label: "累計売上", value: kYen(uriageTotal), strong: true }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement(KRow, { label: "キャッシュレス", value: kYen(cashless) }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement(KRow, { label: "入金額", value: kYen(nyukin) }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement(KRow, { label: "硬貨端数（当日）", value: kYen(hasu) }), /* @__PURE__ */ React.createElement(KDivider, null), /* @__PURE__ */ React.createElement(KRow, { label: "硬貨端数（累計）", value: kYen(hasuTotal) })), /* @__PURE__ */ React.createElement(KPanel, null, /* @__PURE__ */ React.createElement(KInput, { label: "金種確認者", value: entry.checker || "", onChange: (v) => setField("checker", v), onFocus: () => focusedRef.current = dk, onBlur: () => {
     focusedRef.current = null;
     commit();
-  }, align: "left" })), /* @__PURE__ */ React.createElement("div", { style: { background: "#EEF1F5", borderRadius: 14, padding: 14, fontSize: 12, color: C.sub, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 800, color: C.ink, marginBottom: 2 } }, "締めの誤差の突合"), "レジ金", kNn(FLOAT), " + 硬貨端数累計 ", kNn(hasuTotal), " = ", kYen(expected), /* @__PURE__ */ React.createElement("br", null), "券売機 + 金種 = ", kYen(kenbaiki + kinsyu), "／差 = ", kYen(sa)))));
+  }, align: "left" }), meK && !entry.checker ? h("button", { type: "button", className: "fk-tap", onClick: () => { const obj = { ...(store[dk] || DAY_BLANK), checker: meK }; setStore((s) => ({ ...s, [dk]: obj })); if (cfg) monthRef().set({ month: monthKey2, days: { [dk]: obj } }, { merge: true }).catch((e) => console.error(e)); else { try { localStorage.setItem("higo_kinshu2_" + monthKey2, JSON.stringify({ ...store, [dk]: obj })); setDemoFlag(false); } catch (e) {} } }, style: { width: "100%", minHeight: 46, marginTop: 6, borderRadius: 12, border: `1.5px solid ${C.line}`, background: C.card, color: C.ink, fontSize: 14, fontWeight: 800, cursor: "pointer" } }, `${meK}さんが確認した`) : null), h(TunagCard, { dayLabel: `${month0 + 1}/${dayNum}（${WD[wdOfDay(dayNum)]}）`, total: uriageTotal, cashless, nyukin, name: entry.nyukinBy, defName: meK || entry.checker || "", onName: (v) => setField("nyukinBy", v), onFocus: () => focusedRef.current = dk, onBlur: () => { focusedRef.current = null; commit(); }, url: tnUrlOk(settings.tunag) ? settings.tunag : TN_DEFAULT_URL, onSetup: () => { setShowSettings(true); window.scrollTo(0, 0); }, missing: eff("uday") === "" ? "当日売上がまだ入っていません" : eff("genkin") === "" ? "現金会計がまだ入っていません" : "" }), /* @__PURE__ */ React.createElement("div", { style: { background: "#EEF1F5", borderRadius: 14, padding: 14, fontSize: 12, color: C.sub, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 800, color: C.ink, marginBottom: 2 } }, "締めの誤差の突合"), "レジ金", kNn(FLOAT), " + 硬貨端数累計 ", kNn(hasuTotal), " = ", kYen(expected), /* @__PURE__ */ React.createElement("br", null), "券売機 + 金種 = ", kYen(kenbaiki + kinsyu), "／差 = ", kYen(sa)))));
 }
 
 // ───────── 共通パーツ ─────────
@@ -381,14 +418,14 @@ const primaryBtn = { width: "100%", border: "none", borderRadius: 14, background
 const subBtn = { flex: 1, border: `1.5px solid ${C.line}`, borderRadius: 13, background: C.card, color: C.ink, padding: "12px 6px", fontSize: 13.5, fontWeight: 800, cursor: "pointer" };
 
 function Pill({ text, color, bg }) {
-  return h("span", { style: { display: "inline-flex", alignItems: "center", fontSize: 10.5, fontWeight: 800, color, background: bg, borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" } }, text);
+  return h("span", { style: { display: "inline-flex", alignItems: "center", fontSize: 11.5, fontWeight: 800, color, background: bg, borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" } }, text);
 }
 function Field({ label, req, hint, children }) {
   return h("div", { style: { marginBottom: 14 } },
     h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.sub, marginBottom: 6, display: "flex", gap: 6, alignItems: "center" } }, label,
-      req && h("span", { style: { fontSize: 10, color: C.drop, fontWeight: 800 } }, "必須")),
+      req && h("span", { style: { fontSize: 11, color: C.drop, fontWeight: 800 } }, "必須")),
     children,
-    hint && h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 5 } }, hint));
+    hint && h("div", { style: { fontSize: 12, color: C.subLight, marginTop: 5 } }, hint));
 }
 function TextIn({ id, value, onChange, placeholder, type, inputMode }) {
   return h("input", { id, type: type || "text", inputMode, value: value || "", placeholder: placeholder || "", onChange: (e) => onChange(e.target.value), style: inStyle });
@@ -442,8 +479,8 @@ function DRow({ label, value }) {
 function StatStrip({ items }) {
   return h("div", { style: { ...cardStyle, display: "grid", gridTemplateColumns: `repeat(${items.length}, 1fr)`, marginBottom: 12 } },
     items.map((x, i) => h("div", { key: x.l, style: { padding: "13px 14px", borderLeft: i ? `1px solid ${C.lineSoft}` : "none" } },
-      h("div", { style: { fontSize: 11, color: C.sub, fontWeight: 700 } }, x.l),
-      h("div", { style: { fontSize: 22, fontWeight: 800, marginTop: 2, color: x.c || C.ink, fontVariantNumeric: "tabular-nums" } }, x.v, h("span", { style: { fontSize: 11, marginLeft: 2, color: C.sub, fontWeight: 700 } }, "件")))));
+      h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 700 } }, x.l),
+      h("div", { style: { fontSize: 22, fontWeight: 800, marginTop: 2, color: x.c || C.ink, fontVariantNumeric: "tabular-nums" } }, x.v, h("span", { style: { fontSize: 12, marginLeft: 2, color: C.sub, fontWeight: 700 } }, "件")))));
 }
 function FilterChips({ options, value, onChange }) {
   return h("div", { style: { display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4, margin: "16px 0 10px" } },
@@ -454,7 +491,7 @@ function FilterChips({ options, value, onChange }) {
 }
 function SampleNote({ show }) {
   return null;
-  return h("div", { style: { fontSize: 11.5, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 10, padding: "8px 12px", marginBottom: 12, fontWeight: 700 } }, "「例」が付いた記録は見本です");
+  return h("div", { style: { fontSize: 12, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 10, padding: "8px 12px", marginBottom: 12, fontWeight: 700 } }, "「例」が付いた記録は見本です");
 }
 function Empty({ text }) {
   return h("div", { style: { ...cardStyle, padding: "28px 16px", textAlign: "center", color: C.subLight, fontSize: 13, fontWeight: 700 } }, text);
@@ -599,7 +636,7 @@ function ThemePicker() {
           h("span", { style: { position: "relative", width: 40, height: 40, borderRadius: 12, background: t.c.head, overflow: "hidden", display: "block" } },
             h("span", { style: { position: "absolute", right: 0, bottom: 0, width: 22, height: 22, borderTopLeftRadius: 10, background: t.c.cyan } }),
             on && h("span", { style: { position: "absolute", left: 5, top: 5, color: "#fff", display: "grid" } }, h(Icon, { name: "check", size: 14, sw: 3 }))),
-          h("span", { style: { fontSize: 11.5, fontWeight: 800, color: on ? t.c.cyanDeep : C.ink } }, t.l)); })));
+          h("span", { style: { fontSize: 12, fontWeight: 800, color: on ? t.c.cyanDeep : C.ink } }, t.l)); })));
 }
 
 // ───────── この端末を使う人 ─────────
@@ -636,7 +673,7 @@ function MonthNav({ ym, setYm, ahead = 0, style }) {
     h("button", { type: "button", "aria-label": "前の月", disabled: !canPrev, onClick: () => canPrev && setYm(ymShift(ym, -1)), style: b(canPrev) }, h("span", { style: { display: "inline-block", transform: "scaleX(-1)" } }, h(Icon, { name: "chev", size: 18, sw: 2.2 }))),
     h("button", { type: "button", onClick: () => setYm(cur), style: { border: "none", background: "transparent", cursor: ym === cur ? "default" : "pointer", textAlign: "center", color: C.ink } },
       h("div", { style: { fontSize: 15, fontWeight: 900 } }, ymLabel(ym)),
-      ym !== cur && h("div", { style: { fontSize: 10.5, fontWeight: 800, color: C.cyanDeep, marginTop: 1 } }, "今月に戻る")),
+      ym !== cur && h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.cyanDeep, marginTop: 1 } }, "今月に戻る")),
     h("button", { type: "button", "aria-label": "次の月", disabled: !canNext, onClick: () => canNext && setYm(ymShift(ym, 1)), style: b(canNext) }, h(Icon, { name: "chev", size: 18, sw: 2.2 })));
 }
 
@@ -695,7 +732,7 @@ function BreakForm({ prices, onSubmit }) {
             h("button", { type: "button", className: "fk-tap", onClick: () => { add(k, 1); setErr(""); },
               style: { width: "100%", minHeight: 76, borderRadius: 14, cursor: "pointer", color: C.ink, border: n ? `2px solid ${C.ink}` : `1.5px solid ${C.line}`, background: n ? C.cyanSoft : C.card, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3 } },
               h("span", { style: { fontSize: 15, fontWeight: 800 } }, k),
-              h("span", { style: { fontSize: 11.5, fontWeight: 700, color: prices[k] == null ? C.drop : C.sub, fontVariantNumeric: "tabular-nums" } }, prices[k] == null ? "単価未設定" : yen(prices[k]))),
+              h("span", { style: { fontSize: 12, fontWeight: 700, color: prices[k] == null ? C.drop : C.sub, fontVariantNumeric: "tabular-nums" } }, prices[k] == null ? "単価未設定" : yen(prices[k]))),
             n > 0 && h("span", { style: { position: "absolute", top: -7, right: -5, minWidth: 24, height: 24, borderRadius: 99, background: C.ink, color: "#fff", fontSize: 12.5, fontWeight: 800, display: "grid", placeItems: "center", padding: "0 6px" } }, n),
             n > 0 && h("button", { type: "button", "aria-label": k + "を1枚減らす", onClick: () => add(k, -1), style: { position: "absolute", bottom: -7, right: -5, width: 24, height: 24, borderRadius: 99, border: `1.5px solid ${C.line}`, background: "#fff", color: C.ink, fontWeight: 800, fontSize: 14, lineHeight: 1, cursor: "pointer" } }, "−")); }))),
     h(Field, { label: "その他" },
@@ -709,7 +746,7 @@ function BreakForm({ prices, onSubmit }) {
       h("button", { type: "button", className: "fk-tap", onClick: () => setOthers(o => [...o, { name: "", price: "", qty: 1 }]), style: { ...subBtn, width: "100%", borderStyle: "dashed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 } }, h(Icon, { name: "plus", size: 18, sw: 2 }), "その他を追加（金額を入力）")),
     h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "4px 2px 12px" } },
       h("span", { style: { fontSize: 13, fontWeight: 800, color: C.sub } }, "ロス金額"),
-      h("span", { style: { fontSize: 22, fontWeight: 800, fontVariantNumeric: "tabular-nums" } }, yen(total), unset && h("span", { style: { fontSize: 11, color: C.drop, marginLeft: 6 } }, "＋単価未設定あり"))),
+      h("span", { style: { fontSize: 22, fontWeight: 800, fontVariantNumeric: "tabular-nums" } }, yen(total), unset && h("span", { style: { fontSize: 12, color: C.drop, marginLeft: 6 } }, "＋単価未設定あり"))),
     err && h("div", { role: "alert", style: { fontSize: 13, fontWeight: 800, color: C.drop, background: "#FBEAE6", borderRadius: 10, padding: "10px 12px", marginBottom: 12 } }, err),
     h("button", { type: "button", className: "fk-tap", onClick: submit, style: primaryBtn }, h(Icon, { name: "check", size: 20, sw: 2.2 }), "記録する"));
 }
@@ -782,7 +819,7 @@ function BreakTab({ toast }) {
               h("button", { type: "button", onClick: () => setDelId(delId === r.id ? null : r.id), style: { width: "100%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, padding: "11px 16px", color: C.ink, textAlign: "left" } },
                 h("span", { style: { fontSize: 14, fontWeight: 800 } }, r.item),
                 h("span", { style: { fontSize: 13, color: C.sub, fontWeight: 700 } }, `×${r.qty}`),
-                r.sample && h("span", { style: { fontSize: 10, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例"),
+                r.sample && h("span", { style: { fontSize: 11, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例"),
                 h("span", { style: { marginLeft: "auto", fontSize: 13.5, fontWeight: 700, color: u == null ? C.drop : C.ink, fontVariantNumeric: "tabular-nums" } }, u == null ? "単価未設定" : yen(u * r.qty))),
               delId === r.id && h("div", { style: { display: "flex", gap: 8, padding: "0 16px 12px" } },
                 h("button", { type: "button", onClick: () => setDelId(null), style: subBtn }, "やめる"),
@@ -839,7 +876,7 @@ function AttForm({ onSubmit }) {
             style: { border: on ? `2px solid ${x.tint}` : `1.5px solid ${C.line}`, background: on ? x.soft : C.card, borderRadius: 14, padding: "12px 4px 10px", cursor: "pointer", color: C.ink, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 } },
             h("span", { style: { color: x.tint } }, h(Icon, { name: x.icon, size: 26 })),
             h("span", { style: { fontSize: 13.5, fontWeight: 800 } }, x.label),
-            h("span", { style: { fontSize: 10, color: C.sub } }, x.hint)); }))),
+            h("span", { style: { fontSize: 11, color: C.sub } }, x.hint)); }))),
     !t ? h("div", { style: { fontSize: 13, color: C.subLight, textAlign: "center", padding: "10px 0 4px" } }, "種類を選んでください")
     : h(React.Fragment, null,
       h(Field, { label: "誰の勤怠ですか", req: true, hint: me ? `報告者は「${me}」として記録されます` : "" }, (() => { const st0 = readStored(STAFF_KEY, seedStaff).names; const st = me ? [me, ...st0.filter(n => n !== me)] : st0;
@@ -921,9 +958,9 @@ function AttTab({ toast }) {
           style: { ...cardStyle, padding: "13px 14px", display: "flex", gap: 12, alignItems: "center", textAlign: "left", cursor: "pointer", color: C.ink, width: "100%" } },
           h("span", { style: { width: 40, height: 40, borderRadius: 12, background: tp.soft, color: tp.tint, display: "grid", placeItems: "center", flexShrink: 0 } }, h(Icon, { name: tp.icon, size: 22 })),
           h("div", { style: { flex: 1, minWidth: 0 } },
-            h("div", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: C.sub, fontWeight: 700 } },
+            h("div", { style: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.sub, fontWeight: 700 } },
               h("span", { style: { color: tp.tint, fontWeight: 800 } }, tp.label), `${fmtYMD(r.date)}・${r.name}`,
-              r.sample && h("span", { style: { fontSize: 10, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例")),
+              r.sample && h("span", { style: { fontSize: 11, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例")),
             h("div", { style: { fontSize: 14, fontWeight: 800, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, aSummary(r))),
           r.status === "open" ? h(Pill, { text: "確認待ち", color: C.cyanDeep, bg: C.cyanSoft }) : h(Pill, { text: "確認済み", color: C.done, bg: C.doneSoft })); })),
     h(Sheet, { open: formOpen, onClose: () => setFormOpen(false), title: "勤怠を報告する" },
@@ -1006,7 +1043,7 @@ function LostForm({ onSubmit }) {
       style: { width: "100%", display: "flex", alignItems: "center", gap: 12, textAlign: "left", cursor: "pointer", marginBottom: 14, borderRadius: 14, padding: "12px 14px", border: f.valuable ? `2px solid ${C.drop}` : `1.5px solid ${C.line}`, background: f.valuable ? "#FBEAE6" : C.card, color: C.ink } },
       h("span", { style: { width: 24, height: 24, borderRadius: 7, flexShrink: 0, display: "grid", placeItems: "center", background: f.valuable ? C.drop : "transparent", border: f.valuable ? "none" : `1.5px solid ${C.line}`, color: "#fff" } }, f.valuable && h(Icon, { name: "check", size: 16, sw: 2.6 })),
       h("span", null, h("span", { style: { display: "block", fontSize: 14, fontWeight: 800 } }, "貴重品"),
-        h("span", { style: { display: "block", fontSize: 11.5, color: f.valuable ? C.drop : C.sub, marginTop: 1 } }, f.valuable ? "金庫に保管して、すぐ店長に連絡してください" : "財布・スマホ・時計・鍵・現金など"))),
+        h("span", { style: { display: "block", fontSize: 12, color: f.valuable ? C.drop : C.sub, marginTop: 1 } }, f.valuable ? "金庫に保管して、すぐ店長に連絡してください" : "財布・スマホ・時計・鍵・現金など"))),
     err && h("div", { role: "alert", style: { fontSize: 13, fontWeight: 800, color: C.drop, background: "#FBEAE6", borderRadius: 10, padding: "10px 12px", marginBottom: 12 } }, err),
     h("button", { type: "button", className: "fk-tap", onClick: submit, style: primaryBtn }, h(Icon, { name: "check", size: 20, sw: 2.2 }), "忘れ物を登録する"));
 }
@@ -1046,7 +1083,7 @@ function LostDetail({ x, onUpdate }) {
       h("button", { type: "button", className: "fk-tap", onClick: () => go("return"), style: { ...subBtn, gridColumn: "1 / -1", background: C.ink, color: "#fff", border: "none", padding: "14px 0", fontSize: 14.5 } }, "お客様に返却した"),
       h("button", { type: "button", className: "fk-tap", onClick: () => go("police"), style: subBtn }, "警察へ届け出た"),
       h("button", { type: "button", className: "fk-tap", onClick: () => !valuable && go("dispose"), style: { ...subBtn, color: valuable ? C.subLight : C.ink, cursor: valuable ? "default" : "pointer" } }, "処分を申請する"),
-      valuable && h("div", { style: { gridColumn: "1 / -1", fontSize: 11.5, color: C.subLight, textAlign: "center" } }, "貴重品は処分できません。返却か警察への届出をしてください")),
+      valuable && h("div", { style: { gridColumn: "1 / -1", fontSize: 12, color: C.subLight, textAlign: "center" } }, "貴重品は処分できません。返却か警察への届出をしてください")),
     act === "return" && actBox("お客様に返却",
       h(React.Fragment, null,
         h(Field, { label: "受け取った方" }, h(TextIn, { id: "a-to", value: a.to, onChange: set("to"), placeholder: "例：ご本人／ご家族" })),
@@ -1082,11 +1119,11 @@ function LostDetail({ x, onUpdate }) {
           h("span", { style: { width: 9, height: 9, borderRadius: 99, background: i === arr.length - 1 ? C.cyan : C.line, marginTop: 5, flexShrink: 0 } }),
           i < arr.length - 1 && h("span", { style: { width: 1.5, flex: 1, background: C.line, marginTop: 3 } })),
         h("div", null,
-          h("div", { style: { fontSize: 11, color: C.subLight, fontWeight: 700 } }, fmtDT(g.t)),
+          h("div", { style: { fontSize: 12, color: C.subLight, fontWeight: 700 } }, fmtDT(g.t)),
           h("div", { style: { fontSize: 13.5, fontWeight: 700, marginTop: 1 } }, g.text))))));
 }
 
-function LostApp() {
+function LostApp({ go }) {
   const [list, save] = useStored(L_KEY, seedLost);
   const [tab, setTab] = useState("open");
   const [lm, setLm] = useState(ymOf(new Date()));
@@ -1100,7 +1137,7 @@ function LostApp() {
   const shown = (tab === "open" ? open.sort((a, b) => deadlineOf(a) - deadlineOf(b)) : list.filter(x => !isOpenLost(x) && (x.foundAt || "").startsWith(lm)).sort((a, b) => new Date(b.foundAt) - new Date(a.foundAt)));
   const detail = list.find(x => x.id === detailId);
   return h("div", { className: "fk-page" },
-    h(Header, null, h(AppTitle, { title: "忘れ物チェック" })),
+    h(Header, null, go && h(BackHome, { go }), h(AppTitle, { title: "忘れ物チェック" })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "16px 14px calc(104px + env(safe-area-inset-bottom))" } },
       h("button", { type: "button", className: "fk-tap", onClick: () => setFormOpen(true), style: { ...primaryBtn, marginBottom: 12 } }, h(Icon, { name: "plus", size: 20, sw: 2.2 }), "忘れ物を登録する"),
       h(StatStrip, { items: [{ l: "保管中", v: open.length }, { l: "期限が近い", v: near, c: near ? C.drop : C.ink }, { l: "承認待ち", v: waiting, c: waiting ? C.cyanDeep : C.ink }] }),
@@ -1117,14 +1154,14 @@ function LostApp() {
             h("div", { style: { flex: 1, minWidth: 0 } },
               h("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
                 h("span", { style: { fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, titleOf(x)),
-                x.sample && h("span", { style: { fontSize: 10, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px", flexShrink: 0 } }, "例")),
-              h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 3, fontWeight: 700 } }, fmtDT(x.foundAt)),
-              h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, `席 ${x.seat || "—"}${x.customer ? "・" + x.customer : ""}`)),
+                x.sample && h("span", { style: { fontSize: 11, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px", flexShrink: 0 } }, "例")),
+              h("div", { style: { fontSize: 12, color: C.sub, marginTop: 3, fontWeight: 700 } }, fmtDT(x.foundAt)),
+              h("div", { style: { fontSize: 12, color: C.subLight, marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, `席 ${x.seat || "—"}${x.customer ? "・" + x.customer : ""}`)),
             h("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 } },
               isOpenLost(x) ? h(Pill, { text: dl.t, color: dl.c, bg: dl.bg }) : h(Pill, { text: st.t, color: st.c, bg: st.bg }),
               x.status === "disposeReq" && h(Pill, { text: st.t, color: st.c, bg: st.bg }),
               val && h(Pill, { text: "貴重品", color: C.drop, bg: "#FBEAE6" }))); })),
-      h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.7, marginTop: 14, padding: "0 4px" } }, `保管期限は見つけた日から${L_DAYS}日間です。`)),
+      h("div", { style: { fontSize: 12, color: C.subLight, lineHeight: 1.7, marginTop: 14, padding: "0 4px" } }, `保管期限は見つけた日から${L_DAYS}日間です。`)),
     h(Sheet, { open: formOpen, onClose: () => setFormOpen(false), title: "忘れ物を登録" },
       formOpen && h(LostForm, { onSubmit: (rec) => { save([rec, ...list]); setFormOpen(false); setTab("open"); setToast("登録しました"); } })),
     h(Sheet, { open: !!detail, onClose: () => setDetailId(null), title: "忘れ物の詳細" },
@@ -1146,6 +1183,9 @@ const BD_CATS = [
 const bdCat = (k) => BD_CATS.find(x => x.k === k) || BD_CATS[0];
 const expired = () => false;
 const bdPhotos = (p) => p.photos || (p.photo ? [p.photo] : []);
+// 自分（この端末を使う人）がまだ読んでいない掲示
+const bdMine = (list, me, staff) => me && staff.includes(me) ? list.filter(p => !expired(p) && !(p.reads || []).some(r => r.name === me)).sort((a, b) => b.createdAt - a.createdAt) : [];
+let _bdOpen = null, _bdFilter = null;
 const ago = (t) => { const s = (Date.now() - t) / 1000; if (s < 60) return "たった今"; if (s < 3600) return Math.floor(s / 60) + "分前"; if (s < 86400) return Math.floor(s / 3600) + "時間前"; if (s < 86400 * 7) return Math.floor(s / 86400) + "日前"; return fmtDT(t); };
 
 function seedBoard() {
@@ -1188,7 +1228,7 @@ function NameChip({ name, sub, onClick, done }) {
     style: { display: "inline-flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minWidth: 78, minHeight: done ? 46 : 52, padding: "6px 14px", borderRadius: 14, cursor: "pointer",
       border: done ? `1px solid ${C.line}` : `1.5px solid ${C.ink}`, background: done ? C.lineSoft : C.card, color: done ? C.sub : C.ink } },
     h("span", { style: { fontSize: done ? 13.5 : 15, fontWeight: 800 } }, name),
-    sub && h("span", { style: { fontSize: 10, color: C.subLight, fontWeight: 700, marginTop: 1 } }, sub));
+    sub && h("span", { style: { fontSize: 11, color: C.subLight, fontWeight: 700, marginTop: 1 } }, sub));
 }
 
 function PostDetail({ p, staff, onUpdate, onEdit, onDelete, toast }) {
@@ -1219,7 +1259,7 @@ function PostDetail({ p, staff, onUpdate, onEdit, onDelete, toast }) {
     reads.length > 0 && h(React.Fragment, null,
       h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "4px 2px 8px" } },
         h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub, letterSpacing: ".06em" } }, `読んだ人 ${reads.length}人`),
-        h("span", { style: { fontSize: 11, color: C.subLight } }, "間違えたときは名前をタップで取り消し")),
+        h("span", { style: { fontSize: 12, color: C.subLight } }, "間違えたときは名前をタップで取り消し")),
       h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 } },
         reads.slice().sort((a, b) => a.t - b.t).map(r => h(NameChip, { key: r.name, name: r.name, sub: fmtDT(r.t).replace(/^.*?）/, ""), done: true, onClick: () => undo(r.name) })))),
     h("div", { style: { display: "flex", gap: 8, marginBottom: 8 } },
@@ -1236,10 +1276,10 @@ function LatestPost({ p, staff, onOpen, onRead }) {
   const cat = bdCat(p.cat); const u = unreadOf(p, staff);
   return h("div", { style: { ...cardStyle, padding: "16px 16px 14px", border: `1.5px solid ${C.ink}`, position: "relative" } },
     h("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 8 } },
-      h("span", { style: { fontSize: 10.5, fontWeight: 900, color: "#fff", background: C.ink, borderRadius: 5, padding: "2px 7px" } }, "最新"),
+      h("span", { style: { fontSize: 11.5, fontWeight: 900, color: "#fff", background: C.ink, borderRadius: 5, padding: "2px 7px" } }, "最新"),
       h(Pill, { text: p.cat, color: cat.c, bg: cat.bg }),
-      p.sample && h("span", { style: { fontSize: 10, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例"),
-      h("span", { style: { marginLeft: "auto", fontSize: 11.5, color: C.subLight, fontWeight: 700 } }, ago(p.createdAt))),
+      p.sample && h("span", { style: { fontSize: 11, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例"),
+      h("span", { style: { marginLeft: "auto", fontSize: 12, color: C.subLight, fontWeight: 700 } }, ago(p.createdAt))),
     h("div", { style: { fontSize: 18, fontWeight: 900, lineHeight: 1.45 } }, p.title),
     h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 700, marginTop: 4 } }, `${p.author}・${fmtDT(p.createdAt)}`),
     h("div", { style: { fontSize: 15, lineHeight: 1.85, whiteSpace: "pre-wrap", margin: "12px 0", overflowWrap: "anywhere" } }, p.body),
@@ -1255,17 +1295,20 @@ function BoardApp({ go }) {
   const [list, save] = useStored(BD_KEY, seedBoard);
   const [staffRec, saveStaff] = useStored(STAFF_KEY, seedStaff);
   const staff = staffRec.names;
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState(() => { const v = _bdFilter; _bdFilter = null; return v || "all"; });
   const [formOpen, setFormOpen] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [detailId, setDetailId] = useState(null);
+  const [detailId, setDetailId] = useState(() => { const v = _bdOpen; _bdOpen = null; return v; });
   const [msg, setMsg] = useState("");
   useEffect(() => { if (!msg) return; const id = setTimeout(() => setMsg(""), 2400); return () => clearTimeout(id); }, [msg]);
+  const [meName] = useMe();
+  const mine = bdMine(list, meName, staff);
+  const isMine = (p) => mine.some(x => x.id === p.id);
   const isUnread = (p) => unreadOf(p, staff).length > 0;
   const live = list.filter(p => !expired(p));
   const past = list.filter(expired);
   const base = filter === "past" ? past : live;
-  const shown = base.filter(p => filter === "unread" ? isUnread(p) : (filter === "all" || filter === "past") ? true : p.cat === filter)
+  const shown = base.filter(p => filter === "mine" ? isMine(p) : filter === "unread" ? isUnread(p) : (filter === "all" || filter === "past") ? true : p.cat === filter)
     .sort((a, b) => b.createdAt - a.createdAt);
   const unreadCnt = live.filter(isUnread).length;
   const detail = list.find(p => p.id === detailId);
@@ -1274,27 +1317,36 @@ function BoardApp({ go }) {
     h(Header, null, h(AppTitle, { title: "共有事項掲示板" })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "16px 14px calc(104px + env(safe-area-inset-bottom))" } },
       h("button", { type: "button", className: "fk-tap", onClick: () => setFormOpen(true), style: primaryBtn }, h(Icon, { name: "plus", size: 20, sw: 2.2 }), "新しく掲示する"),
+      meName && (mine.length
+        ? h("button", { type: "button", className: "fk-tap", onClick: () => setFilter("mine"), style: { width: "100%", display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "13px 14px", borderRadius: 14, border: "none", background: C.drop, color: "#fff", cursor: "pointer", textAlign: "left" } },
+            h("span", { style: { minWidth: 30, height: 30, borderRadius: 99, background: "#fff", color: C.drop, display: "grid", placeItems: "center", fontSize: 15, fontWeight: 900, fontVariantNumeric: "tabular-nums", padding: "0 6px" } }, mine.length),
+            h("span", { style: { flex: 1, fontSize: 14.5, fontWeight: 900 } }, `${meName}さんの未読があります`),
+            h("span", { style: { fontSize: 12, fontWeight: 800, opacity: .9 } }, "未読だけ見る"),
+            h(Icon, { name: "chev", size: 16, sw: 2.2 }))
+        : h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginTop: 12, padding: "11px 14px", borderRadius: 14, background: C.doneSoft, color: C.done, fontSize: 13.5, fontWeight: 800 } },
+            h(Icon, { name: "check", size: 18, sw: 2.4 }), `${meName}さんは全部読んでいます`)),
       h(FilterChips, { value: filter, onChange: setFilter, options: [
-        { k: "all", l: "すべて", n: live.length }, { k: "unread", l: "未読あり", n: unreadCnt },
+        { k: "all", l: "すべて", n: live.length }, ...(meName ? [{ k: "mine", l: "自分の未読", n: mine.length }] : []), { k: "unread", l: meName ? "誰かが未読" : "未読あり", n: unreadCnt },
       ] }),
       h(SampleNote, { show: list.some(p => p.sample) }),
-      shown.length === 0 ? h(Empty, { text: filter === "unread" ? "全員が読んだ掲示だけです" : "該当する掲示はありません" }) :
+      shown.length === 0 ? h(Empty, { text: filter === "mine" ? "未読の掲示はありません" : filter === "unread" ? "全員が読んだ掲示だけです" : "該当する掲示はありません" }) :
       h("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
         shown.map((p, idx) => { const cat = bdCat(p.cat); const un = isUnread(p) && !expired(p);
           if (idx === 0 && filter === "all") return h(LatestPost, { key: p.id, p, staff, onOpen: () => setDetailId(p.id),
             onRead: (n) => { save(list.map(x => x.id === p.id ? { ...x, reads: [...(x.reads || []), { name: n, t: Date.now() }] } : x)); setMsg(`${n}さん 既読`); } });
           return h("button", { key: p.id, type: "button", className: "fk-tap", onClick: () => setDetailId(p.id),
             style: { ...cardStyle, padding: "14px 16px", textAlign: "left", cursor: "pointer", color: C.ink, width: "100%", position: "relative",
-              border: `1px solid ${C.line}` } },
+              border: meName && isMine(p) ? `1.5px solid ${C.drop}` : `1px solid ${C.line}` } },
             h("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 6 } },
+              meName && isMine(p) && h(Pill, { text: "未読", color: "#fff", bg: C.drop }),
               h(Pill, { text: p.cat, color: cat.c, bg: cat.bg }),
-              p.sample && h("span", { style: { fontSize: 10, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例"),
-              h("span", { style: { marginLeft: "auto", fontSize: 11.5, color: C.subLight, fontWeight: 700 } }, ago(p.createdAt))),
+              p.sample && h("span", { style: { fontSize: 11, color: C.subLight, border: `1px solid ${C.line}`, borderRadius: 5, padding: "0 4px" } }, "例"),
+              h("span", { style: { marginLeft: "auto", fontSize: 12, color: C.subLight, fontWeight: 700 } }, ago(p.createdAt))),
             h("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
-              un && h("span", { "aria-label": "未読", style: { width: 8, height: 8, borderRadius: 99, background: C.drop, flexShrink: 0 } }),
+              !meName && un && h("span", { "aria-label": "未読", style: { width: 8, height: 8, borderRadius: 99, background: C.drop, flexShrink: 0 } }),
               h("div", { style: { fontSize: 15, fontWeight: 800, lineHeight: 1.45 } }, p.title)),
             h("div", { style: { fontSize: 12.5, color: C.sub, marginTop: 4, lineHeight: 1.6, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, p.body),
-            h("div", { style: { display: "flex", gap: 12, marginTop: 10, fontSize: 11.5, color: C.sub, fontWeight: 700 } },
+            h("div", { style: { display: "flex", gap: 12, marginTop: 10, fontSize: 12, color: C.sub, fontWeight: 700 } },
               h("span", null, p.author),
               (() => { const u = unreadOf(p, staff); return u.length ? h("span", { style: { color: C.drop } }, `未読 ${u.slice(0, 3).join("・")}${u.length > 3 ? ` ほか${u.length - 3}人` : ""}`) : h("span", { style: { color: C.done } }, "全員既読"); })(),
               bdPhotos(p).length > 0 && h("span", { style: { marginLeft: "auto" } }, `写真${bdPhotos(p).length}枚`))); })),
@@ -1350,11 +1402,95 @@ function StaffPage({ go }) {
             rm === n && h("div", { style: { display: "flex", gap: 8, marginTop: 8 } },
               h("button", { type: "button", onClick: () => setRm(null), style: subBtn }, "やめる"),
               h("button", { type: "button", onClick: () => { put(names.filter(x => x !== n), `${n}さんを外しました`); setRm(null); }, style: { ...subBtn, background: C.drop, color: "#fff", border: "none" } }, `${n}さんを名簿から外す`))))),
-      h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.7, marginTop: 12, padding: "0 4px" } }, "並び順は、掲示板や勤怠の名前ボタンの並びになります。")),
+      h("div", { style: { fontSize: 12, color: C.subLight, lineHeight: 1.7, marginTop: 12, padding: "0 4px" } }, "並び順は、掲示板や勤怠の名前ボタンの並びになります。")),
     h(Toast, { text: msg }));
 }
 const CL_SEED_SCHED = {"2026-10-01": {"im": "麺湯機内", "iy": "グリスト", "dm": "麺場の壁", "dy": "焼き場棚", "dh": "アイスディスペンサー"}, "2026-10-02": {"im": "冷蔵庫下左", "iy": "休憩室 トイレ廊下", "dm": "冷蔵庫フィルタ周り", "dy": "スープ場棚", "dh": "トラの絵、だるま"}, "2026-10-03": {"im": "ホールエアコン", "iy": "電球カウンター", "dm": "ゴミ箱、シンクの下", "dy": "ショーケース内", "dh": "イスの脚"}, "2026-10-04": {"im": "休憩室", "iy": "ショーケース内", "dm": "エアコン", "dy": "炊飯器", "dh": "トイレ洗面台"}, "2026-10-05": {"im": "冷蔵庫内右", "iy": "シンク、洗浄機下", "dm": "パッキン右", "dy": "炊飯器台下", "dh": "待ち列ポール"}, "2026-10-06": {"im": "冷蔵庫内左", "iy": "冷蔵庫内後", "dm": "パッキン左", "dy": "フード外 焼き場", "dh": "店内POP"}, "2026-10-07": {"im": "ホールエアコン", "iy": "冷蔵庫内前", "dm": "備品類整理整頓", "dy": "フード外 奥", "dh": "ショーケース内"}, "2026-10-08": {"im": "麺湯機内", "iy": "フード内", "dm": "バットテプラチェック", "dy": "パッキン前", "dh": "アイスディスペンサー"}, "2026-10-09": {"im": "グレーチング", "iy": "ショーケース内", "dm": "冷蔵庫フィルタ周り", "dy": "パッキン後ろ", "dh": "テーブルの棚"}, "2026-10-10": {"im": "ファサード", "iy": "グリスト", "dm": "フード外", "dy": "ドリンク類のバット", "dh": "カウンターのタイル"}, "2026-10-11": {"im": "ストッカー", "iy": "フード内（焼き場・奥）", "dm": "麺場棚", "dy": "炊飯器", "dh": "荷物カゴテーブル"}, "2026-10-12": {"im": "フード内", "iy": "電球カウンター", "dm": "麺場の壁", "dy": "炊飯器台下", "dh": "カスターシールチェック"}, "2026-10-13": {"im": "はし箱、餃子のタレ", "iy": "シンク、洗浄機下", "dm": "冷蔵庫フィルタ周り", "dy": "フード外 焼き場", "dh": "ツボシールチェック"}, "2026-10-14": {"im": "冷蔵庫内右", "iy": "フード内", "dm": "掃除装具入れ整理整頓", "dy": "フード外 奥", "dh": "ショーケース内"}, "2026-10-15": {"im": "冷蔵庫内左", "iy": "フード内奥", "dm": "厨房テプラチェック", "dy": "焼き場棚", "dh": "アイスディスペンサー"}, "2026-10-16": {"im": "天井埃取る", "iy": "電球カウンター", "dm": "ゴミ箱、シンクの下", "dy": "スープ場棚", "dh": "テーブルの棚"}, "2026-10-17": {"im": "ストッカー", "iy": "冷蔵庫内前", "dm": "麺場の壁", "dy": "ショーケース内", "dh": "イスの脚"}, "2026-10-18": {"im": "ホールショーケース", "iy": "グリスト", "dm": "パッキン右", "dy": "炊飯器", "dh": "待ち列ポール"}, "2026-10-19": {"im": "製氷機", "iy": "冷蔵庫下後", "dm": "パッキン左", "dy": "炊飯器台下", "dh": "トイレ洗面台"}, "2026-10-20": {"im": "冷蔵庫内右", "iy": "フード内", "dm": "フード外", "dy": "フード外 焼き場", "dh": "外看板"}, "2026-10-21": {"im": "フード内", "iy": "冷蔵庫内後", "dm": "ゴミ箱、シンクの下", "dy": "フード外 奥", "dh": "ショーケース内"}, "2026-10-22": {"im": "ホールエアコン", "iy": "冷蔵庫内前", "dm": "冷蔵庫フィルタ周り", "dy": "パッキン前", "dh": "アイスディスペンサー"}, "2026-10-23": {"im": "冷蔵庫内右", "iy": "グリスト", "dm": "麺場の壁", "dy": "パッキン後ろ", "dh": "テーブルの棚"}, "2026-10-24": {"im": "はし箱、餃子のタレ", "iy": "ショーケース内", "dm": "掃除装具入れ整理整頓", "dy": "ドリンク類のバット", "dh": "荷物カゴカウンター"}, "2026-10-25": {"im": "製氷機", "iy": "フード内（焼き場・奥）", "dm": "麺場の壁", "dy": "パッキン後ろ", "dh": "荷物カゴテーブル"}, "2026-10-26": {"im": "グレーチング", "iy": "フード内", "dm": "パッキン右", "dy": "炊飯器台下", "dh": "カスターシールチェック"}, "2026-10-27": {"im": "冷蔵庫内左", "iy": "冷蔵庫内後", "dm": "外のゴミ入れ", "dy": "フード外 焼き場", "dh": "ツボシールチェック"}, "2026-10-28": {"im": "フード内", "iy": "フード内", "dm": "パッキン左", "dy": "フード外 奥", "dh": "ショーケース内"}, "2026-10-29": {"im": "扇風機", "iy": "ゴマ容器、塩容器", "dm": "掃除装具入れ整理整頓", "dy": "焼き場棚", "dh": "アイスディスペンサー"}, "2026-10-30": {"im": "ファサード", "iy": "ショーケース内", "dm": "バットテプラチェック", "dy": "スープ場棚", "dh": "カウンターのタイル"}, "2026-10-31": {"im": "電球テーブル", "iy": "電球カウンター", "dm": "サーキュレーター", "dy": "冷蔵庫フィルター", "dh": "イスの脚"}, "2026-11-01": {"im": "天井埃取る", "iy": "フード内奥", "dm": "フード外", "dy": "炊飯器", "dh": "トイレ洗面台"}, "2026-11-02": {"im": "休憩室", "iy": "フード内", "dm": "麺場棚", "dy": "炊飯器台下", "dh": "トイレ洗面台"}, "2026-11-03": {"im": "麺湯機内", "iy": "グリスト", "dm": "ゴミ箱、シンクの下", "dy": "フード外 焼き場", "dh": "店内POP"}, "2026-11-04": {"im": "製氷機", "iy": "シンク、洗浄機下", "dm": "厨房テプラチェック", "dy": "フード外 奥", "dh": "ショーケース内"}};
 const CL_MASTER = {"im": ["麺湯機内", "フード内", "冷蔵庫内右", "冷蔵庫内左", "冷蔵庫下右", "冷蔵庫下左", "グレーチング", "製氷機", "ファサード", "ホールエアコン", "扇風機", "天井埃取る", "電球テーブル", "ストッカー", "はし箱、餃子のタレ", "休憩室"], "iy": ["グリスト", "フード内（焼き場・奥）", "ダクトフード内", "冷蔵庫内前", "冷蔵庫内後", "冷蔵庫下前", "冷蔵庫下後", "洗浄機内", "シンク、洗浄機下", "２階＆トイレ", "２階ベランダ", "カスターシール", "電球カウンター", "ショーケース内", "ゴマ容器、塩容器", "休憩室 トイレ廊下", "焼き場エアコン"], "dm": ["麺場の壁", "冷蔵庫フィルタ周り", "ゴミ箱、シンクの下", "エアコン", "パッキン右", "パッキン左", "備品類整理整頓", "掃除装具入れ整理整頓", "バットテプラチェック", "厨房テプラチェック", "フード外", "麺場棚", "外のゴミ入れ", "厨房天井"], "dy": ["焼き場棚", "スープ場棚", "ショーケース内", "炊飯器", "炊飯器台下", "エアコン", "フード外 焼き場", "フード外 奥", "パッキン前", "パッキン後ろ", "ドリンク類のバット", "サーキュレーター", "製氷機パッキン・フィルター", "冷蔵庫フィルター"], "dh": ["アイスディスペンサー", "ショーケース内", "イスの脚", "待ち列ポール", "外看板", "トラの絵、だるま", "店内POP", "カウンターのタイル", "トイレ洗面台", "テーブルの棚", "荷物カゴカウンター", "荷物カゴテーブル", "カスターシールチェック", "ツボシールチェック", "足元壁黒ずみ"]};
+
+// 追加する掃除箇所（2026-11）。場所のリストに一度だけ足す
+const CL_ADD_V2 = {
+  dh: ["テーブルの下", "カゴの中／下", "フード内のライト", "青いカゴ", "ハンガー、ラック", "メニューラスト作業", "ストッカー周り", "A、Bの収納場所"]
+};
+// 見本データ（サーバーにつながっていないときだけ使う）
+function clDemoPhoto(text, hue) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360"><rect width="480" height="360" fill="hsl(${hue},32%,78%)"/><rect x="40" y="200" width="400" height="120" rx="10" fill="hsl(${hue},28%,62%)"/><circle cx="380" cy="90" r="38" fill="hsl(${hue},40%,90%)"/><text x="240" y="150" text-anchor="middle" font-family="sans-serif" font-size="30" font-weight="700" fill="hsl(${hue},40%,24%)">${text}</text><text x="240" y="272" text-anchor="middle" font-family="sans-serif" font-size="20" fill="#fff">写真の見本</text></svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+function clSchedSeed() {
+  const s = { ...CL_SEED_SCHED };
+  if (db) return s;
+  const keys = Object.keys(s).sort(); const [y, m, d] = keys[keys.length - 1].split("-").map(Number);
+  const end = new Date(Date.now() + 21 * 864e5);
+  let i = 0;
+  for (let x = new Date(y, m - 1, d + 1); x <= end; x = new Date(x.getFullYear(), x.getMonth(), x.getDate() + 1), i++) {
+    const o = {}; CL_SLOTS.forEach((sl, j) => { const l = CL_MASTER[sl.k]; o[sl.k] = l[(i + j * 3) % l.length]; });
+    s[ymdOf(x)] = o;
+  }
+  return s;
+}
+function clDoneSeed() {
+  if (db) return {};
+  const s = clSchedSeed(), today = ymdOf(new Date()), names = seedStaff().names.slice(1), out = {};
+  Object.keys(s).filter(d => d < today).sort().slice(-34).forEach((d, i) => {
+    const [y, m, dd] = d.split("-").map(Number); const o = {};
+    CL_SLOTS.forEach((sl, j) => { if ((i * 7 + j * 3) % 5 === 0) return;
+      const t = new Date(y, m - 1, dd, sl.time === "アイドル" ? 15 : 22, 10 + j * 7).getTime();
+      o[sl.k] = { by: names[(i + j) % names.length], t, ...((i + j) % 2 === 0 ? { photos: [clDemoPhoto(s[d][sl.k], (i * 37 + j * 61) % 360)] } : {}) }; });
+    out[d] = o;
+  });
+  return out;
+}
+// 場所ごとの記録（新しい順）。掃除表と「掃除表以外の掃除」の両方から拾う
+function clHistory(sched, done, free) {
+  const m = {};
+  const put = (name, ymd, r) => { if (!name || !r) return; (m[name] = m[name] || []).push({ ymd, by: r.by, t: r.t || 0, photos: clPhotos(r) }); };
+  Object.keys(done || {}).forEach(d => { const s = sched[d] || {}; Object.keys(done[d] || {}).forEach(k => put(s[k], d, done[d][k])); });
+  Object.keys(free || {}).forEach(d => (free[d] || []).forEach(x => put(x.place, d, x)));
+  Object.values(m).forEach(a => a.sort((x, y) => x.ymd < y.ymd ? 1 : x.ymd > y.ymd ? -1 : y.t - x.t));
+  return m;
+}
+const clPrev = (hist, name, ymd) => (hist[name] || []).find(x => x.ymd < ymd) || null;
+const clDaysAgo = (ymd, base) => { const p = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).getTime(); }; return Math.round((p(base) - p(ymd)) / 864e5); };
+const clAgoText = (n) => n <= 0 ? "今日" : n === 1 ? "きのう" : `${n}日前`;
+function ClPrevBox({ prev, ymd }) {
+  return h("div", { style: { ...cardStyle, padding: "12px 14px 2px", marginBottom: 14 } },
+    h("div", { style: { display: "flex", alignItems: "baseline", gap: 8, marginBottom: prev ? 10 : 12 } },
+      h("span", { style: { fontSize: 12, fontWeight: 900, color: C.sub, letterSpacing: ".06em" } }, "前回"),
+      prev ? h(React.Fragment, null,
+          h("span", { style: { fontSize: 15, fontWeight: 900 } }, fmtYMD(prev.ymd)),
+          h("span", { style: { fontSize: 12.5, fontWeight: 800, color: C.sub } }, `${prev.by}さん`),
+          h("span", { style: { marginLeft: "auto", fontSize: 12.5, fontWeight: 800, color: C.cyanDeep } }, clAgoText(clDaysAgo(prev.ymd, ymd))))
+        : h("span", { style: { fontSize: 13.5, fontWeight: 800, color: C.subLight } }, "まだ記録がありません")),
+    prev && (prev.photos.length ? h(PhotoGrid, { photos: prev.photos }) : h("div", { style: { fontSize: 12, color: C.subLight, fontWeight: 700, marginBottom: 12 } }, "前回の写真はありません")));
+}
+// 場所ごとの一覧（前回やった日と写真）
+function ClHistoryList({ master, hist, today }) {
+  const [slot, setSlot] = useState("all");
+  const [view, setView] = useState(null);
+  const seen = new Set(); const rows = [];
+  CL_SLOTS.forEach(sl => { if (slot !== "all" && slot !== sl.k) return;
+    (master[sl.k] || []).forEach(name => { const key = slot === "all" ? name : sl.k + name; if (seen.has(key)) return; seen.add(key);
+      const last = (hist[name] || [])[0] || null; rows.push({ name, sl, last, ago: last ? clDaysAgo(last.ymd, today) : 99999 }); }); });
+  rows.sort((a, b) => b.ago - a.ago);
+  return h("div", null,
+    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 4 } }, "長くやっていない場所が上に並びます。写真をタップすると大きく見られます。"),
+    h(FilterChips, { value: slot, onChange: setSlot, options: [{ k: "all", l: "すべて", n: "" }, ...CL_SLOTS.map(s => ({ k: s.k, l: `${s.time === "アイドル" ? "アイドル" : "ポジ"}・${s.place}`, n: "" }))] }),
+    h("div", { style: { ...cardStyle, overflow: "hidden" } },
+      rows.map((r, i) => h("div", { key: r.sl.k + r.name, style: { display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
+        h("div", { style: { flex: 1, minWidth: 0 } },
+          h("div", { style: { fontSize: 15, fontWeight: 800, lineHeight: 1.4 } }, r.name),
+          r.last
+            ? h("div", { style: { fontSize: 12, fontWeight: 700, color: C.sub, marginTop: 2 } }, `${fmtYMD(r.last.ymd)}・${r.last.by}さん`)
+            : h("div", { style: { fontSize: 12, fontWeight: 700, color: C.subLight, marginTop: 2 } }, "まだ記録がありません")),
+        r.last && h("span", { style: { flexShrink: 0, fontSize: 12.5, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: r.ago >= 30 ? C.drop : r.ago >= 14 ? "#B7791F" : C.done } }, clAgoText(r.ago)),
+        r.last && r.last.photos.length
+          ? h("button", { type: "button", "aria-label": `${r.name}の前回の写真`, onClick: () => setView(r.last.photos), style: { flexShrink: 0, position: "relative", width: 52, height: 52, padding: 0, border: "none", background: "none", cursor: "zoom-in" } },
+              h("img", { src: r.last.photos[0], alt: "", style: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 10, display: "block" } }),
+              r.last.photos.length > 1 && h("span", { style: { position: "absolute", right: 3, bottom: 3, background: "rgba(26,24,22,.72)", color: "#fff", borderRadius: 6, fontSize: 11, fontWeight: 800, padding: "0 4px" } }, r.last.photos.length))
+          : h("span", { style: { flexShrink: 0, width: 52, height: 52, borderRadius: 10, border: `1.5px dashed ${C.line}`, display: "grid", placeItems: "center", color: C.subLight } }, h(Icon, { name: "camera", size: 18 }))))),
+    view && h(PhotoViewer, { photos: view, start: 0, onClose: () => setView(null) }));
+}
 
 // ───────── 掃除表（日替わりローテーション） ─────────
 const CL_SCHED_KEY = "higo_clean_sched_v1";
@@ -1374,7 +1510,7 @@ const clDow = (ymd) => { const [y, m, d] = ymd.split("-").map(Number); return ne
 const clDowColor = (ymd) => { const w = clDow(ymd); return w === 6 ? "#2563EB" : w === 0 ? C.drop : C.ink; };
 function clDoneCount(sched, done, ymd) { const s = sched[ymd]; if (!s) return { n: 0, total: 0 }; const d = done[ymd] || {}; const ks = CL_SLOTS.filter(x => s[x.k]); return { n: ks.filter(x => d[x.k]).length, total: ks.length }; }
 
-function ClCheckBody({ ymd, slot, task, rec, staff, master, onCheck, onUndo, onChangeTask }) {
+function ClCheckBody({ ymd, slot, task, rec, prev, staff, master, onCheck, onUndo, onChangeTask }) {
   const [photos, setPhotos] = useState([]);
   const [changing, setChanging] = useState(false);
   const [custom, setCustom] = useState("");
@@ -1396,16 +1532,18 @@ function ClCheckBody({ ymd, slot, task, rec, staff, master, onCheck, onUndo, onC
     h("div", { style: { display: "flex", alignItems: "center", gap: 8, background: C.doneSoft, color: C.done, borderRadius: 12, padding: "12px 14px", fontSize: 14, fontWeight: 800, marginBottom: 14 } },
       h(Icon, { name: "check", size: 18, sw: 2.4 }), `${rec.by}さんが完了（${fmtDT(rec.t)}）`),
     h(PhotoGrid, { photos: clPhotos(rec) }),
+    h(ClPrevBox, { prev, ymd }),
     h("button", { type: "button", className: "fk-tap", onClick: onUndo, style: { ...subBtn, width: "100%" } }, "未完了に戻す"));
   return h("div", null, head,
+    h(ClPrevBox, { prev, ymd }),
     h(Field, { label: "写真（任意・何枚でも）", hint: "写真を付けるときは、完了ボタンを押す前に追加してください" }, h(MultiPhotoIn, { id: "cl-photo", value: photos, onChange: setPhotos })),
     h(NamePick, { staff, onPick: (n) => onCheck(n, photos) }),
     h("button", { type: "button", onClick: () => setChanging(true), style: { border: "none", background: "transparent", color: C.cyanDeep, fontSize: 13, fontWeight: 800, width: "100%", padding: 10, cursor: "pointer" } }, "この日の担当場所を変更する"));
 }
 
 function CleanApp() {
-  const [sched, saveSched] = useStored(CL_SCHED_KEY, () => ({ ...CL_SEED_SCHED }));
-  const [done, saveDone] = useStored(CL_DONE_KEY, () => ({}));
+  const [sched, saveSched] = useStored(CL_SCHED_KEY, clSchedSeed);
+  const [done, saveDone] = useStored(CL_DONE_KEY, clDoneSeed);
   const staff = readStored(STAFF_KEY, seedStaff).names;
   const dates = Object.keys(sched).sort();
   const today = todayYMD();
@@ -1420,6 +1558,16 @@ function CleanApp() {
   const [freeForm, setFreeForm] = useState(false);
   const [freeOpen, setFreeOpen] = useState(null);
   const [rankOpen, setRankOpen] = useState(false);
+  const [histOpen, setHistOpen] = useState(false);
+  const hist = React.useMemo(() => clHistory(sched, done, free), [sched, done, free]);
+  // 追加の掃除箇所を、場所のリストに一度だけ足す（サーバーの内容を読み込んでから）
+  useEffect(() => {
+    if (!master || master._v >= 2) return;
+    if (db && getStore(CL_MASTER_KEY).raw == null) return;
+    const next = { ...master, _v: 2 };
+    Object.keys(CL_ADD_V2).forEach(k => { const cur = next[k] || []; next[k] = [...cur, ...CL_ADD_V2[k].filter(t => !cur.includes(t))]; });
+    saveMaster(next);
+  }, [master]);
   const [ymd, setYmd] = useState(today);
   const [cm, setCmRaw] = useState(ymOf(new Date()));
   const setCm = (v) => { setCmRaw(v); setYmd(today.startsWith(v) ? today : `${v}-01`); };
@@ -1439,16 +1587,18 @@ function CleanApp() {
   const setRec = (slot, rec) => { const d = { ...(done[ymd] || {}) }; if (rec) d[slot] = rec; else delete d[slot]; saveDone({ ...done, [ymd]: d }); };
   const missedPast = dates.filter(d => d < today && (() => { const c = clDoneCount(sched, done, d); return c.n < c.total; })()).length;
 
-  const slotCard = (sl) => { const task = day && day[sl.k]; if (!task) return null; const rec = dd[sl.k];
+  const slotCard = (sl) => { const task = day && day[sl.k]; if (!task) return null; const rec = dd[sl.k]; const prev = clPrev(hist, task, ymd);
     return h("button", { key: sl.k, type: "button", className: "fk-tap", onClick: () => setOpen(sl.k),
       style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 14px", background: rec ? "#F7FBF8" : "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, textAlign: "left", cursor: "pointer", color: C.ink } },
       h("span", { style: { width: 30, height: 30, borderRadius: 99, flexShrink: 0, display: "grid", placeItems: "center", background: rec ? C.done : "transparent", border: rec ? "none" : `2px solid ${C.line}`, color: "#fff" } }, rec && h(Icon, { name: "check", size: 18, sw: 2.8 })),
       h("div", { style: { flex: 1, minWidth: 0 } },
-        h("div", { style: { fontSize: 11.5, fontWeight: 800, color: sl.tint } }, sl.place),
-        h("div", { style: { fontSize: 16, fontWeight: 800, marginTop: 1, color: rec ? C.sub : C.ink } }, task)),
+        h("div", { style: { fontSize: 12, fontWeight: 800, color: sl.tint } }, sl.place),
+        h("div", { style: { fontSize: 16, fontWeight: 800, marginTop: 1, color: rec ? C.sub : C.ink } }, task),
+        !rec && h("div", { style: { fontSize: 12, fontWeight: 700, marginTop: 2, color: prev ? C.sub : C.subLight } }, prev ? `前回 ${fmtYMD(prev.ymd)}・${prev.by}（${clAgoText(clDaysAgo(prev.ymd, ymd))}）` : "前回の記録なし")),
+      !rec && prev && prev.photos.length > 0 && h("img", { src: prev.photos[0], alt: "前回の写真", style: { flexShrink: 0, width: 46, height: 46, objectFit: "cover", borderRadius: 10, display: "block" } }),
       rec ? h("div", { style: { textAlign: "right", flexShrink: 0 } },
           h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.done } }, rec.by),
-          h("div", { style: { fontSize: 10.5, color: C.subLight, fontWeight: 700 } }, `${pad(new Date(rec.t).getHours())}:${pad(new Date(rec.t).getMinutes())}`, clPhotos(rec).length ? `・写真${clPhotos(rec).length}` : ""))
+          h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 700 } }, `${pad(new Date(rec.t).getHours())}:${pad(new Date(rec.t).getMinutes())}`, clPhotos(rec).length ? `・写真${clPhotos(rec).length}` : ""))
         : h(Icon, { name: "chev", size: 18, sw: 2, color: C.subLight }));
   };
   const section = (time) => { const sls = CL_SLOTS.filter(s => s.time === time && day && day[s.k]); if (!sls.length) return null; const c = sls.filter(s => dd[s.k]).length;
@@ -1473,9 +1623,9 @@ function CleanApp() {
         h("div", { ref: rowRef, style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10 } },
           monthDays.map(d => { const on = d === ymd; const c = clDoneCount(sched, done, d); const c2 = dcCount(dcItems, dcDone, d); const all = c.n === c.total && c2.n === c2.total && (c.total + c2.total) > 0; const miss = d < today && !all; const [, m, dn] = d.split("-").map(Number);
             return h("button", { key: d, "data-d": d, type: "button", onClick: () => setYmd(d), style: { flexShrink: 0, width: 50, padding: "6px 0 5px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: on ? C.cyan : "#fff", border: on ? "none" : d === today ? `1.5px solid ${C.ink}` : `1px solid ${C.line}`, color: on ? C.onAccent : clDowColor(d) } },
-              h("div", { style: { fontSize: 9.5, opacity: .7, fontWeight: 700 } }, d === today ? "今日" : "\u00a0"),
+              h("div", { style: { fontSize: 10.5, opacity: .7, fontWeight: 700 } }, d === today ? "今日" : "\u00a0"),
               h("div", { style: { fontSize: 15, fontWeight: 800, lineHeight: 1.1 } }, dn),
-              h("div", { style: { fontSize: 10, opacity: .8 } }, WD[clDow(d)]),
+              h("div", { style: { fontSize: 11, opacity: .8 } }, WD[clDow(d)]),
               h("div", { style: { height: 6, display: "flex", justifyContent: "center", marginTop: 2 } }, all ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: on ? C.onAccent : C.done } }) : miss ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: C.drop } }) : null)); })),
         (() => { const dc = dcCount(dcItems, dcDone, ymd); const tn = dc.n + n, tt = dc.total + total; const tp = tt ? tn / tt : 0;
           return h("div", { style: { ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, marginBottom: 4 } },
@@ -1483,11 +1633,18 @@ function CleanApp() {
             h("div", { style: { flex: 1, minWidth: 0 } },
               h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 800 } }, `${ymd === today ? "今日 " : ""}${fmtYMD(ymd)}`),
               h("div", { style: { fontSize: 20, fontWeight: 800, marginTop: 2, color: tp >= 1 ? C.done : C.ink, fontVariantNumeric: "tabular-nums" } }, tp >= 1 ? "すべて完了" : `${tn} / ${tt}`, tp < 1 && h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 6 } }, "完了")),
-              h("div", { style: { fontSize: 11.5, color: C.sub, fontWeight: 700, marginTop: 2 } }, `日次チェック ${dc.n}/${dc.total}・掃除表 ${n}/${total}`)),
-            h("button", { type: "button", className: "fk-tap", onClick: () => setRankOpen(true), style: { ...subBtn, flex: "0 0 auto", padding: "8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontSize: 11.5 } }, h(Icon, { name: "trophy", size: 22, color: C.cyanDeep }), "ランキング")); })(),
-        h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "日次チェック"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "ポジション別・時間までに")),
+              null),
+            h("button", { type: "button", className: "fk-tap", onClick: () => setRankOpen(true), style: { ...subBtn, flex: "0 0 auto", padding: "8px 12px", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, fontSize: 12 } }, h(Icon, { name: "trophy", size: 22, color: C.cyanDeep }), "ランキング")); })(),
+        (() => { const dc = dcCount(dcItems, dcDone, ymd); const jump = (id) => { const el = document.getElementById(id); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 84, behavior: "smooth" }); };
+          const jb = (id, l, a, b) => h("button", { key: id, type: "button", className: "fk-tap", onClick: () => jump(id), style: { flex: 1, minHeight: 46, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, border: `1px solid ${C.line}`, background: C.card, color: C.ink, fontSize: 13.5, fontWeight: 800, cursor: "pointer" } }, l, h("span", { style: { fontVariantNumeric: "tabular-nums", color: b > 0 && a === b ? C.done : C.sub } }, `${a}/${b}`), h("span", { style: { display: "inline-block", transform: "rotate(90deg)", color: C.subLight } }, h(Icon, { name: "chev", size: 14, sw: 2.2 })));
+          return h("div", { style: { display: "flex", gap: 8, marginTop: 8 } }, jb("cl-sec-dc", "日次チェック", dc.n, dc.total), jb("cl-sec-cl", "掃除表", n, total)); })(),
+        h("div", { id: "cl-sec-dc", style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "日次チェック"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "ポジション別・時間までに")),
         h(DailyCheckView, { items: dcItems, done: dcDone, ymd, today, onOpen: setDcOpen, hideProgress: true }),
-        h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "掃除表"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "得点つき")),
+        h("div", { id: "cl-sec-cl", style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", margin: "18px 4px 10px" } }, h("span", { style: { fontSize: 16, fontWeight: 900 } }, "掃除表"), h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, "得点つき")),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setHistOpen(true), style: { ...cardStyle, width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", marginBottom: 12, cursor: "pointer", color: C.ink, textAlign: "left" } },
+          h(Icon, { name: "camera", size: 20, color: C.cyanDeep }),
+          h("span", { style: { flex: 1, fontSize: 14, fontWeight: 800 } }, "場所ごとの前回の日付と写真"),
+          h(Icon, { name: "chev", size: 16, sw: 2, color: C.subLight })),
         !day ? h(Empty, { text: "この日の掃除表はありません" }) : h(React.Fragment, null,
           section("アイドル"), section("ポジション清掃")),
         h("div", { style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
@@ -1501,7 +1658,7 @@ function CleanApp() {
             h("span", { style: { flex: 1, minWidth: 0, fontSize: 15, fontWeight: 800 } }, x.place),
             h("div", { style: { textAlign: "right", flexShrink: 0 } },
               h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.done } }, x.by),
-              h("div", { style: { fontSize: 10.5, color: C.subLight, fontWeight: 700 } }, `${pad(new Date(x.t).getHours())}:${pad(new Date(x.t).getMinutes())}`, (x.photos || []).length ? `・写真${x.photos.length}` : "")))),
+              h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 700 } }, `${pad(new Date(x.t).getHours())}:${pad(new Date(x.t).getMinutes())}`, (x.photos || []).length ? `・写真${x.photos.length}` : "")))),
           h("button", { type: "button", onClick: () => setFreeForm(true), style: { width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "13px 0", background: "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, color: C.cyanDeep, fontWeight: 800, fontSize: 14, cursor: "pointer" } },
             h(Icon, { name: "plus", size: 18, sw: 2.2 }), "掃除表以外の場所を掃除した")),
         missedPast > 0 && h("div", { style: { fontSize: 12, color: C.drop, fontWeight: 800, padding: "2px 4px" } }, `赤い点の日は、終わっていない掃除があります（${missedPast}日）`),
@@ -1516,19 +1673,19 @@ function CleanApp() {
           h("div", { style: { overflowX: "auto" } },
             h("table", { style: { borderCollapse: "collapse", minWidth: 640, width: "100%" } },
               h("thead", null, h("tr", { style: { background: C.head, color: "#fff" } },
-                h("th", { style: { position: "sticky", left: 0, background: C.head, padding: "9px 8px", fontSize: 11, textAlign: "left", whiteSpace: "nowrap" } }, ""),
-                weekDates.map(d => h("th", { key: d, style: { padding: "8px 4px", fontSize: 11.5, fontWeight: 800, whiteSpace: "nowrap", color: clDow(d) === 6 ? "#9DB8FF" : clDow(d) === 0 ? "#FF9C8F" : "#fff", background: d === today ? C.inkSoft : C.ink } }, `${fmtYMD(d)}`)))),
+                h("th", { style: { position: "sticky", left: 0, background: C.head, padding: "9px 8px", fontSize: 12, textAlign: "left", whiteSpace: "nowrap" } }, ""),
+                weekDates.map(d => h("th", { key: d, style: { padding: "8px 4px", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", color: clDow(d) === 6 ? "#9DB8FF" : clDow(d) === 0 ? "#FF9C8F" : "#fff", background: d === today ? C.inkSoft : C.ink } }, `${fmtYMD(d)}`)))),
               h("tbody", null, CL_SLOTS.map(sl => h("tr", { key: sl.k, style: { borderTop: `1px solid ${C.lineSoft}` } },
-                h("td", { style: { position: "sticky", left: 0, background: "#FAF9F6", padding: "8px", fontSize: 11, fontWeight: 800, color: sl.tint, whiteSpace: "nowrap", lineHeight: 1.3 } }, sl.time, h("br"), sl.place),
+                h("td", { style: { position: "sticky", left: 0, background: "#FAF9F6", padding: "8px", fontSize: 12, fontWeight: 800, color: sl.tint, whiteSpace: "nowrap", lineHeight: 1.3 } }, sl.time, h("br"), sl.place),
                 weekDates.map(d => { const t = sched[d] && sched[d][sl.k]; const r = done[d] && done[d][sl.k]; const miss = !r && d < today && t;
-                  return h("td", { key: d, onClick: () => { setYmd(d); setTab("day"); window.scrollTo(0, 0); }, style: { cursor: "pointer", padding: "7px 5px", fontSize: 11.5, fontWeight: 700, textAlign: "center", lineHeight: 1.35, minWidth: 82, borderLeft: `1px solid ${C.lineSoft}`, background: r ? C.doneSoft : miss ? "#FBEAE6" : d === today ? C.cyanSoft : "#fff", color: r ? C.done : C.ink } },
-                    t || "—", r && h("div", { style: { fontSize: 10, fontWeight: 800, marginTop: 2 } }, `✓ ${r.by}`)); }))))))),
-        h("div", { style: { display: "flex", gap: 14, fontSize: 11.5, color: C.sub, fontWeight: 700, marginTop: 10, padding: "0 4px", flexWrap: "wrap" } },
+                  return h("td", { key: d, onClick: () => { setYmd(d); setTab("day"); window.scrollTo(0, 0); }, style: { cursor: "pointer", padding: "7px 5px", fontSize: 12, fontWeight: 700, textAlign: "center", lineHeight: 1.35, minWidth: 82, borderLeft: `1px solid ${C.lineSoft}`, background: r ? C.doneSoft : miss ? "#FBEAE6" : d === today ? C.cyanSoft : "#fff", color: r ? C.done : C.ink } },
+                    t || "—", r && h("div", { style: { fontSize: 11, fontWeight: 800, marginTop: 2 } }, `✓ ${r.by}`)); }))))))),
+        h("div", { style: { display: "flex", gap: 14, fontSize: 12, color: C.sub, fontWeight: 700, marginTop: 10, padding: "0 4px", flexWrap: "wrap" } },
           h("span", null, h("span", { style: { display: "inline-block", width: 10, height: 10, borderRadius: 3, background: C.doneSoft, border: `1px solid ${C.done}`, marginRight: 4, verticalAlign: -1 } }), "完了"),
           h("span", null, h("span", { style: { display: "inline-block", width: 10, height: 10, borderRadius: 3, background: "#FBEAE6", border: `1px solid ${C.drop}`, marginRight: 4, verticalAlign: -1 } }), "やり残し"),
           h("span", null, "マスをタップするとその日を開きます")))),
     h(Sheet, { open: !!open, onClose: () => setOpen(null), title: open && dd[open] ? "完了済み" : "掃除を完了にする" },
-      open && day && h(ClCheckBody, { key: ymd + open, ymd, slot: open, task: day[open], rec: dd[open], staff, master,
+      open && day && h(ClCheckBody, { key: ymd + open, ymd, slot: open, task: day[open], rec: dd[open], prev: clPrev(hist, day[open], ymd), staff, master,
         onCheck: (nm, photos) => { setRec(open, { by: nm, t: Date.now(), ...(photos.length ? { photos } : {}) }); setOpen(null); setMsg(`${nm}さん 完了`); },
         onUndo: () => { setRec(open, null); setOpen(null); setMsg("未完了に戻しました"); },
         onChangeTask: (t) => { saveSched({ ...sched, [ymd]: { ...sched[ymd], [open]: t } }); setOpen(null); setMsg("担当場所を変更しました"); } })),
@@ -1538,6 +1695,7 @@ function CleanApp() {
       freeOpen && (free[ymd] || []).find(x => x.id === freeOpen) && h(FreeDetail, { key: freeOpen, x: (free[ymd] || []).find(x => x.id === freeOpen),
         onDelete: () => { saveFree({ ...free, [ymd]: (free[ymd] || []).filter(x => x.id !== freeOpen) }); setFreeOpen(null); setMsg("削除しました"); } })),
     h(Sheet, { open: rankOpen, onClose: () => setRankOpen(false), title: "掃除ランキング" }, rankOpen && h(Ranking, { done, free })),
+    h(Sheet, { open: histOpen, onClose: () => setHistOpen(false), title: "場所ごとの前回" }, histOpen && h(ClHistoryList, { master, hist, today })),
     h(Sheet, { open: !!dcOpen, onClose: () => setDcOpen(null), title: dcOpen && (dcDone[ymd] || {})[dcOpen] ? "完了済み" : "チェックする" },
       dcOpen && dcItems.find(i => i.id === dcOpen) && h(DcCheckBody, { key: ymd + dcOpen, item: dcItems.find(i => i.id === dcOpen), ymd, rec: (dcDone[ymd] || {})[dcOpen], staff,
         onCheck: (nm) => { saveDcDone({ ...dcDone, [ymd]: { ...(dcDone[ymd] || {}), [dcOpen]: { by: nm, t: Date.now() } } }); setDcOpen(null); setMsg(`${nm}さん 完了`); },
@@ -1618,7 +1776,7 @@ function CleanEditor({ sched, saveSched, master, saveMaster, dcItems, saveDcItem
           return h("button", { key: s.k, type: "button", className: "fk-tap", onClick: () => { setSlot(s.k); setFillAsk(false); setRmItem(null); },
             style: { gridColumn: i === CL_SLOTS.length - 1 ? "1 / -1" : "auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "10px 10px", borderRadius: 12, cursor: "pointer", border: on ? `2px solid ${s.tint}` : `1px solid ${C.line}`, background: on ? s.soft : C.card, color: C.ink } },
             h("span", { style: { fontSize: 13, fontWeight: 800, whiteSpace: "nowrap" } }, h("span", { style: { color: s.tint } }, s.time), "・", s.place),
-            h("span", { style: { fontSize: 11, fontWeight: 800, whiteSpace: "nowrap", color: filled === nDays ? C.done : C.sub } }, filled === nDays ? "✓" : `${filled}/${nDays}`)); })),
+            h("span", { style: { fontSize: 12, fontWeight: 800, whiteSpace: "nowrap", color: filled === nDays ? C.done : C.sub } }, filled === nDays ? "✓" : `${filled}/${nDays}`)); })),
       // 自動で埋める
       empty.length > 0 && list.length > 0 && (fillAsk
         ? h("div", { style: { ...cardStyle, padding: 14, marginBottom: 12 } },
@@ -1631,7 +1789,7 @@ function CleanEditor({ sched, saveSched, master, saveMaster, dcItems, saveDcItem
       h("div", { style: { ...cardStyle, overflow: "hidden" } },
         days.map((d, i) => { const t = sched[d] && sched[d][slot]; const [, , dn] = d.split("-").map(Number);
           return h("button", { key: d, type: "button", onClick: () => setPick(d), style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", background: d === todayYMD() ? C.cyanSoft : "transparent", border: "none", borderTop: i ? `1px solid ${C.lineSoft}` : "none", textAlign: "left", cursor: "pointer", color: C.ink } },
-            h("span", { style: { width: 78, flexShrink: 0, whiteSpace: "nowrap", fontSize: 13, fontWeight: 800, color: clDowColor(d), fontVariantNumeric: "tabular-nums" } }, `${m}/${dn}`, h("span", { style: { fontSize: 11, marginLeft: 3 } }, `（${WD[clDow(d)]}）`)),
+            h("span", { style: { width: 78, flexShrink: 0, whiteSpace: "nowrap", fontSize: 13, fontWeight: 800, color: clDowColor(d), fontVariantNumeric: "tabular-nums" } }, `${m}/${dn}`, h("span", { style: { fontSize: 12, marginLeft: 3 } }, `（${WD[clDow(d)]}）`)),
             h("span", { style: { flex: 1, fontSize: 14.5, fontWeight: t ? 700 : 600, color: t ? C.ink : C.subLight } }, t || "未設定"),
             h(Icon, { name: "edit", size: 16, color: C.subLight })); })),
       // 場所のリスト
@@ -1648,7 +1806,7 @@ function CleanEditor({ sched, saveSched, master, saveMaster, dcItems, saveDcItem
           h("div", { style: { flex: 1 } }, h(TextIn, { id: "ce-new", value: newItem, onChange: setNewItem, placeholder: "リストに追加する場所" })),
           h("button", { type: "button", disabled: !newItem.trim(), onClick: () => { const t = newItem.trim(); if (list.includes(t)) { setMsg("すでにリストにあります"); return; } saveMaster({ ...master, [slot]: [...list, t] }); setNewItem(""); setMsg("リストに追加しました"); },
             style: { ...subBtn, flex: "0 0 auto", padding: "0 16px", background: newItem.trim() ? C.ink : C.line, color: newItem.trim() ? "#fff" : C.subLight, border: "none" } }, "追加")),
-        h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 8 } }, "リストから外しても、すでに表に入っている日はそのまま残ります。"))),
+        h("div", { style: { fontSize: 12, color: C.subLight, marginTop: 8 } }, "リストから外しても、すでに表に入っている日はそのまま残ります。"))),
     h(Sheet, { open: !!pick, onClose: () => setPick(null), title: pick ? `${fmtYMD(pick)}　${sl.time}・${sl.place}` : "" },
       pick && h(ClTaskPicker, { key: pick + slot, current: sched[pick] && sched[pick][slot], options: list, onPick: (t) => { setTask(pick, t); setPick(null); setMsg(t ? "変更しました" : "なしにしました"); } })),
     h(Toast, { text: msg }));
@@ -1663,7 +1821,7 @@ function MultiPhotoIn({ id, value, onChange }) {
     value.map((src, i) => h("div", { key: i, style: { position: "relative", aspectRatio: "1 / 1", maxWidth: "100%" } },
       h("img", { src, alt: `写真${i + 1}`, style: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, display: "block" } }),
       h("button", { type: "button", "aria-label": `写真${i + 1}を外す`, onClick: () => onChange(value.filter((_, j) => j !== i)), style: { position: "absolute", top: 4, right: 4, width: 26, height: 26, borderRadius: 99, border: "none", background: "rgba(26,24,22,.72)", color: "#fff", display: "grid", placeItems: "center", cursor: "pointer" } }, h(Icon, { name: "x", size: 14, sw: 2.4 })))),
-    h("label", { htmlFor: id, className: "fk-tap", style: { aspectRatio: "1 / 1", maxWidth: "100%", border: `1.5px dashed ${C.line}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, color: C.sub, fontSize: 11.5, fontWeight: 800, cursor: "pointer", background: C.card } },
+    h("label", { htmlFor: id, className: "fk-tap", style: { aspectRatio: "1 / 1", maxWidth: "100%", border: `1.5px dashed ${C.line}`, borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, color: C.sub, fontSize: 12, fontWeight: 800, cursor: "pointer", background: C.card } },
       h(Icon, { name: "camera", size: 22 }), value.length ? "追加" : "写真"),
     h("input", { id, type: "file", accept: "image/*", multiple: true, onChange: pick, style: { display: "none" } }));
 }
@@ -1700,7 +1858,7 @@ function PhotoViewer({ photos, start, onClose, zoomable, name: fname }) {
         h("button", { type: "button", "aria-label": "拡大", onClick: () => setZ(Math.min(4, z + 0.75)), style: btn }, h("span", { style: { fontSize: 24, fontWeight: 800, lineHeight: 1 } }, "+"))),
       photos.length > 1 && i > 0 && z === 1 && h("button", { type: "button", "aria-label": "前の写真", onClick: () => setI(i - 1), style: { ...btn, position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }, h("span", { style: { display: "inline-block", transform: "scaleX(-1)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
       photos.length > 1 && i < photos.length - 1 && z === 1 && h("button", { type: "button", "aria-label": "次の写真", onClick: () => setI(i + 1), style: { ...btn, position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)" } }, h(Icon, { name: "chev", size: 22, sw: 2.4 }))),
-    h("div", { style: { textAlign: "center", color: "rgba(255,255,255,.55)", fontSize: 11.5, fontWeight: 700, padding: "10px 12px calc(14px + env(safe-area-inset-bottom, 0px))" } }, "＋で拡大・2回タップで拡大／戻す。「保存」から写真アプリに保存できます")), document.body);
+    h("div", { style: { textAlign: "center", color: "rgba(255,255,255,.55)", fontSize: 12, fontWeight: 700, padding: "10px 12px calc(14px + env(safe-area-inset-bottom, 0px))" } }, "＋で拡大・2回タップで拡大／戻す。「保存」から写真アプリに保存できます")), document.body);
 }
 function PhotoGrid({ photos }) {
   const [open, setOpen] = useState(null);
@@ -1764,7 +1922,7 @@ function Ranking({ done, free }) {
     h("div", { style: { display: "flex", gap: 6, marginBottom: 12 } },
       [["month", "月ごと"], ["all", "これまでの合計"]].map(([k, l]) => h("button", { key: k, type: "button", onClick: () => setPeriod(k), style: { flex: 1, border: "none", borderRadius: 999, padding: "9px 0", fontSize: 13, fontWeight: 800, cursor: "pointer", background: period === k ? C.ink : C.card, color: period === k ? "#fff" : C.sub, boxShadow: period === k ? "none" : `inset 0 0 0 1px ${C.line}` } }, l))),
     period === "month" && h(MonthNav, { ym, setYm }),
-    h("div", { style: { fontSize: 11.5, color: C.sub, fontWeight: 700, margin: "0 2px 10px" } }, "掃除表1か所＝1点、掃除表以外の掃除＝2点（日次チェックは数えません）"),
+    h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 700, margin: "0 2px 10px" } }, "掃除表1か所＝1点、掃除表以外の掃除＝2点（日次チェックは数えません）"),
     rows.length === 0 ? h(Empty, { text: "まだ記録がありません" }) :
     h("div", { style: { ...cardStyle, overflow: "hidden" } },
       rows.map((r, i) => { if (r.pts !== prev) { rank = i + 1; prev = r.pts; } const top = rank <= 3;
@@ -1772,8 +1930,8 @@ function Ranking({ done, free }) {
           h("span", { style: { width: 32, height: 32, borderRadius: 99, flexShrink: 0, display: "grid", placeItems: "center", fontSize: 14, fontWeight: 900, background: top ? medal[rank - 1] : C.lineSoft, color: top ? "#fff" : C.sub } }, rank),
           h("div", { style: { flex: 1, minWidth: 0 } },
             h("div", { style: { fontSize: 15.5, fontWeight: 900 } }, r.n),
-            h("div", { style: { fontSize: 11.5, color: C.sub, fontWeight: 700, marginTop: 1 } }, `掃除表 ${r.rot}回・掃除表以外 ${r.free}回`)),
-          h("div", { style: { fontSize: 22, fontWeight: 800, fontVariantNumeric: "tabular-nums", color: rank === 1 ? C.cyanDeep : C.ink } }, r.pts, h("span", { style: { fontSize: 11, color: C.sub, marginLeft: 2 } }, "点"))); })));
+            h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 700, marginTop: 1 } }, `掃除表 ${r.rot}回・掃除表以外 ${r.free}回`)),
+          h("div", { style: { fontSize: 22, fontWeight: 800, fontVariantNumeric: "tabular-nums", color: rank === 1 ? C.cyanDeep : C.ink } }, r.pts, h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 2 } }, "点"))); })));
 }
 
 // ───────── 日次チェック ─────────
@@ -1848,11 +2006,11 @@ function DailyCheckView({ items, done, ymd, today, onOpen, hideProgress }) {
             h("span", { style: { width: 28, height: 28, borderRadius: 99, flexShrink: 0, display: "grid", placeItems: "center", background: r ? C.done : "transparent", border: r ? "none" : `2px solid ${late ? C.drop : C.line}`, color: "#fff" } }, r && h(Icon, { name: "check", size: 17, sw: 2.8 })),
             h("span", { style: { width: 62, flexShrink: 0, lineHeight: 1.2 } },
               h("span", { style: { display: "block", fontSize: 14, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: late ? C.drop : r ? C.sub : C.ink } }, i.time),
-              h("span", { style: { display: "block", fontSize: 10, fontWeight: 800, color: late ? C.drop : next ? C.cyanDeep : C.subLight } }, late ? "過ぎています" : next ? "次はこれ" : "まで")),
+              h("span", { style: { display: "block", fontSize: 11, fontWeight: 800, color: late ? C.drop : next ? C.cyanDeep : C.subLight } }, late ? "時間超過" : next ? "次はこれ" : "まで")),
             h("span", { style: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, lineHeight: 1.45, color: r ? C.sub : C.ink } }, dcShow(i.text)),
             r && h("div", { style: { textAlign: "right", flexShrink: 0 } },
               h("div", { style: { fontSize: 12, fontWeight: 800, color: C.done } }, r.by),
-              h("div", { style: { fontSize: 10.5, color: C.subLight, fontWeight: 700 } }, `${pad(new Date(r.t).getHours())}:${pad(new Date(r.t).getMinutes())}`))); })); }));
+              h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 700 } }, `${pad(new Date(r.t).getHours())}:${pad(new Date(r.t).getMinutes())}`))); })); }));
 }
 
 function DcItemForm({ init, times, onSave, onDelete }) {
@@ -1948,7 +2106,7 @@ function QsaEditor({ data, save }) {
                     style: { width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", border: "none", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: on ? C.cyanSoft : "transparent", textAlign: "left", cursor: "pointer", color: C.ink } },
                     h("span", { style: { width: 24, height: 24, borderRadius: 7, flexShrink: 0, display: "grid", placeItems: "center", background: on ? C.ink : "transparent", border: on ? "none" : `1.5px solid ${C.line}`, color: "#fff" } }, on && h(Icon, { name: "check", size: 16, sw: 2.6 })),
                     h("span", { style: { minWidth: 0 } },
-                      it.group && h("span", { style: { display: "block", fontSize: 11, fontWeight: 800, color: C.subLight } }, `${it.no ? "No." + it.no + "　" : ""}${it.group}`),
+                      it.group && h("span", { style: { display: "block", fontSize: 12, fontWeight: 800, color: C.subLight } }, `${it.no ? "No." + it.no + "　" : ""}${it.group}`),
                       h("span", { style: { display: "block", fontSize: 14, fontWeight: on ? 800 : 600, lineHeight: 1.5 } }, it.text))); }))); })))
     : h(React.Fragment, null,
         h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 10 } }, "QSAレポート（2026年5月版）の44項目が入っています。項目が変わったときは、1行に1項目ずつ書き換えて保存します。先頭の Q・S・A で分類され、【 】の中は小見出しになります。"),
@@ -1968,7 +2126,7 @@ function QsaCard() {
       h("div", { style: { display: "flex", alignItems: "center", gap: 10, padding: "13px 16px", background: C.head, color: "#fff" } },
         h(Icon, { name: "star", size: 20, color: C.headAccent, sw: 2 }),
         h("div", { style: { flex: 1 } },
-          h("div", { style: { fontSize: 10.5, letterSpacing: ".14em", color: C.headAccent, fontWeight: 800 } }, `${new Date().getMonth() + 1}月のQSA`),
+          h("div", { style: { fontSize: 11.5, letterSpacing: ".14em", color: C.headAccent, fontWeight: 800 } }, `${new Date().getMonth() + 1}月のQSA`),
           h("div", { style: { fontSize: 15.5, fontWeight: 900, marginTop: 1 } }, "今月のこだわりポイント")),
         h("button", { type: "button", className: "fk-tap", onClick: () => setOpen(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer" } }, picks.length ? "変更" : "選ぶ")),
       picks.length === 0
@@ -1978,7 +2136,7 @@ function QsaCard() {
             return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
               h("span", { style: { width: 26, height: 26, borderRadius: 8, flexShrink: 0, display: "grid", placeItems: "center", background: cc.bg, color: cc.c, fontSize: 13, fontWeight: 900 } }, it.cat || "・"),
               h("span", { style: { minWidth: 0 } },
-                it.group && h("span", { style: { display: "block", fontSize: 11, fontWeight: 800, color: C.subLight } }, it.group),
+                it.group && h("span", { style: { display: "block", fontSize: 12, fontWeight: 800, color: C.subLight } }, it.group),
                 h("span", { style: { display: "block", fontSize: 14.5, fontWeight: 800, lineHeight: 1.5 } }, it.text))); })),
     h(Sheet, { open, onClose: () => setOpen(false), title: "QSAこだわりポイント" }, open && h(QsaEditor, { data, save })));
 }
@@ -2026,7 +2184,7 @@ const SH_COLOR = { work: "#E8772E", blue: "#3B5BDB", other: "#A39B8F" };
 const seedShift = () => ({ days: parseShiftText(SHIFT_SEED_TEXT).days });
 
 function shBreaks(p) { const w = p.segs.filter(s => s.type !== "other").sort((a, b) => a.s - b.s); const out = []; for (let i = 1; i < w.length; i++) if (w[i].s > w[i - 1].e) out.push([w[i - 1].e, w[i].s]); return out; }
-const shTag = (t) => h("span", { key: t, style: { fontSize: 10.5, fontWeight: 800, color: t === "社員" ? C.cyanDeep : t === "28h" ? "#B3412F" : C.sub, background: t === "社員" ? C.cyanSoft : t === "28h" ? "#F7E7E3" : C.lineSoft, borderRadius: 5, padding: "1px 6px" } }, t);
+const shTag = (t) => h("span", { key: t, style: { fontSize: 11.5, fontWeight: 800, color: t === "社員" ? C.cyanDeep : t === "28h" ? "#B3412F" : C.sub, background: t === "社員" ? C.cyanSoft : t === "28h" ? "#F7E7E3" : C.lineSoft, borderRadius: 5, padding: "1px 6px" } }, t);
 const shSortFn = (a, b) => { const sa = shSpan(a), sb = shSpan(b); return (sa ? sa[0] : 9999) - (sb ? sb[0] : 9999) || (sa ? sa[1] : 0) - (sb ? sb[1] : 0); };
 
 
@@ -2049,7 +2207,7 @@ function PersonShift({ name }) {
     h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, margin: "4px 0 12px" } },
       [["出勤", `${rows.length}日`], ["合計", hm(tot)], ["これから", `${rest.length}日`]].map(([l, v]) =>
         h("div", { key: l, style: { ...cardStyle, padding: "9px 10px", textAlign: "center" } },
-          h("div", { style: { fontSize: 11, fontWeight: 800, color: C.sub } }, l),
+          h("div", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, l),
           h("div", { style: { fontSize: 15.5, fontWeight: 900, marginTop: 2, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, v)))),
     rows.length === 0 ? h(Empty, { text: "この月のシフトはまだ入っていません" }) :
     h("div", { style: { ...cardStyle, overflow: "hidden" } },
@@ -2058,10 +2216,10 @@ function PersonShift({ name }) {
         return h("div", { key: x.d, style: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: isT ? C.cyanSoft : "transparent", opacity: past ? .5 : 1 } },
           h("div", { style: { width: 76, flexShrink: 0 } },
             h("div", { style: { fontSize: 14, fontWeight: 900, color: clDowColor(x.d), whiteSpace: "nowrap" } }, fmtYMD(x.d)),
-            isT && h("div", { style: { fontSize: 10.5, fontWeight: 900, color: C.cyanDeep } }, "今日")),
+            isT && h("div", { style: { fontSize: 11.5, fontWeight: 900, color: C.cyanDeep } }, "今日")),
           h("div", { style: { flex: 1, minWidth: 0 } },
             h("div", { style: { fontSize: 16, fontWeight: 900, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, `${shFmt(sp[0])}–${shFmt(sp[1])}`),
-            (br.length > 0 || blue.length > 0 || other.length > 0) && h("div", { style: { display: "flex", flexWrap: "wrap", gap: "1px 8px", fontSize: 11.5, fontWeight: 700, color: C.sub, marginTop: 1 } },
+            (br.length > 0 || blue.length > 0 || other.length > 0) && h("div", { style: { display: "flex", flexWrap: "wrap", gap: "1px 8px", fontSize: 12, fontWeight: 700, color: C.sub, marginTop: 1 } },
               br.map((b, k) => h("span", { key: "b" + k, style: { whiteSpace: "nowrap" } }, `休憩 ${shFmt(b[0])}–${shFmt(b[1])}`)),
               blue.map((b, k) => h("span", { key: "u" + k, style: { color: SH_COLOR.blue, whiteSpace: "nowrap" } }, `${b.label || "事務"} ${shFmt(b.s)}–${shFmt(b.e)}`)),
               other.map((b, k) => h("span", { key: "o" + k, style: { whiteSpace: "nowrap" } }, `${b.label || "他店舗"} ${shFmt(b.s)}–${shFmt(b.e)}`)))),
@@ -2088,7 +2246,7 @@ function ShiftList({ people, me, onName }) {
       h("div", { style: { flex: 1, minWidth: 0 } },
         h("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } },
           shNameBtn(p.name, mine ? onName : null, { fontSize: 16, fontWeight: 900, color: mine ? C.cyanDeep : C.ink }),
-          mine && h("span", { style: { fontSize: 10.5, fontWeight: 900, color: "#fff", background: C.cyanDeep, borderRadius: 5, padding: "1px 6px" } }, "自分"),
+          mine && h("span", { style: { fontSize: 11.5, fontWeight: 900, color: "#fff", background: C.cyanDeep, borderRadius: 5, padding: "1px 6px" } }, "自分"),
           p.tags.map(shTag)),
         (br.length > 0 || labels.length > 0 || blue.length > 0 || other.length > 0) && h("div", { style: { display: "flex", flexWrap: "wrap", gap: "4px 10px", marginTop: 5, fontSize: 12.5, fontWeight: 700, color: C.sub } },
           br.map((b, k) => h("span", { key: "b" + k }, `休憩 ${shFmt(b[0])}–${shFmt(b[1])}`)),
@@ -2103,7 +2261,7 @@ function ShiftList({ people, me, onName }) {
     groups.map(g => { const ps = work.filter(p => g.f(shSpan(p)[0])); if (!ps.length) return null;
       return h("div", { key: g.k, style: { marginBottom: 12 } },
         h("div", { style: { display: "flex", alignItems: "baseline", gap: 8, margin: "4px 4px 8px" } },
-          h("span", { style: { fontSize: 15, fontWeight: 900 } }, g.l), h("span", { style: { fontSize: 11.5, fontWeight: 700, color: C.subLight } }, g.sub),
+          h("span", { style: { fontSize: 15, fontWeight: 900 } }, g.l), h("span", { style: { fontSize: 12, fontWeight: 700, color: C.subLight } }, g.sub),
           h("span", { style: { marginLeft: "auto", fontSize: 12, fontWeight: 800, color: C.sub } }, `${ps.length}人`)),
         h("div", { style: { ...cardStyle, overflow: "hidden" } }, ps.map(row))); }),
     away.length > 0 && h("div", { style: { marginBottom: 12 } },
@@ -2127,25 +2285,25 @@ function ShiftTimeline({ people, me, onName }) {
     h("div", { style: { overflowX: "auto", WebkitOverflowScrolling: "touch" } },
       h("div", { style: { width: NW + gridW + 8 } },
         h("div", { style: { display: "flex", background: "#FAF9F6", borderBottom: `1px solid ${C.line}` } },
-          h("div", { style: { ...cell, background: "#FAF9F6", fontSize: 11, fontWeight: 800, color: C.sub, padding: "8px 10px" } }, "時刻"),
+          h("div", { style: { ...cell, background: "#FAF9F6", fontSize: 12, fontWeight: 800, color: C.sub, padding: "8px 10px" } }, "時刻"),
           hours.map(hr => h("div", { key: hr, style: { width: HW, flexShrink: 0, fontSize: 12.5, fontWeight: 900, padding: "7px 0 7px 4px", borderLeft: `1px solid ${C.lineSoft}`, fontVariantNumeric: "tabular-nums" } }, hr))),
         h("div", { style: { display: "flex", borderBottom: `1px solid ${C.line}` } },
-          h("div", { style: { ...cell, fontSize: 11, fontWeight: 800, color: C.sub, padding: "7px 10px" } }, "人数"),
+          h("div", { style: { ...cell, fontSize: 12, fontWeight: 800, color: C.sub, padding: "7px 10px" } }, "人数"),
           hours.map(hr => { const n = cnt(hr); return h("div", { key: hr, style: { width: HW, flexShrink: 0, textAlign: "center", padding: "5px 0", borderLeft: `1px solid ${C.lineSoft}` } },
             h("span", { style: { display: "inline-block", minWidth: 22, borderRadius: 6, fontSize: 12.5, fontWeight: 900, padding: "1px 0", background: n ? C.cyanSoft : "transparent", color: n ? C.cyanDeep : C.subLight } }, n || "–")); })),
         sorted.map((p, i) => { const mine = shIsMe(p.name, me); const bg = mine ? C.cyanSoft : C.card;
           return h("div", { key: p.name + i, style: { display: "flex", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: bg } },
             h("div", { style: { ...cell, background: bg, padding: "8px 8px 8px 10px" } },
               h("div", { style: { fontSize: 13, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: mine ? C.cyanDeep : C.ink } }, shNameBtn(p.name, mine ? onName : null, { fontSize: 13, fontWeight: 900, color: mine ? C.cyanDeep : C.ink })),
-              h("div", { style: { fontSize: 11, color: C.sub, fontWeight: 800 } }, `${shHours(p)}h`)),
+              h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 800 } }, `${shHours(p)}h`)),
             h("div", { style: { position: "relative", width: gridW, flexShrink: 0, minHeight: 46 } },
               hours.map((hr, k) => h("span", { key: hr, style: { position: "absolute", left: k * HW, top: 0, bottom: 0, width: 1, background: C.lineSoft } })),
               shBreaks(p).map((b, k) => h("div", { key: "g" + k, style: { position: "absolute", left: X(b[0]), width: X(b[1]) - X(b[0]), top: "50%", height: 2, marginTop: -1, background: `repeating-linear-gradient(90deg, ${C.subLight} 0 4px, transparent 4px 8px)` } })),
               p.segs.map((s, k) => h("div", { key: k, style: { position: "absolute", left: X(s.s), width: X(s.e) - X(s.s), top: "50%", height: 26, marginTop: -13, borderRadius: 7, background: SH_COLOR[s.type], overflow: "hidden", display: "flex", alignItems: "center", padding: "0 6px", gap: 6 } },
-                h("span", { style: { fontSize: 11, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } }, `${shFmt(s.s)}–${shFmt(s.e)}`),
-                s.label && h("span", { style: { fontSize: 10.5, fontWeight: 800, color: "rgba(255,255,255,.85)", whiteSpace: "nowrap" } }, s.label)))));
+                h("span", { style: { fontSize: 12, fontWeight: 900, color: "#fff", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } }, `${shFmt(s.s)}–${shFmt(s.e)}`),
+                s.label && h("span", { style: { fontSize: 11.5, fontWeight: 800, color: "rgba(255,255,255,.85)", whiteSpace: "nowrap" } }, s.label)))));
         }))),
-    h("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", padding: "9px 12px", borderTop: `1px solid ${C.line}`, fontSize: 11, fontWeight: 700, color: C.sub } },
+    h("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", padding: "9px 12px", borderTop: `1px solid ${C.line}`, fontSize: 12, fontWeight: 700, color: C.sub } },
       [["work", "勤務"], ["blue", "事務"], ["other", "他店舗"]].map(([k, l]) => h("span", { key: k, style: { display: "flex", alignItems: "center", gap: 4 } }, h("span", { style: { width: 14, height: 8, borderRadius: 2, background: SH_COLOR[k] } }), l)),
       h("span", { style: { display: "flex", alignItems: "center", gap: 4 } }, h("span", { style: { width: 14, height: 2, background: `repeating-linear-gradient(90deg, ${C.subLight} 0 3px, transparent 3px 6px)` } }), "休憩"),
       h("span", { style: { marginLeft: "auto" } }, "← 横にスクロールできます")));
@@ -2161,7 +2319,7 @@ function ShiftImport({ onSave }) {
     h("div", { style: { fontSize: 12.5, fontWeight: 800, color: ks.length ? C.done : C.sub, margin: "8px 2px" } }, ks.length ? `${fmtYMD(ks[0])}〜${fmtYMD(ks[ks.length - 1])}　${ks.length}日分・${ks.reduce((a, k) => a + r.days[k].length, 0)}人分を読み取りました` : "まだ読み取れていません"),
     r.errors.length > 0 && h("div", { style: { fontSize: 12, fontWeight: 700, color: C.drop, background: "#FBEAE6", borderRadius: 10, padding: "8px 12px", marginBottom: 8, lineHeight: 1.6 } }, r.errors.slice(0, 4).map((e, i) => h("div", { key: i }, e))),
     h("button", { type: "button", className: "fk-tap", disabled: !ks.length, onClick: () => onSave(r.days), style: { ...primaryBtn, background: ks.length ? C.ink : C.line, color: ks.length ? "#fff" : C.subLight } }, h(Icon, { name: "check", size: 20, sw: 2.2 }), "シフトを取り込む"),
-    h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 8 } }, "同じ日付のシフトは、新しい内容で置き換わります。"));
+    h("div", { style: { fontSize: 12, color: C.subLight, marginTop: 8 } }, "同じ日付のシフトは、新しい内容で置き換わります。"));
 }
 
 const SHIFT_NAME_FIX = { "Do Nhat Linh": "リン", "ベ ギュグ": "ギュ", "WANG QI": "オウ" };
@@ -2209,16 +2367,16 @@ function MkConfirm({ add, existing, onSave, onCancel }) {
       h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", background: "#FAF9F6" } },
         h("span", { style: { fontSize: 15, fontWeight: 900, color: clDowColor(d) } }, fmtYMD(d)),
         h("span", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, add[d].length ? `${add[d].length}人・${add[d].reduce((a, p) => a + shHours(p), 0)}時間` : "シフトなし"),
-        h("span", { style: { marginLeft: "auto", fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "2px 8px", color: f.isNew ? C.cyanDeep : f.ch ? "#8A5A00" : C.sub, background: f.isNew ? C.cyanSoft : f.ch ? "#FAF0DC" : C.lineSoft } }, f.isNew ? "新しく追加" : f.ch ? `変更 ${f.ch}人` : "変更なし")),
+        h("span", { style: { marginLeft: "auto", fontSize: 12, fontWeight: 900, borderRadius: 6, padding: "2px 8px", color: f.isNew ? C.cyanDeep : f.ch ? "#8A5A00" : C.sub, background: f.isNew ? C.cyanSoft : f.ch ? "#FAF0DC" : C.lineSoft } }, f.isNew ? "新しく追加" : f.ch ? `変更 ${f.ch}人` : "変更なし")),
       add[d].slice().sort(shSortFn).map((p, i) => { const sp = shSpan(p); const m = f.isNew ? null : f.mark[shNorm(p.name)];
         return h("div", { key: i, style: { display: "flex", gap: 8, alignItems: "center", padding: "7px 14px", borderTop: `1px solid ${C.lineSoft}`, background: m ? tagC[m][1] : "transparent" } },
           h("span", { style: { fontSize: 14, fontWeight: 900, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.name),
-          m && h("span", { style: { flexShrink: 0, fontSize: 10.5, fontWeight: 900, color: "#fff", background: tagC[m][0], borderRadius: 5, padding: "1px 6px" } }, m),
+          m && h("span", { style: { flexShrink: 0, fontSize: 11.5, fontWeight: 900, color: "#fff", background: tagC[m][0], borderRadius: 5, padding: "1px 6px" } }, m),
           h("span", { style: { marginLeft: "auto", fontSize: 14, fontWeight: 800, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, sp ? `${shFmt(sp[0])}–${shFmt(sp[1])}` : "—"),
-          h("span", { style: { width: 34, textAlign: "right", fontSize: 11.5, fontWeight: 800, color: C.subLight } }, `${shHours(p)}h`)); }),
+          h("span", { style: { width: 34, textAlign: "right", fontSize: 12, fontWeight: 800, color: C.subLight } }, `${shHours(p)}h`)); }),
       f.gone.length > 0 && h("div", { style: { padding: "7px 14px", borderTop: `1px solid ${C.lineSoft}`, background: "#FBEAE6", fontSize: 12.5, fontWeight: 800, color: C.drop } }, `外れた人：${f.gone.join("・")}`)); };
   const stat = (n, l, c, bg) => h("div", { style: { flex: 1, borderRadius: 12, background: bg, padding: "8px 6px", textAlign: "center" } },
-    h("div", { style: { fontSize: 18, fontWeight: 900, color: c } }, `${n}日`), h("div", { style: { fontSize: 11, fontWeight: 800, color: c } }, l));
+    h("div", { style: { fontSize: 18, fontWeight: 900, color: c } }, `${n}日`), h("div", { style: { fontSize: 12, fontWeight: 800, color: c } }, l));
   return h("div", null,
     h("div", { style: { fontSize: 13, color: C.sub, fontWeight: 700, lineHeight: 1.7, marginBottom: 10 } }, `まかせてネットから ${md(ks[0])}〜${md(ks[ks.length - 1])} の${ks.length}日分が届きました。今のアプリの内容と比べた結果です。`),
     h("div", { style: { display: "flex", gap: 6, marginBottom: 14 } },
@@ -2226,10 +2384,10 @@ function MkConfirm({ add, existing, onSave, onCancel }) {
     chD.map(dayCard),
     newD.length > 0 && (showNew || newD.length <= 2 ? newD.map(dayCard) : h("button", { type: "button", onClick: () => setShowNew(true), style: { ...subBtn, width: "100%", marginBottom: 10, textAlign: "left", padding: "10px 14px", lineHeight: 1.6, background: C.cyanSoft, border: "none" } },
       h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.cyanDeep } }, `新しく追加 ${newD.length}日（タップで表示）`),
-      h("div", { style: { fontSize: 11.5, fontWeight: 700, color: C.sub } }, newD.map(md).join("・")))),
+      h("div", { style: { fontSize: 12, fontWeight: 700, color: C.sub } }, newD.map(md).join("・")))),
     sameD.length > 0 && (showAll ? sameD.map(dayCard) : h("button", { type: "button", onClick: () => setShowAll(true), style: { ...subBtn, width: "100%", marginBottom: 10, textAlign: "left", padding: "10px 14px", lineHeight: 1.6 } },
       h("div", { style: { fontSize: 12.5, fontWeight: 900 } }, `変更なし ${sameD.length}日（タップで表示）`),
-      h("div", { style: { fontSize: 11.5, fontWeight: 700, color: C.sub } }, sameD.map(md).join("・")))),
+      h("div", { style: { fontSize: 12, fontWeight: 700, color: C.sub } }, sameD.map(md).join("・")))),
     h("button", { type: "button", className: "fk-tap", onClick: onSave, style: { ...primaryBtn, marginTop: 4 } }, h(Icon, { name: "check", size: 20, sw: 2.2 }), chD.length + newD.length ? `取り込む（変更${chD.length}日・追加${newD.length}日）` : "このまま取り込む（変更なし）"),
     h("button", { type: "button", onClick: onCancel, style: { border: "none", background: "transparent", color: C.sub, fontSize: 13, fontWeight: 800, width: "100%", padding: 12, cursor: "pointer" } }, "取り込まない"));
 }
@@ -2250,7 +2408,7 @@ function MkInstall() {
       step(1, "下の黄色いボタンを、ブックマークバーへドラッグ", "ブックマークバーが出ていないときは Ctrl＋Shift＋B（Macは⌘＋Shift＋B）"),
       h("div", { style: { textAlign: "center", margin: "4px 0 12px" } },
         h("a", { ref, onClick: (e) => e.preventDefault(), draggable: true, style: { display: "inline-flex", alignItems: "center", gap: 6, background: C.cyan, color: C.onAccent, borderRadius: 999, padding: "10px 18px", fontSize: 14, fontWeight: 900, textDecoration: "none", cursor: "grab" } }, "肥後橋アプリへ送る")),
-      h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.6 } }, "ドラッグできないときは「コードをコピー」→ ブックマークを新しく作り、URL欄に貼り付けてください。"),
+      h("div", { style: { fontSize: 12, color: C.subLight, lineHeight: 1.6 } }, "ドラッグできないときは「コードをコピー」→ ブックマークを新しく作り、URL欄に貼り付けてください。"),
       h("button", { type: "button", onClick: copy, style: { ...subBtn, width: "100%", marginTop: 8 } }, copied ? "コピーしました" : "コードをコピー")),
     h("div", { style: { ...cardStyle, padding: 14 } },
       h("div", { style: { fontSize: 13, fontWeight: 900, marginBottom: 10 } }, "毎回の使い方"),
@@ -2306,27 +2464,27 @@ function ShiftApp({ incoming, onIncomingDone }) {
         h("div", { style: { display: "flex", gap: 6, overflowX: "auto" } },
           mine.map(x => { const sp = x.p && shSpan(x.p);
             return h("button", { key: x.d, type: "button", onClick: () => { setYmd(x.d); setCmRaw(x.d.slice(0, 7)); }, style: { flexShrink: 0, minWidth: 78, borderRadius: 12, padding: "7px 8px", cursor: "pointer", textAlign: "center", border: x.d === ymd ? `1.5px solid ${C.ink}` : `1px solid ${C.line}`, background: sp ? C.card : C.lineSoft, color: C.ink } },
-              h("div", { style: { fontSize: 11, fontWeight: 800, color: clDowColor(x.d) } }, x.d === today ? "今日" : fmtYMD(x.d)),
+              h("div", { style: { fontSize: 12, fontWeight: 800, color: clDowColor(x.d) } }, x.d === today ? "今日" : fmtYMD(x.d)),
               h("div", { style: { fontSize: 12.5, fontWeight: 900, marginTop: 2, fontVariantNumeric: "tabular-nums", color: sp ? C.ink : C.subLight } }, sp ? `${shFmt(sp[0])}–${shFmt(sp[1])}` : "休み")); }))),
       h(MonthNav, { ym: cm, setYm: setCm, ahead: 2 }),
       h("div", { ref: rowRef, style: { display: "flex", gap: 6, overflowX: "auto", paddingBottom: 8, marginBottom: 10 } },
         monthDays.map(d => { const on = d === ymd; const has = !!days[d]; const [, , dn] = d.split("-").map(Number); const meIn = me && has && days[d].some(x => shIsMe(x.name, me) && shHours(x) > 0);
           return h("button", { key: d, "data-d": d, type: "button", onClick: () => setYmd(d), style: { flexShrink: 0, width: 50, padding: "6px 0 5px", borderRadius: 12, textAlign: "center", cursor: "pointer", background: on ? C.cyan : "#fff", border: on ? "none" : d === today ? `1.5px solid ${C.ink}` : `1px solid ${C.line}`, color: on ? C.onAccent : clDowColor(d), opacity: has || on ? 1 : .5 } },
-            h("div", { style: { fontSize: 9.5, opacity: .7, fontWeight: 700 } }, d === today ? "今日" : " "),
+            h("div", { style: { fontSize: 10.5, opacity: .7, fontWeight: 700 } }, d === today ? "今日" : " "),
             h("div", { style: { fontSize: 15, fontWeight: 800, lineHeight: 1.1 } }, dn),
-            h("div", { style: { fontSize: 10, opacity: .8 } }, WD[clDow(d)]),
+            h("div", { style: { fontSize: 11, opacity: .8 } }, WD[clDow(d)]),
             h("div", { style: { height: 6, display: "flex", justifyContent: "center", marginTop: 2 } }, meIn ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: on ? C.onAccent : C.drop } }) : has ? h("span", { style: { width: 6, height: 6, borderRadius: 99, background: on ? C.onAccent : C.cyanDeep } }) : null)); })),
       h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } },
         h("button", { type: "button", "aria-label": "前の日", onClick: () => go(-1), style: { ...subBtn, flex: "0 0 auto", width: 40, padding: "8px 0" } }, "‹"),
         h("div", { style: { flex: 1, textAlign: "center" } },
           h("div", { style: { fontSize: 17, fontWeight: 900, color: clDowColor(ymd) } }, `${ymd === today ? "今日 " : ""}${fmtYMD(ymd)}`),
-          people.length > 0 && h("div", { style: { fontSize: 11.5, color: C.sub, fontWeight: 800 } }, `${here.length}人・合計${totalH}時間`),
-          (data.mkAt || {})[ymd] && h("div", { style: { fontSize: 11, color: C.subLight, fontWeight: 700, marginTop: 1 } }, (() => { const t = new Date(data.mkAt[ymd]); return `まかせてネットから ${t.getMonth() + 1}/${t.getDate()} ${pad(t.getHours())}:${pad(t.getMinutes())} に取り込み`; })())),
+          people.length > 0 && h("div", { style: { fontSize: 12, color: C.sub, fontWeight: 800 } }, `${here.length}人・合計${totalH}時間`),
+          (data.mkAt || {})[ymd] && h("div", { style: { fontSize: 12, color: C.subLight, fontWeight: 700, marginTop: 1 } }, (() => { const t = new Date(data.mkAt[ymd]); return `まかせてネットから ${t.getMonth() + 1}/${t.getDate()} ${pad(t.getHours())}:${pad(t.getMinutes())} に取り込み`; })())),
         h("button", { type: "button", "aria-label": "次の日", onClick: () => go(1), style: { ...subBtn, flex: "0 0 auto", width: 40, padding: "8px 0" } }, "›")),
       people.length > 0 && h("div", { style: { display: "flex", gap: 6, marginBottom: 12 } },
         [["list", "一覧"], ["time", "時間の表"]].map(([k, l]) => h("button", { key: k, type: "button", onClick: () => setModeP(k), style: { flex: 1, border: "none", borderRadius: 999, padding: "9px 0", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: mode === k ? C.ink : C.card, color: mode === k ? "#fff" : C.sub, boxShadow: mode === k ? "none" : `inset 0 0 0 1px ${C.line}` } }, l))),
       people.length ? (mode === "time" ? h(ShiftTimeline, { people, me, onName: setPerson }) : h(ShiftList, { people, me, onName: setPerson })) : h(Empty, { text: "この日のシフトはまだ取り込まれていません" }),
-      lastDay && h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 700, marginTop: 10, padding: "0 4px" } }, `シフトは${fmtYMD(lastDay)}まで入っています`)),
+      lastDay && h("div", { style: { fontSize: 12, color: C.subLight, fontWeight: 700, marginTop: 10, padding: "0 4px" } }, `シフトは${fmtYMD(lastDay)}まで入っています`)),
     h(Sheet, { open: !!incoming, onClose: onIncomingDone, title: "まかせてネットから取り込み" },
       incoming && h(MkConfirm, { add: incoming, existing: days, onCancel: onIncomingDone,
         onSave: () => { const at = Date.now(); const mkAt = { ...(data.mkAt || {}) }; Object.keys(incoming).forEach(k => { mkAt[k] = at; }); save({ ...data, days: { ...days, ...incoming }, mkAt }); const ks = Object.keys(incoming).sort(); setYmd(ks[0]); setCmRaw(ks[0].slice(0, 7)); setMsg(`${ks.length}日分を取り込みました`); onIncomingDone(); } })),
@@ -2518,7 +2676,7 @@ function ShotImport({ onSave }) {
           h("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
             h("img", { src: p.img, alt: "名前の部分", style: { height: 20, maxWidth: 150, borderRadius: 3, border: `1px solid ${C.line}` } }),
             h("span", { style: { marginLeft: "auto", fontSize: 14, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: sp ? C.ink : C.subLight } }, sp ? `${shFmt(sp[0])}–${shFmt(sp[1])}` : p.segs.length ? "他店舗のみ" : "勤務なし"),
-            h("span", { style: { fontSize: 11.5, fontWeight: 800, color: bad ? C.drop : C.done } }, bad ? `⚠ ${hrs}h（表は${p.sysH}h）` : `${hrs}h ✓`)),
+            h("span", { style: { fontSize: 12, fontWeight: 800, color: bad ? C.drop : C.done } }, bad ? `⚠ ${hrs}h（表は${p.sysH}h）` : `${hrs}h ✓`)),
           p.segs.length > 0 && (p.known
             ? h("div", { style: { display: "flex", alignItems: "center", gap: 6, marginTop: 6 } },
                 h("span", { style: { fontSize: 14.5, fontWeight: 900 } }, p.name), p.tags.map(shTag),
@@ -2587,7 +2745,7 @@ function MenuRow({ icon, tint, soft, title, badge, badgeWarn, onClick }) {
     style: { width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 14px 14px 12px", background: "transparent", border: "none", textAlign: "left", cursor: "pointer", color: C.ink } },
     h("span", { style: { width: 44, height: 44, borderRadius: 13, background: soft, color: tint, display: "grid", placeItems: "center", flexShrink: 0 } }, h(Icon, { name: icon, size: 24 })),
     h("span", { style: { flex: 1, minWidth: 0, fontSize: 15.5, fontWeight: 800 } }, title),
-    badge && h("span", { style: { fontSize: 11.5, fontWeight: 800, borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap", color: badgeWarn ? "#fff" : C.cyanDeep, background: badgeWarn ? C.drop : C.cyanSoft } }, badge),
+    badge && h("span", { style: { fontSize: 12, fontWeight: 800, borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap", color: badgeWarn ? "#fff" : C.cyanDeep, background: badgeWarn ? C.drop : C.cyanSoft } }, badge),
     h(Icon, { name: "chev", size: 18, sw: 2, color: C.subLight }));
 }
 
@@ -2633,9 +2791,9 @@ const qsaGoal = (t) => (t || "").split(/\s*※/)[0].trim()
 
 function HomeStat({ label, value, sub, color, big }) {
   return h("div", { style: { minWidth: 0 } },
-    h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.sub, whiteSpace: "nowrap" } }, label),
+    h("div", { style: { fontSize: 12, fontWeight: 800, color: C.sub, whiteSpace: "nowrap" } }, label),
     h("div", { style: { fontSize: big ? "clamp(16px, 5.3vw, 22px)" : "clamp(15px, 4.9vw, 19px)", fontWeight: 800, marginTop: 2, fontVariantNumeric: "tabular-nums", color: color || C.ink, whiteSpace: "nowrap", letterSpacing: "-.01em" } }, value),
-    sub && h("div", { style: { fontSize: 10.5, fontWeight: 700, color: C.subLight, marginTop: 1 } }, sub));
+    sub && h("div", { style: { fontSize: 11.5, fontWeight: 700, color: C.subLight, marginTop: 1 } }, sub));
 }
 
 // 今日のシフト（ホーム用の短い一覧）
@@ -2658,18 +2816,62 @@ function HomeShift({ people, me, go, onName }) {
       ? h("div", { style: { padding: "16px 14px", fontSize: 13, color: C.sub, fontWeight: 700, borderTop: `1px solid ${C.lineSoft}` } }, "今日のシフトはまだ登録されていません")
       : groups.map(g => { const ps = work.filter(p => g.f(shSpan(p)[0])); if (!ps.length) return null;
           return h("div", { key: g.l, style: { borderTop: `1px solid ${C.lineSoft}`, padding: "8px 14px 6px" } },
-            h("div", { style: { fontSize: 11, fontWeight: 900, color: C.subLight, letterSpacing: ".06em", marginBottom: 2 } }, g.l),
+            h("div", { style: { fontSize: 12, fontWeight: 900, color: C.subLight, letterSpacing: ".06em", marginBottom: 2 } }, g.l),
             ps.map((p, i) => { const sp = shSpan(p); const mine = shIsMe(p.name, me); const blue = p.segs.some(s => s.type === "blue");
               return h("div", { key: p.name + i, style: { display: "flex", alignItems: "center", gap: 8, padding: "5px 0", margin: mine ? "0 -8px" : 0, paddingLeft: mine ? 8 : 0, paddingRight: mine ? 8 : 0, borderRadius: 8, background: mine ? C.cyanSoft : "transparent" } },
                 shNameBtn(p.name, mine ? onName : null, { fontSize: 15, fontWeight: 900, color: mine ? C.cyanDeep : C.ink, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
-                p.tags.includes("社員") && h("span", { style: { flexShrink: 0, whiteSpace: "nowrap", fontSize: 10, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 5, padding: "0 5px" } }, "社員"),
+                p.tags.includes("社員") && h("span", { style: { flexShrink: 0, whiteSpace: "nowrap", fontSize: 11, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 5, padding: "0 5px" } }, "社員"),
                 h("span", { style: { marginLeft: "auto", flexShrink: 0, fontSize: 14.5, fontWeight: 800, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, `${shFmt(sp[0])}–${shFmt(sp[1])}`),
-                h("span", { style: { width: 36, flexShrink: 0, textAlign: "right", fontSize: 11.5, fontWeight: 800, color: C.subLight, fontVariantNumeric: "tabular-nums" } }, hm(p))); })); }));
+                h("span", { style: { width: 36, flexShrink: 0, textAlign: "right", fontSize: 12, fontWeight: 800, color: C.subLight, fontVariantNumeric: "tabular-nums" } }, hm(p))); })); }));
 }
 
+// ホーム：自分の未読の掲示
+function HomeUnread({ go, me, onPickMe }) {
+  const staff = readStored(STAFF_KEY, seedStaff).names;
+  const list = readStored(BD_KEY, seedBoard);
+  if (!me) {
+    if (!staff.length || !list.length) return null;
+    return h("button", { type: "button", className: "fk-tap", onClick: onPickMe, style: { ...cardStyle, width: "100%", marginTop: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", color: C.ink, textAlign: "left" } },
+      h(Icon, { name: "board", size: 20, color: "#44548A" }),
+      h("span", { style: { flex: 1, fontSize: 13, fontWeight: 800, lineHeight: 1.5 } }, "名前を選ぶと、自分がまだ読んでいない掲示がここに出ます"),
+      h(Icon, { name: "chev", size: 16, sw: 2, color: C.subLight }));
+  }
+  const mine = bdMine(list, me, staff);
+  if (!mine.length) return h("div", { style: { ...cardStyle, marginTop: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, color: C.done, fontSize: 13.5, fontWeight: 800 } },
+    h(Icon, { name: "check", size: 18, sw: 2.4 }), "未読の掲示はありません");
+  const show = mine.slice(0, 3);
+  return h("div", { style: { ...cardStyle, marginTop: 10, overflow: "hidden", border: `1.5px solid ${C.drop}` } },
+    h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "11px 14px", background: C.drop, color: "#fff" } },
+      h(Icon, { name: "board", size: 20 }),
+      h("span", { style: { fontSize: 15, fontWeight: 900 } }, `${me}さんの未読`),
+      h("span", { style: { marginLeft: "auto", fontSize: 15, fontWeight: 900, fontVariantNumeric: "tabular-nums" } }, `${mine.length}件`)),
+    show.map((p, i) => { const cat = bdCat(p.cat);
+      return h("button", { key: p.id, type: "button", className: "fk-tap", onClick: () => { _bdOpen = p.id; go("board"); },
+        style: { width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "transparent", border: "none", borderTop: i ? `1px solid ${C.lineSoft}` : "none", textAlign: "left", cursor: "pointer", color: C.ink } },
+        h("div", { style: { flex: 1, minWidth: 0 } },
+          h("div", { style: { display: "flex", alignItems: "center", gap: 6, marginBottom: 3 } },
+            h(Pill, { text: p.cat, color: cat.c, bg: cat.bg }),
+            h("span", { style: { fontSize: 12, color: C.subLight, fontWeight: 700 } }, `${p.author}・${ago(p.createdAt)}`)),
+          h("div", { style: { fontSize: 15, fontWeight: 800, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.title)),
+        h("span", { style: { flexShrink: 0, fontSize: 12, fontWeight: 800, color: C.drop, whiteSpace: "nowrap" } }, "読む"),
+        h(Icon, { name: "chev", size: 16, sw: 2, color: C.subLight })); }),
+    mine.length > show.length && h("button", { type: "button", onClick: () => { _bdFilter = "mine"; go("board"); }, style: { width: "100%", padding: "11px 0", background: "#FAF9F6", border: "none", borderTop: `1px solid ${C.lineSoft}`, color: C.sub, fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, `ほか${mine.length - show.length}件を見る`));
+}
+
+function BackHome({ go }) {
+  return h("button", { type: "button", onClick: () => go("home"), style: { border: "none", background: "transparent", color: "rgba(255,255,255,.75)", fontSize: 13, fontWeight: 800, padding: "0 0 8px", cursor: "pointer", display: "flex", alignItems: "center", gap: 2 } },
+    h("span", { style: { display: "inline-block", transform: "scaleX(-1)" } }, h(Icon, { name: "chev", size: 15, sw: 2.2 })), "ホーム");
+}
 function Home({ go }) {
   const [me] = useMe();
   const [meOpen, setMeOpen] = useState(false);
+  const [meFirst, setMeFirst] = useState(false);
+  const staffN = readStored(STAFF_KEY, seedStaff).names.length;
+  useEffect(() => {
+    if (me || !staffN) return;
+    try { if (localStorage.getItem("higo_me_asked_v1")) return; localStorage.setItem("higo_me_asked_v1", "1"); } catch (e) { return; }
+    setMeFirst(true); setMeOpen(true);
+  }, [staffN]);
   const [person, setPerson] = useState(null);
   const now = new Date(), hr = now.getHours();
   const [greet] = useState(() => pickGreet(hr));
@@ -2704,17 +2906,17 @@ function Home({ go }) {
       h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
         h("div", { style: { display: "flex", alignItems: "center", gap: 10, minWidth: 0 } },
           h(AppTitle, { title: "肥後橋店", solo: true }),
-          h("button", { type: "button", className: "fk-tap", onClick: () => go("staff"), style: { display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,.10)", color: "rgba(255,255,255,.85)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 999, padding: "4px 10px 4px 8px", fontSize: 11.5, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" } },
+          h("button", { type: "button", className: "fk-tap", onClick: () => go("staff"), style: { display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,.10)", color: "rgba(255,255,255,.85)", border: "1px solid rgba(255,255,255,.18)", borderRadius: 999, padding: "4px 10px 4px 8px", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" } },
             h(Icon, { name: "staff", size: 14, sw: 2 }), `名簿 ${staff.length}人`)),
         h("div", { style: { fontSize: 12, color: "rgba(255,255,255,.62)", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 } }, `${mo}/${now.getDate()}（${WD[now.getDay()]}）`)),
       h("div", { style: { marginTop: 18, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 } },
         h("div", { style: { fontSize: 17, fontWeight: 900, letterSpacing: ".02em", lineHeight: 1.45, minWidth: 0, textWrap: "pretty" } }, greetText(greet, me)),
-        h("button", { type: "button", className: "fk-tap", onClick: () => setMeOpen(true), style: { flexShrink: 0, background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "6px 12px", fontSize: 12, fontWeight: 800, cursor: "pointer" } }, me ? "設定" : "名前を選ぶ")),
-      qsaToday && (() => { const cc = qsaCat(qsaToday.cat);
+        h("button", { type: "button", className: "fk-tap", onClick: () => setMeOpen(true), style: { flexShrink: 0, background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "6px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" } }, h(Icon, { name: me ? "gear" : "staff", size: 14, sw: 2 }), me ? me : "名前を選ぶ")),
+      false && qsaToday && (() => { const cc = qsaCat(qsaToday.cat);
         return h("div", { style: { marginTop: 12, display: "flex", gap: 10, alignItems: "flex-start", background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "10px 12px" } },
           h("span", { style: { flexShrink: 0, width: 24, height: 24, borderRadius: 7, display: "grid", placeItems: "center", background: cc.bg, color: cc.c, fontSize: 13, fontWeight: 900 } }, qsaToday.cat),
           h("div", { style: { minWidth: 0 } },
-            h("div", { style: { fontSize: 10.5, fontWeight: 800, color: C.headAccent, letterSpacing: ".08em" } }, "今日はここを意識しましょう"),
+            h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.headAccent, letterSpacing: ".08em" } }, "今日はここを意識しましょう"),
             h("div", { style: { fontSize: 13.5, fontWeight: 700, lineHeight: 1.55, marginTop: 2, color: "rgba(255,255,255,.92)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" } }, qsaGoal(qsaToday.text)))); })()),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "0 14px calc(104px + env(safe-area-inset-bottom))" } },
       fbAuthError && h("div", { style: { position: "relative", zIndex: 32, marginTop: -12, marginBottom: 20, background: "#FBEAE6", color: C.drop, borderRadius: 12, padding: "10px 14px", fontSize: 12.5, fontWeight: 800, lineHeight: 1.6 } }, `サーバーに接続できません（${fbAuthError}）。入力はこの端末に一時保存され、つながったときに送られます。`),
@@ -2724,29 +2926,29 @@ function Home({ go }) {
         h("div", { style: { borderLeft: `1px solid ${C.lineSoft}`, paddingLeft: 12, minWidth: 0 } }, h(HomeStat, { label: "硬貨端数（累計）", value: yenF(hasu), big: true })),
         h("div", { style: { borderTop: `1px solid ${C.lineSoft}`, paddingTop: 12, minWidth: 0 } }, h(HomeStat, { label: "人時生産性", value: prod ? yenF(prod) : "—", sub: prod ? `売上÷シフト時間（${pDays}日分）` : "シフトが入った日がまだありません" })),
         h("div", { style: { borderTop: `1px solid ${C.lineSoft}`, borderLeft: `1px solid ${C.lineSoft}`, paddingTop: 12, paddingLeft: 12, minWidth: 0 } }, h(HomeStat, { label: "着地見込み", value: cnt ? yenF(landing) : "—", color: C.cyanDeep, sub: `日平均×${days}日（${cnt}日分）` })),
-        demo && h("div", { style: { gridColumn: "1 / -1", fontSize: 11, color: C.subLight, fontWeight: 700 } }, "サンプルの数値です")),
-      h(QsaCard, null),
+        demo && h("div", { style: { gridColumn: "1 / -1", fontSize: 12, color: C.subLight, fontWeight: 700 } }, "サンプルの数値です")),
+      h(HomeUnread, { go, me, onPickMe: () => setMeOpen(true) }),
       h(HomeShift, { people: shDay, me, go, onName: setPerson }),
       // 下のタブにないもの
       h("div", { style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
         (() => { const p = PAGES.find(x => x.k === "lost");
           return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: p.title, badge: lostNear ? `期限間近 ${lostNear}` : lost.length ? `保管中 ${lost.length}` : "", badgeWarn: lostNear > 0, onClick: () => go("lost") }); })()),
       soon.length > 0 && h("div", { style: { marginTop: 18, padding: "0 4px" } },
-        h("div", { style: { fontSize: 11.5, fontWeight: 800, color: C.subLight, marginBottom: 8 } }, "準備中"),
+        h("div", { style: { fontSize: 12, fontWeight: 800, color: C.subLight, marginBottom: 8 } }, "準備中"),
         h("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } },
           soon.map(p => h("button", { key: p.k, type: "button", onClick: () => go(p.k), style: { border: `1px dashed ${C.line}`, background: "transparent", color: C.sub, borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" } }, p.tile ? p.tile.replace("\n", "・") : p.title))))),
     h(Sheet, { open: !!person, onClose: () => setPerson(null), title: "個人のシフト" }, person && h(PersonShift, { key: person, name: person })),
-    h(Sheet, { open: meOpen, onClose: () => setMeOpen(false), title: "この端末の設定" }, meOpen && h(React.Fragment, null, h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.sub, marginBottom: 8 } }, "使う人"), h(MePicker, null), h("div", { style: { height: 1, background: C.line, margin: "18px 0 16px" } }), h(ThemePicker, null))));
+    h(Sheet, { open: meOpen, onClose: () => { setMeOpen(false); setMeFirst(false); }, title: meFirst ? "あなたの名前を選んでください" : "この端末の設定" }, meOpen && h(React.Fragment, null, h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.sub, marginBottom: 8 } }, "使う人"), h(MePicker, { onDone: () => { if (meFirst) { setMeOpen(false); setMeFirst(false); } } }), h("div", { style: { height: 1, background: C.line, margin: "18px 0 16px" } }), h(ThemePicker, null))));
 }
 
-function Placeholder({ page }) {
+function Placeholder({ page, go }) {
   return h("div", { className: "fk-page" },
-    h(Header, null, h(AppTitle, { title: page.title })),
+    h(Header, null, go && h(BackHome, { go }), h(AppTitle, { title: page.title })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "16px 14px calc(104px + env(safe-area-inset-bottom))" } },
       h("div", { style: { ...cardStyle, padding: 20 } },
         h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
           h("span", { style: { width: 52, height: 52, borderRadius: 16, background: page.soft, color: page.tint, display: "grid", placeItems: "center" } }, h(Icon, { name: page.icon, size: 28 })),
-          h("span", { style: { fontSize: 11, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "4px 11px" } }, "準備中")),
+          h("span", { style: { fontSize: 12, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "4px 11px" } }, "準備中")),
         h("div", { style: { fontSize: 16, fontWeight: 800, marginTop: 16, lineHeight: 1.65, textWrap: "balance" } }, page.lead)),
       h("div", { style: { fontSize: 12, fontWeight: 800, color: C.sub, letterSpacing: ".08em", margin: "22px 4px 10px" } }, "予定している機能"),
       h("div", { style: { ...cardStyle, overflow: "hidden" } },
@@ -2768,11 +2970,14 @@ function App() {
   const go = (k) => { setMode(k); window.scrollTo(0, 0); };
   const page = PAGES.find(p => p.k === mode);
   const navFor = NAV.includes(mode) ? mode : "home";
-  const navDot = {};
+  const [meApp] = useMe();
+  const navDot = {}, navCnt = {};
   try {
     const st = readStored(STAFF_KEY, seedStaff).names;
     navDot.report = readStored(A_KEY, seedAtt).filter(r => r.status === "open").length > 0;
-    navDot.board = readStored(BD_KEY, seedBoard).filter(p => !expired(p) && unreadOf(p, st).length > 0).length > 0;
+    const bl = readStored(BD_KEY, seedBoard);
+    if (meApp) navCnt.board = bdMine(bl, meApp, st).length;
+    else navDot.board = bl.filter(p => !expired(p) && unreadOf(p, st).length > 0).length > 0;
   } catch (e) {}
   return h("div", { style: { minHeight: "100vh", background: C.paper, fontFamily: FONT, color: C.ink } },
     h("style", null, `
@@ -2795,7 +3000,7 @@ function App() {
       button:focus-visible{outline:2px solid ${C.cyan};outline-offset:2px;}
       @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
     `),
-    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r" }) : mode === "lost" ? h(LostApp, null) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : h(Placeholder, { page, key: mode }),
+    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r" }) : mode === "lost" ? h(LostApp, { go }) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : h(Placeholder, { page, go, key: mode }),
     h("nav", { style: { position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 45, background: "rgba(255,255,255,.94)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: `1px solid ${C.line}`, paddingBottom: "env(safe-area-inset-bottom, 0px)" } },
       h("div", { style: { maxWidth: 640, margin: "0 auto", display: "flex", padding: "6px 6px 4px" } },
         NAV.map(k => { const on = k === navFor; const p = PAGES.find(x => x.k === k);
@@ -2803,8 +3008,9 @@ function App() {
             style: { flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", padding: "2px 0 6px", color: on ? C.ink : C.subLight, fontWeight: 800, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 } },
             h("span", { style: { position: "relative", width: 48, maxWidth: "100%", height: 30, borderRadius: 999, display: "grid", placeItems: "center", background: on ? C.cyanSoft : "transparent", color: on ? C.cyanDeep : C.subLight } },
               h(Icon, { name: p ? p.icon : "home", size: 22, sw: on ? 2 : 1.7 }),
+              navCnt[k] > 0 ? h("span", { "aria-label": `未読${navCnt[k]}件`, style: { position: "absolute", top: -2, right: "calc(50% - 22px)", minWidth: 18, height: 18, padding: "0 5px", borderRadius: 99, background: C.drop, color: "#fff", border: "1.5px solid #fff", fontSize: 11.5, fontWeight: 900, lineHeight: "15px", textAlign: "center", fontVariantNumeric: "tabular-nums" } }, navCnt[k] > 9 ? "9+" : navCnt[k]) :
               navDot[k] && h("span", { "aria-label": "お知らせあり", style: { position: "absolute", top: 3, right: "calc(50% - 15px)", width: 8, height: 8, borderRadius: 99, background: C.drop, border: "1.5px solid #fff" } })),
-            h("span", { style: { fontSize: 10.5, whiteSpace: "nowrap" } }, p ? p.nav : "ホーム")); }))));
+            h("span", { style: { fontSize: 11.5, whiteSpace: "nowrap" } }, p ? p.nav : "ホーム")); }))));
 }
 (function boot() {
   const root = ReactDOM.createRoot(document.getElementById("root"));
