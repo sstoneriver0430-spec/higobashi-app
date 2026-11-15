@@ -519,6 +519,7 @@ function prodSeed(key, seed) {
   const k = sharedKind(key);
   if (k === "list") return [];
   if (key === STAFF_KEY) return { names: [] };
+  if (key === SHIFT_KEY) return { days: {} };
   if (key === CL_DONE_KEY || key === DC_DONE_KEY || key === CL_FREE_KEY) return {};
   return seed();
 }
@@ -566,7 +567,8 @@ function getStore(key, seed) {
   if (kind === "single") {
     const ref = db.collection("single").doc(key);
     ref.onSnapshot(d => {
-      if (!d.exists) { if (!seeded) { seeded = true; const s = prodSeed(key, seed); ref.set({ v: dehydrate(s) }).catch(() => {}); st.val = s; notify(); } return; }
+      // 端末の控え（キャッシュ）だけを見て「無い」と判断しない。サーバーの答えを待つ（見本データで本物を上書きしないため）
+      if (!d.exists) { if (d.metadata && d.metadata.fromCache) return; if (!seeded) { seeded = true; const s = prodSeed(key, seed); ref.set({ v: dehydrate(s) }).catch(() => {}); st.val = s; notify(); } return; }
       apply(d.data().v);
     }, e => console.error(key, e));
     st.save = (nv) => { st.val = nv; notify(); ref.set({ v: dehydrate(JSON.parse(JSON.stringify(nv))) }).catch(e => console.error(e)); };
