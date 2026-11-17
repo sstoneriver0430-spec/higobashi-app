@@ -3156,11 +3156,14 @@ function OrderApp({ go }) {
     h("span", { style: { width: COLW.q, textAlign: "center" } }, "発注数"));
   const row = (it, i) => {
     const c = calc[it.id], q = qtyOf(it.id), changed = over[it.id] != null;
-    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}${it.unit}` : `必要 ${orR(c.need)}${it.unit}` + (it.per ? `（1${it.unit}=${it.per}${it.cu}）` : "");
+    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}${it.unit}` : `必要 ${orR(c.need)}${it.unit}`;
+    const conv = it.per ? `1${it.unit}＝${it.per}${it.cu}` : "";
     return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
       h("div", { style: { flex: 1, minWidth: 0 } },
         h("div", { style: { fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, it.name),
-        h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2 } }, sub, changed && h("span", { style: { marginLeft: 6, color: C.drop } }, "手で変更"))),
+        h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2, whiteSpace: "nowrap" } }, sub),
+        conv && h("div", { style: { fontSize: 11, color: C.subLight, whiteSpace: "nowrap" } }, conv),
+        changed && h("div", { style: { fontSize: 11, color: C.drop, fontWeight: 700, whiteSpace: "nowrap" } }, "手で変更")),
       h("div", { style: { width: COLW.st, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 } },
       h("input", { id: "or-st-" + it.id, type: "text", inputMode: "decimal", enterKeyHint: "next", value: stock[it.id] == null ? "" : String(stock[it.id]), placeholder: "—", "aria-label": `${it.name}の今の在庫`,
         onChange: e => onStock(it.id, e.target.value), onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timers.current[it.id]); focusNext(it.id); } }, onFocus: e => e.target.select(), style: { ...numIn, width: COLW.st, textAlign: "center" } }),
@@ -3194,9 +3197,9 @@ function OrderApp({ go }) {
       h("div", { style: { ...cardStyle, padding: "16px 16px 14px" } },
         h("div", { style: { fontSize: 12.5, color: C.sub, fontWeight: 600 } }, `${isToday ? "今日" : orMD(slot.orderDate)}の発注 → ${slot.label}`, slot.ex && h("span", { style: { marginLeft: 8, color: C.drop } }, "配送変則")),
         h("div", { style: { fontSize: 22, fontWeight: 700, marginTop: 4, letterSpacing: "-.01em" } }, `${orMD(slot.delDate)}に届く分`),
-        h("div", { style: { fontSize: 13, color: C.ink, marginTop: 8, lineHeight: 1.6 } }, "下の発注数を、ASPITに上から順に入力してください（並びはASPITと同じ）"),
+        h("div", { style: { fontSize: 13, color: C.ink, marginTop: 8, lineHeight: 1.6 } }, "下の発注数を、ASPITに上から順に入力", h("br"), "（並びはASPITと同じです）"),
         rec && h("div", { style: { marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: C.done, background: C.doneSoft, borderRadius: 999, padding: "5px 11px" } }, h(Icon, { name: "check", size: 15, sw: 2.6 }), `記録済み${rec.by ? `（${rec.by}）` : ""}`)),
-      h("div", { style: { fontSize: 12.5, color: C.sub, margin: "12px 4px 0", lineHeight: 1.6 } }, "朝一（営業前）に数えた在庫を入れてください。今日使う分・届く日までに使う分・間に届く分を差し引いて計算します"),
+      h("div", { style: { fontSize: 12.5, color: C.sub, margin: "12px 4px 0", lineHeight: 1.6 } }, "朝一（営業前）に数えた在庫を入れてください。", h("br"), "届く日までに使う分と、間に届く分は自動で計算します"),
       // 品目
       groups.map(g => { const arr = master.items.filter(it => it.grp === g);
         return h(React.Fragment, { key: g },
@@ -3212,7 +3215,9 @@ function OrderApp({ go }) {
       h("div", { style: { margin: "22px 4px 8px", fontSize: 13, fontWeight: 700, color: C.sub } }, "計算に使った売上（税抜）"),
       h("div", { style: { ...cardStyle, padding: "4px 16px 10px" } },
         [...Array(slot.days)].map((_, i) => { const d = orAdd(slot.delDate, i);
-          return h(DRow, { key: i, label: `${orMD(d)}の見込み`, value: "¥" + Math.round(orDaySales(basis, d, slot.days === 1)).toLocaleString("ja-JP") + (slot.days === 1 ? "（直近2週の一番売れた日）" : "（直近2週の平均）") }); }),
+          return h("div", { key: i, style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, padding: "11px 0", borderBottom: `1px solid ${C.lineSoft}` } },
+            h("div", null, h("div", { style: { fontSize: 13.5, color: C.sub } }, `${orMD(d)}の見込み`), h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 2 } }, slot.days === 1 ? "直近2週で一番売れた日" : "直近2週の平均")),
+            h("div", { style: { fontSize: 17, fontWeight: 700, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, "¥" + Math.round(orDaySales(basis, d, slot.days === 1)).toLocaleString("ja-JP"))); }),
         h("div", { style: { fontSize: 12, color: basis.sample ? C.drop : C.subLight, paddingTop: 8, lineHeight: 1.6 } },
           basis.sample ? `金種の当日売上が${basis.n}日分しかないため、10〜11月の平均で計算しています` : `金種の当日売上 ${orMD(basis.from)}〜${orMD(basis.to)}（${basis.n}日分）から`)),
       // 発注の記録（紙の物流発注表と同じ形：列＝届く日）
@@ -3309,9 +3314,10 @@ function OrderWeekEditor({ master, saveMaster }) {
   return h("div", null,
     h("div", { style: { ...cardStyle, padding: "12px 14px", fontSize: 13, lineHeight: 1.7, marginBottom: 12 } },
       h("div", { style: { fontWeight: 700, marginBottom: 2 } }, "ペルゴの「配送変則」の紙を見ながら"),
-      h("div", null, "① 左の「WEB入力日」が、紙の店舗WEB入力日"),
-      h("div", null, "② 上の日付が届く日。紙の「通常商品」に書いてある日のマスをタップ（2日なら2つとも）"),
-      h("div", null, "③ 「発注休み」の日は「休み」をタップ（行が灰色になります。マスを押すと戻せます）")),
+      h("div", null, "① 左の日付＝紙の「店舗WEB入力日」"),
+      h("div", null, "② 紙の「通常商品」の日のマスをタップ"),
+      h("div", null, "③ 「発注休み」の日は「休み」をタップ"),
+      h("div", { style: { fontSize: 12, color: C.sub, marginTop: 4 } }, "2日分なら2マスとも。休みの行は灰色になります")),
     h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } },
       h("button", { type: "button", "aria-label": "前の週", onClick: () => setWk(wk - 1), style: navBtn }, "‹"),
       h("div", { style: { flex: 1, textAlign: "center", fontSize: 15, fontWeight: 700 } }, `${start.getMonth() + 1}/${start.getDate()}（土）〜${orAdd(start, 6).getMonth() + 1}/${orAdd(start, 6).getDate()}（金）の入力`),
