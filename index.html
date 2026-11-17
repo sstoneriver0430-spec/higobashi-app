@@ -3294,13 +3294,13 @@ function OrderWeekEditor({ master, saveMaster }) {
   const cols = [...Array(8)].map((_, i) => orAdd(start, i + 1));
   const red = (x) => x.getDay() === 0 || x.getDay() === 6;
   const grid = { display: "grid", gridTemplateColumns: "50px 36px repeat(8, minmax(0, 1fr))", gap: 3, alignItems: "center" };
-  const cellBtn = (on, onClick, warn, label) => h("button", { type: "button", onClick, "aria-label": label, "aria-pressed": on, style: { height: 40, borderRadius: 8, border: on ? "none" : `1.5px solid ${C.line}`, background: on ? (warn ? C.drop : C.ink) : C.card, color: "#fff", cursor: "pointer", padding: 0, display: "grid", placeItems: "center" } }, on ? h(Icon, { name: "check", size: 16, sw: 3, color: "#fff" }) : null);
+  const cellBtn = (on, onClick, warn, label) => h("button", { type: "button", onClick, "aria-label": label, "aria-pressed": on, style: { width: "100%", height: 40, borderRadius: 8, border: on ? "none" : `1.5px solid ${C.line}`, background: on ? (warn ? C.drop : C.ink) : C.card, color: "#fff", cursor: "pointer", padding: 0, display: "grid", placeItems: "center" } }, on ? h(Icon, { name: "check", size: 16, sw: 3, color: "#fff" }) : null);
   return h("div", null,
     h("div", { style: { ...cardStyle, padding: "12px 14px", fontSize: 13, lineHeight: 1.7, marginBottom: 12 } },
       h("div", { style: { fontWeight: 700, marginBottom: 2 } }, "ペルゴの「配送変則」の紙を見ながら"),
       h("div", null, "① 左の「WEB入力日」が、紙の店舗WEB入力日"),
       h("div", null, "② 上の日付が届く日。紙の「通常商品」に書いてある日のマスをタップ（2日なら2つとも）"),
-      h("div", null, "③ 「発注休み」の日は「休み」をタップ")),
+      h("div", null, "③ 「発注休み」の日は「休み」をタップ（行が灰色になります。マスを押すと戻せます）")),
     h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } },
       h("button", { type: "button", "aria-label": "前の週", onClick: () => setWk(wk - 1), style: navBtn }, "‹"),
       h("div", { style: { flex: 1, textAlign: "center", fontSize: 15, fontWeight: 700 } }, `${start.getMonth() + 1}/${start.getDate()}（土）〜${orAdd(start, 6).getMonth() + 1}/${orAdd(start, 6).getDate()}（金）の入力`),
@@ -3314,14 +3314,15 @@ function OrderWeekEditor({ master, saveMaster }) {
       [...Array(7)].map((_, i) => {
         const d = orAdd(start, i), cur = orOrderOn(master, d), isEx = !!ex[orYmd(d)];
         const inSel = (dd) => cur && dd >= cur.delDate && dd < orAdd(cur.delDate, cur.days);
-        return h("div", { key: i, "data-exrow": "1", style: { ...grid, padding: "5px 0", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: isEx ? "#FFF6F5" : "transparent", borderRadius: 6 } },
+        const off = !cur; // 発注休みの日は行ごと色を変える
+        return h("div", { key: i, "data-exrow": "1", style: { ...grid, padding: "5px 0", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: off ? (isEx ? "#F6D9D6" : "#E4E4E9") : isEx ? "#FFF6F5" : "transparent", borderRadius: 6 } },
           h("div", { style: { lineHeight: 1.2 } },
             h("div", { style: { fontSize: 14, fontWeight: 700, color: red(d) ? C.drop : C.ink } }, `${d.getMonth() + 1}/${d.getDate()}`, h("span", { style: { fontSize: 11 } }, `（${WD[d.getDay()]}）`)),
-            h("div", { style: { fontSize: 10, fontWeight: 700, color: isEx ? C.drop : C.subLight } }, isEx ? "変則" : "いつも通り")),
+            h("div", { style: { fontSize: 10, fontWeight: 700, color: isEx ? C.drop : off ? C.sub : C.subLight } }, off ? (isEx ? "変則休み" : "発注休み") : isEx ? "変則" : "いつも通り")),
           h("button", { type: "button", onClick: () => save(d, []), style: { height: 40, borderRadius: 8, border: !cur ? "none" : `1.5px solid ${C.line}`, background: !cur ? (isEx ? C.drop : C.ink) : C.card, color: !cur ? "#fff" : C.ink, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 } }, "休み"),
           cols.map((x, j) => x <= d || x > orAdd(d, 5)
-            ? h("span", { key: j, style: { height: 40, borderRadius: 8, background: C.lineSoft, opacity: .5 } })
-            : h(React.Fragment, { key: j }, cellBtn(inSel(x), () => tap(d, cur, x), isEx, `${orMD(d)}の発注で${orMD(x)}`))));
+            ? h("span", { key: j, style: { height: 40, borderRadius: 8, background: off ? "transparent" : C.lineSoft, opacity: .5 } })
+            : h("div", { key: j, style: { opacity: off ? .35 : 1 } }, cellBtn(inSel(x), () => tap(d, cur, x), isEx, `${orMD(d)}の発注で${orMD(x)}`))));
       })),
     changed && h("button", { type: "button", onClick: () => { const nx = { ...ex }; for (let i = 0; i < 7; i++) delete nx[orYmd(orAdd(start, i))]; saveMaster({ ...master, ex: nx }); }, style: { ...subBtn, width: "100%", marginTop: 12, minHeight: 46, color: C.drop } }, "この週をいつも通りに戻す"),
     h("div", { style: { fontSize: 12, color: C.sub, lineHeight: 1.6, marginTop: 10 } }, "選んだ一番早い日が届く日です。入れた内容はすぐ発注表に反映されます"));
