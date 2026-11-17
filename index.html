@@ -3330,11 +3330,12 @@ function OrderExEditor({ master, saveMaster }) {
 
 function HomeOrder({ go }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const log = readStored(OR_LOG_KEY, orLogSeed);
-  const sl = orOrderOn(readStored(OR_MASTER_KEY, orMasterSeed), today); if (!sl) return null;
-  const done = !!log[orYmd(sl.delDate)];
-  const p = PAGES.find(x => x.k === "order");
-  return h("div", { style: { marginTop: 12, display: "grid" } }, h(HomeTile, { icon: p.icon, tint: p.tint, soft: p.soft, title: `今日は発注日（${sl.label}）`, badge: done ? "記録済み" : "まだ", warn: !done, onClick: () => go("order") }));
+  const master = readStored(OR_MASTER_KEY, orMasterSeed), log = readStored(OR_LOG_KEY, orLogSeed);
+  const sl = orOrderOn(master, today), p = PAGES.find(x => x.k === "order");
+  let title = "発注表", badge = "", warn = false;
+  if (sl) { const done = !!log[orYmd(sl.delDate)]; title = `今日は発注日（${sl.label}）`; badge = done ? "記録済み" : "まだ"; warn = !done; }
+  else { const nx = orSlotFor(master, today, 0); if (nx.orderDate) badge = `次の発注 ${nx.orderDate.getMonth() + 1}/${nx.orderDate.getDate()}（${WD[nx.orderDate.getDay()]}）`; }
+  return h("div", { style: { marginTop: 12, display: "grid" } }, h(HomeTile, { icon: p.icon, tint: p.tint, soft: p.soft, title, badge, warn, onClick: () => go("order") }));
 }
 
 function App() {
