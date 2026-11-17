@@ -3199,23 +3199,32 @@ function OrderApp({ go }) {
 
 function OrderGrid({ master, log, hi, draft }) {
   const ref = useRef(null);
-  const keys = Array.from(new Set([...Object.keys(log), hi])).sort().slice(-14);
-  useEffect(() => { const el = ref.current; if (el) el.scrollLeft = el.scrollWidth; }, [keys.length]);
-  const cell = { padding: "8px 0", textAlign: "center", fontSize: 14, fontVariantNumeric: "tabular-nums", minWidth: 44, borderLeft: `1px solid ${C.lineSoft}` };
-  const nameCell = { position: "sticky", left: 0, background: C.card, zIndex: 1, boxShadow: `1px 0 0 ${C.line}`, padding: "8px 12px", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", textAlign: "left" };
+  // 列は暦どおり毎日（火・木など納品のない日も並べる）。今回の届く日までの14日
+  const end = new Date(hi + "T00:00:00");
+  const days = [...Array(14)].map((_, i) => orAdd(end, i - 13));
+  // その日に届く発注があるか（記録 or いつもの曜日・配送変則）
+  const delSet = new Set(Object.keys(log));
+  for (let od = orAdd(days[0], -6); od <= end; od = orAdd(od, 1)) { const o = orOrderOn(master, od); if (o) delSet.add(orYmd(o.delDate)); }
+  useEffect(() => { const el = ref.current; if (el) el.scrollLeft = el.scrollWidth; }, [hi]);
+  const W = 62;
+  const cell = { padding: "9px 0", textAlign: "center", fontSize: 15, fontVariantNumeric: "tabular-nums", minWidth: W, width: W, borderLeft: `1px solid ${C.lineSoft}` };
+  const nameCell = { position: "sticky", left: 0, background: C.card, zIndex: 2, boxShadow: `1px 0 0 ${C.line}`, padding: "9px 12px", fontSize: 13.5, fontWeight: 700, whiteSpace: "nowrap", textAlign: "left", minWidth: 84 };
+  const OFF = "#EEEEF1";
   return h("div", { style: { ...cardStyle, overflow: "hidden" } },
     h("div", { ref, style: { overflowX: "auto", WebkitOverflowScrolling: "touch" } },
-      h("table", { style: { borderCollapse: "collapse", width: "100%" } },
+      h("table", { style: { borderCollapse: "collapse" } },
         h("thead", null, h("tr", { style: { borderBottom: `1px solid ${C.line}` } },
           h("th", { style: { ...nameCell, fontSize: 11.5, color: C.sub } }, "届く日"),
-          keys.map(k => { const d = new Date(k + "T00:00:00"), on = k === hi, we = d.getDay() === 0 || d.getDay() === 6;
-            return h("th", { key: k, style: { ...cell, fontSize: 12, fontWeight: 700, background: on ? C.lineSoft : "transparent", color: on ? C.ink : C.sub } },
-              h("div", null, `${d.getMonth() + 1}/${d.getDate()}`), h("div", { style: { fontSize: 11, fontWeight: 500, color: we ? C.drop : C.subLight } }, WD[d.getDay()])); }))),
+          days.map(d => { const k = orYmd(d), on = k === hi, we = d.getDay() === 0 || d.getDay() === 6, del = delSet.has(k);
+            return h("th", { key: k, style: { ...cell, fontSize: 12.5, fontWeight: 700, background: on ? C.lineSoft : del ? "transparent" : OFF, color: on ? C.ink : del ? C.sub : C.subLight } },
+              h("div", null, `${d.getMonth() + 1}/${d.getDate()}`), h("div", { style: { fontSize: 11, fontWeight: 500, color: we ? C.drop : C.subLight } }, WD[d.getDay()] + (del ? "" : "・なし"))); }))),
         h("tbody", null, master.items.map((it, i) => h("tr", { key: it.id, style: { borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
           h("td", { style: nameCell }, it.name),
-          keys.map(k => { const on = k === hi, r = log[k], v = on && !r ? draft[it.id] : r && r.qty ? r.qty[it.id] : null;
+          days.map(d => { const k = orYmd(d), on = k === hi, r = log[k], del = delSet.has(k);
+            if (!del) return h("td", { key: k, style: { ...cell, background: OFF } });
+            const v = on && !r ? draft[it.id] : r && r.qty ? r.qty[it.id] : null;
             return h("td", { key: k, style: { ...cell, background: on ? C.lineSoft : "transparent", fontWeight: on ? 700 : 500, color: v ? (on && !r ? C.sub : C.ink) : C.subLight } }, v ? v : "／"); })))))),
-    h("div", { style: { fontSize: 11.5, color: C.subLight, padding: "8px 12px", borderTop: `1px solid ${C.lineSoft}` } }, "灰色の列が今回の発注。記録前はうすい字で表示しています"));
+    h("div", { style: { fontSize: 11.5, color: C.subLight, padding: "8px 12px", borderTop: `1px solid ${C.lineSoft}` } }, "横にスクロールで前の日。灰色の列は納品のない日、右端が今回の発注（記録前はうすい字）"));
 }
 
 function OrderSettings({ master, saveMaster }) {
