@@ -3114,12 +3114,14 @@ function OrderApp({ go }) {
   const timers = useRef({});
   const focusNext = (id) => { const i = order.indexOf(id), nx = order[i + 1]; const el = nx && document.getElementById("or-st-" + nx); if (el) { el.focus(); el.select && el.select(); } else if (document.activeElement) document.activeElement.blur(); };
   const onStock = (id, raw) => {
-    const v = raw.replace(/[^\d.]/g, "");
+    let v = raw.replace(/[^\d.]/g, ""); const dot = v.indexOf("."); if (dot >= 0) v = v.slice(0, dot + 1) + v.slice(dot + 1).replace(/\./g, "").slice(0, 1); // 小数は1桁まで（1.5など）
     setStock(s => ({ ...s, [id]: v })); setOver(o => { const n = { ...o }; delete n[id]; return n; });
     clearTimeout(timers.current[id]);
     // 打ち終わったら次の品目へ（2桁は続けて打てば入る）
     const it = master.items.find(x => x.id === id), maxLen = (it && it.per >= 50) ? 3 : 2;
-    if (v !== "") timers.current[id] = setTimeout(() => focusNext(id), v.length >= maxLen ? 150 : 800);
+    if (v === "" || v.endsWith(".")) return; // 「1.」の途中では移らない
+    const done = v.includes(".") || v.length >= maxLen; // 小数を打ち終えた or 桁がそろった
+    timers.current[id] = setTimeout(() => focusNext(id), done ? 250 : 900);
   };
   const COLW = { st: 62, mid: 58, q: 104 };
   const colHead = h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: `1px solid ${C.lineSoft}`, fontSize: 11, color: C.subLight, fontWeight: 700 } },
