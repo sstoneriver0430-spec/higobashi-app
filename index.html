@@ -3054,13 +3054,20 @@ function orSalesBasis(today) {
   }
   return { avg, max, n, from: orAdd(today, -14), to: orAdd(today, -1), sample: n < 7 };
 }
-// 今日（または次）の発注日と、その発注の届く日
-function orSlotFor(today, idx) {
+// その日の発注（届く日・何日分）。配送変則（祝日など）は設定の ex が優先
+const orLabel = (del, days) => [...Array(days)].map((_, i) => WD[orAdd(del, i).getDay()]).join("・") + "曜分";
+function orOrderOn(master, d) {
+  const ex = (master.ex || {})[orYmd(d)];
+  if (ex) return ex.skip ? null : { orderDate: d, delDate: new Date(ex.del + "T00:00:00"), days: ex.days, label: orLabel(new Date(ex.del + "T00:00:00"), ex.days), ex: true };
+  const s = OR_SLOTS.find(x => x.od === d.getDay()); if (!s) return null;
+  let del = orAdd(d, 1); while (del.getDay() !== s.del) del = orAdd(del, 1);
+  return { orderDate: d, delDate: del, days: s.days, label: orLabel(del, s.days) };
+}
+// 今日から8日の発注日の一覧と、選んだ発注
+function orSlotFor(master, today, idx) {
   const list = [];
-  for (let i = 0; i < 7; i++) { const d = orAdd(today, i), s = OR_SLOTS.find(x => x.od === d.getDay()); if (s) list.push({ ...s, orderDate: d }); }
-  const cur = list[idx || 0];
-  let del = orAdd(cur.orderDate, 1); while (del.getDay() !== cur.del) del = orAdd(del, 1);
-  return { ...cur, delDate: del, list };
+  for (let i = 0; i < 8; i++) { const o = orOrderOn(master, orAdd(today, i)); if (o) list.push(o); }
+  return { ...(list[Math.min(idx || 0, list.length - 1)] || {}), list };
 }
 // 1日分の見込み売上（1日分の枠は一番売れた日、2日分の枠は平均）
 const orDaySales = (basis, d, oneDay) => oneDay ? basis.max[d.getDay()] : basis.avg[d.getDay()];
@@ -3071,7 +3078,7 @@ function orCalc(master, log, slot, basis, stock, timing) {
   // 届く日までに使う日：発注日の残り（timing）＋その間の日
   const before = []; for (let d = orAdd(slot.orderDate, 1); d < slot.delDate; d = orAdd(d, 1)) before.push(d);
   // 間に届く分（記録があれば記録の数、なければ目安）
-  const mid = []; for (let d = orAdd(slot.orderDate, 1); d < slot.delDate; d = orAdd(d, 1)) { const s = OR_SLOTS.find(x => x.del === d.getDay()); if (s) mid.push({ d, s }); }
+  const mid = []; for (let od = orAdd(slot.orderDate, -5); od < slot.orderDate; od = orAdd(od, 1)) { const o = orOrderOn(master, od); if (o && o.delDate > slot.orderDate && o.delDate < slot.delDate) mid.push({ d: o.delDate, s: o }); }
   master.items.forEach(it => {
     const st = stock[it.id], has = st !== "" && st != null && !isNaN(Number(st));
     if (it.point != null) {
@@ -3100,7 +3107,7 @@ function OrderApp({ go }) {
   const [me] = useMe();
   const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
   const [slotIdx, setSlotIdx] = useState(0);
-  const slot = orSlotFor(today, slotIdx);
+  const slot = orSlotFor(master, today, slotIdx);
   const delKey = orYmd(slot.delDate);
   const rec = log[delKey];
   const [stock, setStock] = useState(() => (rec && rec.stock) || {});
@@ -3159,7 +3166,7 @@ function OrderApp({ go }) {
             (orYmd(d) === orYmd(today) ? "今日 " : "") + `${d.getMonth() + 1}/${d.getDate()}（${WD[d.getDay()]}）`); })),
       // いまの発注
       h("div", { style: { ...cardStyle, padding: "16px 16px 14px" } },
-        h("div", { style: { fontSize: 12.5, color: C.sub, fontWeight: 600 } }, `${isToday ? "今日" : orMD(slot.orderDate)}の発注 → ${slot.label}`),
+        h("div", { style: { fontSize: 12.5, color: C.sub, fontWeight: 600 } }, `${isToday ? "今日" : orMD(slot.orderDate)}の発注 → ${slot.label}`, slot.ex && h("span", { style: { marginLeft: 8, color: C.drop } }, "配送変則")),
         h("div", { style: { fontSize: 22, fontWeight: 700, marginTop: 4, letterSpacing: "-.01em" } }, `${orMD(slot.delDate)}に届く分`),
         h("div", { style: { fontSize: 13, color: C.ink, marginTop: 8, lineHeight: 1.6 } }, "紙の物流発注表の ", h("b", null, `${slot.delDate.getDate()}日（${WD[slot.delDate.getDay()]}）の列`), " に書いて、ASPITに入力してください"),
         rec && h("div", { style: { marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: C.done, background: C.doneSoft, borderRadius: 999, padding: "5px 11px" } }, h(Icon, { name: "check", size: 15, sw: 2.6 }), `記録済み${rec.by ? `（${rec.by}）` : ""}`)),
@@ -3231,17 +3238,42 @@ function OrderSettings({ master, saveMaster }) {
               h("input", { inputMode: "numeric", value: it.pq, onChange: e => upd(it.id, { pq: Number(e.target.value.replace(/[^\d]/g, "")) || 0 }), style: { ...inp, width: 48 } }))
           : h(React.Fragment, null, h("span", { style: { fontSize: 12, color: C.sub } }, "10万円あたり"),
               h("input", { inputMode: "decimal", defaultValue: it.rate, onBlur: e => { const v = Number(e.target.value); if (v > 0) upd(it.id, { rate: v }); }, style: inp }))))),
+    h(OrderExEditor, { master, saveMaster }),
     h("label", { style: { display: "block", marginTop: 18 } },
       h("div", { style: { fontSize: 12.5, fontWeight: 700, color: C.sub, marginBottom: 6 } }, "ASPITのリンク"),
       h("input", { type: "url", defaultValue: master.aspit, onBlur: e => saveMaster({ ...master, aspit: e.target.value.trim() }), style: { ...inp, width: "100%", textAlign: "left", fontSize: 14 } })));
 }
 
+function OrderExEditor({ master, saveMaster }) {
+  const [od, setOd] = useState(""), [del, setDel] = useState(""), [days, setDays] = useState(1), [skip, setSkip] = useState(false);
+  const ex = master.ex || {};
+  const today = orYmd(new Date());
+  const keys = Object.keys(ex).filter(k => k >= orYmd(orAdd(new Date(), -7))).sort();
+  const save = (nx) => saveMaster({ ...master, ex: nx });
+  const add = () => { if (!od || (!skip && !del)) return; save({ ...ex, [od]: skip ? { skip: true } : { del, days } }); setOd(""); setDel(""); setDays(1); setSkip(false); };
+  const inp = { minHeight: 42, borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "6px 10px", fontSize: 15, color: C.ink, background: C.card, outline: "none", width: "100%" };
+  const md = (k) => { const d = new Date(k + "T00:00:00"); return orMD(d); };
+  return h("div", { style: { marginTop: 22 } },
+    h("div", { style: { fontSize: 12.5, fontWeight: 700, color: C.sub, marginBottom: 6 } }, "配送変則（祝日など）"),
+    h("div", { style: { fontSize: 12, color: C.sub, lineHeight: 1.6, marginBottom: 8 } }, "ペルゴの「配送変則」の紙のとおりに、いつもと違う日だけ入れます。店舗WEB入力日＝発注する日、通常商品＝届く日です。"),
+    keys.length > 0 && h("div", { style: { ...cardStyle, overflow: "hidden", marginBottom: 10 } }, keys.map((k, i) => { const e = ex[k];
+      return h("div", { key: k, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", fontSize: 14 } },
+        h("span", { style: { flex: 1, fontWeight: 600, color: k < today ? C.subLight : C.ink } }, `${md(k)}の発注`, h("span", { style: { fontWeight: 500, marginLeft: 8, color: C.sub } }, e.skip ? "→ 発注なし" : `→ ${md(e.del)}着・${orLabel(new Date(e.del + "T00:00:00"), e.days)}`)),
+        h("button", { type: "button", onClick: () => { const n = { ...ex }; delete n[k]; save(n); }, style: { border: "none", background: "transparent", color: C.drop, fontSize: 13, fontWeight: 600, cursor: "pointer" } }, "消す")); })),
+    h("div", { style: { ...cardStyle, padding: 14, display: "grid", gap: 10 } },
+      h("label", null, h("div", { style: { fontSize: 12, color: C.sub, marginBottom: 4 } }, "発注する日（店舗WEB入力日）"), h("input", { type: "date", value: od, onChange: e => setOd(e.target.value), style: inp })),
+      h("label", { style: { display: "flex", alignItems: "center", gap: 8, fontSize: 14 } }, h("input", { type: "checkbox", checked: skip, onChange: e => setSkip(e.target.checked) }), "この日は発注なし"),
+      !skip && h("label", null, h("div", { style: { fontSize: 12, color: C.sub, marginBottom: 4 } }, "届く日"), h("input", { type: "date", value: del, onChange: e => setDel(e.target.value), style: inp })),
+      !skip && h("div", null, h("div", { style: { fontSize: 12, color: C.sub, marginBottom: 4 } }, "何日分（届く日から）"),
+        h("div", { style: { display: "flex", gap: 6 } }, [1, 2, 3].map(n => h("button", { key: n, type: "button", onClick: () => setDays(n), style: { flex: 1, minHeight: 40, borderRadius: 10, border: n === days ? "none" : `1.5px solid ${C.line}`, background: n === days ? C.ink : C.card, color: n === days ? "#fff" : C.ink, fontSize: 14, fontWeight: 600, cursor: "pointer" } }, `${n}日分`)))),
+      h("button", { type: "button", onClick: add, disabled: !od || (!skip && !del), style: { ...primaryBtn, padding: "12px 0", opacity: !od || (!skip && !del) ? .4 : 1 } }, "追加")));
+}
+
 function HomeOrder({ go }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const s = OR_SLOTS.find(x => x.od === today.getDay());
   const log = readStored(OR_LOG_KEY, orLogSeed);
-  if (!s) return null;
-  const sl = orSlotFor(today, 0), done = !!log[orYmd(sl.delDate)];
+  const sl = orOrderOn(readStored(OR_MASTER_KEY, orMasterSeed), today); if (!sl) return null;
+  const done = !!log[orYmd(sl.delDate)];
   const p = PAGES.find(x => x.k === "order");
   return h("div", { style: { marginTop: 12, display: "grid" } }, h(HomeTile, { icon: p.icon, tint: p.tint, soft: p.soft, title: `今日は発注日（${sl.label}）`, badge: done ? "記録済み" : "まだ", warn: !done, onClick: () => go("order") }));
 }
