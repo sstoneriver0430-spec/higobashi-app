@@ -2982,7 +2982,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/17 19:35版";
+const APP_VER = "11/17 19:50版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3387,8 +3387,10 @@ const voEndo = (a, b, c) => ({ 2: a, 4: b, 0: c });
 const VO_DATA = [
   { v: "中日本フーズ", items: [
     { n: "肩ロース", use: "4本", r: { 1: "19本以上", 3: "13本以上", 4: "13本以上", 5: "19本以上", 0: "13本以上" } }] },
-  { v: "ジャパンフロントファーム", note: "旧・柴商（11月から）", items: [
+  { v: "ジャパンフロントファーム", note: "旧・柴商（11月から）。水曜休み", items: [
     { n: "奴ネギ", use: "6P", r: { 2: "10袋合わせ（木曜納品）", 3: "10袋合わせ（金曜納品）", 4: "15袋合わせ（土曜納品）", 6: "10袋合わせ（月曜納品）", 0: "15袋合わせ（火曜納品）" } }] },
+  { v: "エスペランザ", note: "限定麻婆の麺。発注しない日も「（麺）発注なし」に1を入力", items: [
+    { n: "椿#10（麺）", r: { 1: "水曜分（水曜納品）", 2: "木曜分（木曜納品）", 3: "金・土曜の2日分（金曜納品）", 4: "日・月曜の2日分（日曜納品）", 0: "火曜分（火曜納品）" } }] },
   { v: "太伸", items: [
     { n: "旨赤卵", use: "0.6箱", r: { 1: "2ケース合わせ（火曜納品）", 3: "2ケース合わせ（木曜納品）", 5: "2ケース合わせ（土曜納品）" } },
     { n: "ムキ玉子", use: "8袋", r: { 1: "39袋合わせ（木曜納品）", 3: "48袋合わせ（土曜納品）", 6: "39袋合わせ（火曜納品）" } }] },
@@ -3438,21 +3440,27 @@ const VO_LINK = {
   "ムキ玉子":     { id: "muki",     rate: 2.43,  unit: "袋",     lt: 3 },
   "木耳スライス": { id: "kikurage", rate: 0.197, unit: "袋",     lt: 1 },
   "強化スープ":   { id: "soup",     rate: 2.30,  unit: "枚",     lt: 1, ou: "箱", per: 10 }, // 在庫は枚で数え、発注は箱（10枚入り）
-  "秘伝返し":     { id: "hiden",    rate: 0.153, unit: "個",     lt: 1 }
+  "秘伝返し":     { id: "hiden",    rate: 0.153, unit: "個",     lt: 1 },
+  "椿#10（麺）":  { id: "tsubaki",  rate: 2.74,  unit: "玉",     lt: { 1: 2, 2: 2, 3: 2, 4: 3, 0: 2 }, step: 5 } // 5玉単位。限定麻婆の売れ方しだいでぶれる
 };
+// 発注日の曜日ごとの「何日後に届くか」
+const voLt = (L, w) => typeof L.lt === "object" ? (L.lt[w] || 1) : L.lt;
+// 翌日より後に届く品目だけ記録が要る（間に届く分を差し引くため）
+const voNeedRec = (L) => typeof L.lt === "object" ? Object.values(L.lt).some(v => v > 1) : L.lt > 1;
 const VO_LOG_KEY = "higo_vorder_log_v1";
 const VO_BUF = 1.1; // 売上のぶれ用に1割上乗せ
 // D（発注日）に頼む数：届く日の翌の発注分が届くまでに使う量 −（今の在庫＋間に届く分）
 function voCalc(it, D, basis, stock, log) {
   const L = VO_LINK[it.n], days = Object.keys(it.r).map(Number);
   let nx = orAdd(D, 1); while (!days.includes(nx.getDay())) nx = orAdd(nx, 1);
-  const del = orAdd(D, L.lt), nextDel = orAdd(nx, L.lt);
+  const del = orAdd(D, voLt(L, D.getDay())), nextDel = orAdd(nx, voLt(L, nx.getDay()));
   const u = (d) => L.rate * orDaySales(basis, d, false) / 1e5 * VO_BUF;
   let need = 0.5 * u(D); for (let d = orAdd(D, 1); d < nextDel; d = orAdd(d, 1)) need += u(d);
   let pending = 0;
-  for (let p = orAdd(D, -7); p < D; p = orAdd(p, 1)) { const q = ((log[orYmd(p)] || {})[L.id]); const pd = orAdd(p, L.lt); if (q && pd > D && pd < nextDel) pending += q * (L.per || 1); }
+  for (let p = orAdd(D, -7); p < D; p = orAdd(p, 1)) { const q = ((log[orYmd(p)] || {})[L.id]); const pd = orAdd(p, voLt(L, p.getDay())); if (q && pd > D && pd < nextDel) pending += q * (L.per || 1); }
   const has = stock !== "" && stock != null;
-  const qty = has ? Math.max(0, Math.ceil((need - Number(stock) - pending) / (L.per || 1) - 1e-9)) : null;
+  const raw = has ? Math.max(0, Math.ceil((need - Number(stock) - pending) / (L.per || 1) - 1e-9)) : null;
+  const qty = raw == null ? null : L.step ? Math.ceil(raw / L.step) * L.step : raw;
   return { need, pending, del, nextDel, qty, L };
 }
 
@@ -3484,7 +3492,8 @@ function VendorOrderApp({ go }) {
   const calcOf = (it) => voCalc(it, D, basis, stock[VO_LINK[it.n].id], vlog);
   const qtyOf = (it) => { const id = VO_LINK[it.n].id; return over[id] != null ? over[id] : calcOf(it).qty; };
   const rec = vlog[dKey];
-  const record = () => { const q = {}; linked.forEach(it => { const v = qtyOf(it); if (v != null) q[VO_LINK[it.n].id] = v; }); saveVlog({ ...vlog, [dKey]: q }); setMsg("発注を記録しました"); };
+  const recItems = linked.filter(it => voNeedRec(VO_LINK[it.n]));
+  const record = () => { const q = {}; recItems.forEach(it => { const v = qtyOf(it); if (v != null) q[VO_LINK[it.n].id] = v; }); saveVlog({ ...vlog, [dKey]: q }); setMsg("発注を記録しました"); };
   const isToday = d === todayD;
   const sec = (t, sub) => h("div", { style: { margin: "22px 4px 10px" } },
     h("div", { style: { fontSize: 15, fontWeight: 900, color: C.ink } }, t),
@@ -3514,11 +3523,11 @@ function VendorOrderApp({ go }) {
       h("div", { style: { width: 104, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 } },
         q == null ? h("span", { style: { fontSize: 12, color: C.subLight, width: "100%", textAlign: "center" } }, "在庫を入れる")
         : h(React.Fragment, null,
-          h("button", { type: "button", "aria-label": "1つ減らす", style: step, onClick: () => setOver(o => ({ ...o, [id]: Math.max(0, q - 1) })) }, "−"),
+          h("button", { type: "button", "aria-label": "1つ減らす", style: step, onClick: () => setOver(o => ({ ...o, [id]: Math.max(0, q - (L.step || 1)) })) }, "−"),
           h("div", { style: { width: 38, textAlign: "center", lineHeight: 1.05 } },
             h("div", { style: { fontSize: 24, fontWeight: 900, color: q === 0 ? C.subLight : C.ink, fontVariantNumeric: "tabular-nums" } }, q === 0 ? "0" : q),
             h("div", { style: { fontSize: 10.5, color: C.sub, fontWeight: 700, whiteSpace: "nowrap" } }, L.ou || L.unit)),
-          h("button", { type: "button", "aria-label": "1つ増やす", style: step, onClick: () => setOver(o => ({ ...o, [id]: q + 1 })) }, "+"))));
+          h("button", { type: "button", "aria-label": "1つ増やす", style: step, onClick: () => setOver(o => ({ ...o, [id]: q + (L.step || 1) })) }, "+"))));
   };
   const linkedCard = linkedBy.length > 0 && h("div", { style: { ...cardStyle, overflow: "hidden" } },
     h("div", { style: { display: "flex", gap: 10, padding: "8px 14px", background: C.lineSoft, fontSize: 11, fontWeight: 800, color: C.sub } },
@@ -3576,8 +3585,8 @@ function VendorOrderApp({ go }) {
         linkedBy.length > 0 && h(React.Fragment, null,
           sec("在庫を入れて発注数を出す", "売上と連動する品目です。直近2週の曜日別売上（＋1割）から、次の納品までに使う量を計算します"),
           linkedCard,
-          h("button", { type: "button", className: "fk-tap", onClick: record, style: { width: "100%", minHeight: 52, borderRadius: 12, border: "none", background: C.ink, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 12, fontFamily: FONT } }, rec ? "記録を上書きする" : "インフォマートで発注した（記録）"),
-          h("div", { style: { fontSize: 12, color: rec ? C.done : C.sub, fontWeight: rec ? 800 : 500, margin: "8px 4px 0", lineHeight: 1.6 } }, rec ? "記録済みです。次の発注で「届く分」として差し引きます" : "記録すると、次の発注で「届く分」として差し引きます")),
+          recItems.length > 0 && h("button", { type: "button", className: "fk-tap", onClick: record, style: { width: "100%", minHeight: 52, borderRadius: 12, border: "none", background: C.ink, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 12, fontFamily: FONT } }, rec ? "記録を上書きする" : `${recItems.map(it => it.n.replace("（麺）", "")).join("・")}の発注数を記録`),
+          recItems.length > 0 && h("div", { style: { fontSize: 12, color: rec ? C.done : C.sub, fontWeight: rec ? 800 : 500, margin: "8px 4px 0", lineHeight: 1.6 } }, rec ? "記録済みです。次の発注で「届く分」として差し引きます" : "2日以上先に届く品目だけ記録します。次の発注で「届く分」として差し引くためです（翌日届く品目は記録不要）")),
         ruleCards.length > 0 && h(React.Fragment, null, sec("基準を見て発注する", "在庫を見て、下の基準に当てはまれば発注します"), ruleCards)),
       all && h(React.Fragment, null, h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "濃い曜日が今日。「合わせ」＝在庫と合わせてその数になるように発注"), allView),
       h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.card, border: `1.5px solid ${C.line}`, color: C.ink, fontSize: 15, fontWeight: 800, textDecoration: "none", marginTop: 18 } }, "インフォマートを開く")),
