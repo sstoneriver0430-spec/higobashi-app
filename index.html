@@ -2993,17 +2993,17 @@ function Placeholder({ page, go }) {
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
 const OR_LOG_KEY = "higo_order_log_v1";
-// 並び順はASPITと同じ（商品コード順）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
+// 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
 const orLogSeed = () => JSON.parse(JSON.stringify(OR_HIST));
 const orMasterSeed = () => ({
   aspit: "https://www.f-aspit.com/aspit2/logon/index",
   items: [
     { id: "grill",  grp: "ファクトリー", name: "グリル",     unit: "P",  rate: 1.104 },
-    { id: "ekisu",  grp: "ファクトリー", name: "エキス",     unit: "箱", rate: 0.928 },
-    { id: "tare",   grp: "ファクトリー", name: "ラーたれ",   unit: "本", rate: 0.211 },
+    { id: "ekisu",  grp: "ファクトリー", name: "エキス",     unit: "箱", rate: 0.928, cu: "袋", per: 10 },
+    { id: "tare",   grp: "ファクトリー", name: "ラーたれ",   unit: "本", rate: 0.211, cu: "袋", per: 5 },
     { id: "seabura",grp: "ファクトリー", name: "背脂",       unit: "kg", rate: 0.597 },
-    { id: "men",    grp: "ファクトリー", name: "28番麺",     unit: "箱", rate: 1.35 },
+    { id: "men",    grp: "ファクトリー", name: "28番麺",     unit: "箱", rate: 1.35, cu: "玉", per: 80 },
     { id: "gyoza",  grp: "物流",         name: "餃子の皮",   unit: "P",  rate: 0.942 },
     { id: "kome",   grp: "物流",         name: "米",         unit: "袋", rate: 0.703 },
     { id: "goma",   grp: "物流",         name: "ゴマ油",     unit: "本", point: 1, pq: 1 },
@@ -3080,7 +3080,7 @@ function orCalc(master, log, slot, basis, stock, timing) {
   // 間に届く分（記録があれば記録の数、なければ目安）
   const mid = []; for (let od = orAdd(slot.orderDate, -5); od < slot.orderDate; od = orAdd(od, 1)) { const o = orOrderOn(master, od); if (o && o.delDate > slot.orderDate && o.delDate < slot.delDate) mid.push({ d: o.delDate, s: o }); }
   master.items.forEach(it => {
-    const st = stock[it.id], has = st !== "" && st != null && !isNaN(Number(st));
+    const raw = stock[it.id], has = raw !== "" && raw != null && !isNaN(Number(raw)), st = has ? Number(raw) / (it.per || 1) : raw;
     if (it.point != null) {
       let pend = 0; mid.forEach(({ d }) => { const rec = log[orYmd(d)]; if (rec && rec.qty && rec.qty[it.id]) pend += Number(rec.qty[it.id]) || 0; });
       out[it.id] = { point: true, has, pending: pend, qty: has ? (Number(st) + pend <= it.point ? it.pq : 0) : null };
@@ -3103,7 +3103,8 @@ function orCalc(master, log, slot, basis, stock, timing) {
 }
 
 function OrderApp({ go }) {
-  const [master, saveMaster] = useStored(OR_MASTER_KEY, orMasterSeed);
+  const [masterRaw, saveMaster] = useStored(OR_MASTER_KEY, orMasterSeed);
+  const master = (() => { const sd = orMasterSeed().items; return { ...masterRaw, items: masterRaw.items.map(it => { const s = sd.find(x => x.id === it.id) || {}; return { cu: s.cu, per: s.per, ...it }; }) }; })();
   const [log, saveLog] = useStored(OR_LOG_KEY, orLogSeed);
   const [me] = useMe();
   const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
@@ -3142,7 +3143,8 @@ function OrderApp({ go }) {
     setStock(s => ({ ...s, [id]: v })); setOver(o => { const n = { ...o }; delete n[id]; return n; });
     clearTimeout(timers.current[id]);
     // 打ち終わったら次の品目へ（2桁は続けて打てば入る）
-    if (v !== "") timers.current[id] = setTimeout(() => focusNext(id), v.length >= 2 ? 150 : 700);
+    const it = master.items.find(x => x.id === id), maxLen = (it && it.per >= 50) ? 3 : 2;
+    if (v !== "") timers.current[id] = setTimeout(() => focusNext(id), v.length >= maxLen ? 150 : 800);
   };
   const COLW = { st: 62, mid: 58, q: 104 };
   const colHead = h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: `1px solid ${C.lineSoft}`, fontSize: 11, color: C.subLight, fontWeight: 700 } },
@@ -3152,19 +3154,23 @@ function OrderApp({ go }) {
     h("span", { style: { width: COLW.q, textAlign: "center" } }, "発注数"));
   const row = (it, i) => {
     const c = calc[it.id], q = qtyOf(it.id), changed = over[it.id] != null;
-    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}` : `必要 ${orR(c.need)}`;
+    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}${it.unit}` : `必要 ${orR(c.need)}${it.unit}` + (it.per ? `（1${it.unit}=${it.per}${it.cu}）` : "");
     return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
       h("div", { style: { flex: 1, minWidth: 0 } },
-        h("div", { style: { fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, it.name, h("span", { style: { fontSize: 12, color: C.sub, fontWeight: 500, marginLeft: 4 } }, it.unit)),
+        h("div", { style: { fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, it.name),
         h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2 } }, sub, changed && h("span", { style: { marginLeft: 6, color: C.drop } }, "手で変更"))),
+      h("div", { style: { width: COLW.st, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 } },
       h("input", { id: "or-st-" + it.id, type: "text", inputMode: "decimal", enterKeyHint: "next", value: stock[it.id] == null ? "" : String(stock[it.id]), placeholder: "—", "aria-label": `${it.name}の今の在庫`,
         onChange: e => onStock(it.id, e.target.value), onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timers.current[it.id]); focusNext(it.id); } }, onFocus: e => e.target.select(), style: { ...numIn, width: COLW.st, textAlign: "center" } }),
-      h("span", { style: { width: COLW.mid, textAlign: "center", fontSize: 17, fontWeight: 600, color: c.pending ? C.ink : C.subLight, fontVariantNumeric: "tabular-nums" } }, mids.length ? (c.pending ? Math.round(c.pending) : "／") : "—"),
+        h("span", { style: { fontSize: 10.5, color: it.cu ? C.ink : C.subLight, fontWeight: it.cu ? 700 : 500 } }, it.cu || it.unit)),
+      h("div", { style: { width: COLW.mid, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 } },
+        h("span", { style: { fontSize: 17, fontWeight: 600, color: c.pending ? C.ink : C.subLight, fontVariantNumeric: "tabular-nums", lineHeight: "44px" } }, mids.length ? (c.pending ? Math.round(c.pending) : "／") : "—"),
+        h("span", { style: { fontSize: 10.5, color: C.subLight } }, it.unit)),
       h("div", { style: { width: COLW.q, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 } },
         q == null ? h("span", { style: { fontSize: 12.5, color: C.subLight } }, "在庫を入力")
         : h(React.Fragment, null,
           h("button", { type: "button", "aria-label": "1つ減らす", style: stepBtn, onClick: () => setOver(o => ({ ...o, [it.id]: Math.max(0, q - 1) })) }, "−"),
-          h("span", { style: { minWidth: 26, textAlign: "center", fontSize: 24, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: q === 0 ? C.subLight : C.ink } }, q === 0 ? "／" : q),
+          h("span", { style: { minWidth: 26, textAlign: "center", fontVariantNumeric: "tabular-nums", color: q === 0 ? C.subLight : C.ink, display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.1 } }, h("span", { style: { fontSize: 24, fontWeight: 700 } }, q === 0 ? "／" : q), h("span", { style: { fontSize: 10.5, color: C.subLight, fontWeight: 500 } }, it.unit)),
           h("button", { type: "button", "aria-label": "1つ増やす", style: stepBtn, onClick: () => setOver(o => ({ ...o, [it.id]: q + 1 })) }, "+"))));
   };
   const groups = ["ファクトリー", "物流"];
@@ -3241,7 +3247,7 @@ function OrderSettings({ master, saveMaster }) {
     h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 12 } }, "使用量は「売上10万円（税抜）あたり、いくつ使うか」です。10/1〜11/12のペルゴの納品書と売上から出しました。"),
     h("div", { style: { ...cardStyle, overflow: "hidden" } },
       master.items.map((it, i) => h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
-        h("div", { style: { flex: 1, fontSize: 14.5, fontWeight: 600 } }, it.name, h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 4 } }, it.unit)),
+        h("div", { style: { flex: 1, fontSize: 14.5, fontWeight: 600 } }, it.name, h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 4 } }, it.unit + (it.per ? `（在庫は${it.cu}・1${it.unit}=${it.per}${it.cu}）` : ""))),
         it.point != null
           ? h(React.Fragment, null, h("span", { style: { fontSize: 12, color: C.sub } }, "在庫"),
               h("input", { inputMode: "numeric", value: it.point, onChange: e => upd(it.id, { point: Number(e.target.value.replace(/[^\d]/g, "")) || 0 }), style: { ...inp, width: 48 } }),
