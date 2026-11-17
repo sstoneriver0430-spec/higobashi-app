@@ -3003,6 +3003,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
+const APP_VER = "11/17 15:40版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3149,6 +3150,10 @@ function OrderApp({ go }) {
     saveLog({ ...log, [delKey]: { order: orYmd(slot.orderDate), qty, stock: st, by: me || "", t: Date.now() } });
     try { localStorage.removeItem(draftKey); } catch (e) {}
     setMsg("発注を記録しました");
+    // サーバーに保存できたかを確かめて知らせる（消える原因の切り分け用）
+    if (db) setTimeout(() => db.collection(OR_LOG_KEY).doc(delKey).get({ source: "server" })
+      .then(d => setMsg(d.exists ? "記録しました（保存OK）" : "保存を確認できませんでした。通信を確認してください"))
+      .catch(e => setMsg("保存エラー：" + (e.code || e.message))), 1500);
   };
   const numIn = { width: 64, minHeight: 44, borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "8px 10px", fontSize: 17, fontWeight: 600, textAlign: "right", fontVariantNumeric: "tabular-nums", color: C.ink, background: C.card, outline: "none" };
   const stepBtn = { width: 34, height: 34, borderRadius: 999, border: "none", background: C.lineSoft, color: C.ink, fontSize: 18, fontWeight: 600, cursor: "pointer", display: "grid", placeItems: "center", lineHeight: 1 };
@@ -3244,6 +3249,7 @@ function OrderApp({ go }) {
       hist.length > 0 && h(React.Fragment, null,
         h("div", { style: { margin: "22px 4px 8px", fontSize: 13, fontWeight: 700, color: C.sub } }, "発注表（届く日ごと）"),
         h(OrderGrid, { master, log, hi: delKey, draft: (() => { const q = {}; master.items.forEach(it => { const v = qtyOf(it.id); if (v != null) q[it.id] = v; }); return q; })() }))),
+    h("div", { style: { textAlign: "center", fontSize: 11.5, color: C.subLight, margin: "-90px 0 100px" } }, `アプリの版：${APP_VER}`),
     h(Sheet, { open: setOpen, onClose: () => setSetOpen(false), title: "発注の設定" }, setOpen && h(OrderSettings, { master, saveMaster })),
     h(Sheet, { open: exOpen, onClose: () => setExOpen(false), title: "配送変則（祝日など）" }, exOpen && h(OrderWeekEditor, { master: masterRaw, saveMaster })),
     h(Toast, { text: msg }));
