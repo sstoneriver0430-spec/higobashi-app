@@ -511,7 +511,7 @@ const PHOTO_PH = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="ht
 function sharedKind(key) {
   const m = { [A_KEY]: "list", [B_KEY]: "list", [L_KEY]: "list", [BD_KEY]: "list",
     [P_KEY]: "single", [STAFF_KEY]: "single", [QSA_KEY]: "single", [SHIFT_KEY]: "single", [SHN_KEY]: "single", [CL_MASTER_KEY]: "single", [DC_ITEMS_KEY]: "single",
-    [OR_MASTER_KEY]: "single", [OR_LOG_KEY]: "map", [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map" };
+    [OR_MASTER_KEY]: "single", [OR_LOG_KEY]: "single", [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map" };
   return m[key] || null;
 }
 function prodSeed(key, seed) {
@@ -2946,6 +2946,8 @@ function Home({ go }) {
       h("div", { style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
         h(HomeOrder, { go }),
         h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } }),
+        h(HomeVendorOrder, { go }),
+        h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } }),
         (() => { const p = PAGES.find(x => x.k === "lost");
           return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: p.title, badge: lostNear ? `期限間近 ${lostNear}` : lost.length ? `保管中 ${lost.length}` : "", badgeWarn: lostNear > 0, onClick: () => go("lost") }); })()),
       soon.length > 0 && h("div", { style: { marginTop: 18, padding: "0 4px" } },
@@ -2978,7 +2980,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/17 15:40版";
+const APP_VER = "11/17 17:40版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3126,8 +3128,9 @@ function OrderApp({ go }) {
     try { localStorage.removeItem(draftKey); } catch (e) {}
     setMsg("発注を記録しました");
     // サーバーに保存できたかを確かめて知らせる（消える原因の切り分け用）
-    if (db) setTimeout(() => db.collection(OR_LOG_KEY).doc(delKey).get({ source: "server" })
-      .then(d => setMsg(d.exists ? "記録しました（保存OK）" : "保存を確認できませんでした。通信を確認してください"))
+    // 記録は共通の保存場所（single）にまとめて置く（専用の保存場所はサーバーの許可がなく permission-denied になったため）
+    if (db) setTimeout(() => db.collection("single").doc(OR_LOG_KEY).get({ source: "server" })
+      .then(d => setMsg(d.exists && ((d.data() || {}).v || {})[delKey] ? "記録しました（保存OK）" : "保存を確認できませんでした。通信を確認してください"))
       .catch(e => setMsg("保存エラー：" + (e.code || e.message))), 1500);
   };
   const numIn = { width: 64, minHeight: 44, borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "8px 10px", fontSize: 17, fontWeight: 600, textAlign: "right", fontVariantNumeric: "tabular-nums", color: C.ink, background: C.card, outline: "none" };
@@ -3371,6 +3374,106 @@ function OrderExEditor({ master, saveMaster }) {
       h("button", { type: "button", onClick: add, disabled: !od || (!skip && !del), style: { ...primaryBtn, padding: "12px 0", opacity: !od || (!skip && !del) ? .4 : 1 } }, "追加")));
 }
 
+// ───────── 業者の発注表（インフォマート：発注基準表 取引先別・曜日別） ─────────
+// 紙の発注基準表をそのまま見られるようにしたもの（見るだけ）。曜日のキー：0=日〜6=土
+// 2026-11-17 反映：奴ネギは柴商→ジャパンフロントファーム（11/1発注分から）、エンド商事の土曜発注は日曜へ（手書きの矢印）
+const VO_INFOMART = "https://www2.infomart.co.jp/mypage/mypage_fb.page?1";
+const VO_REST = ["ストロー・飴", "トイレットペーパー", "ウーロン茶", "ガーリックパウダー", "強力粉・片栗粉", "パームたわし", "ガラスピックナー", "マジックリン", "ブラックペッパー", "つまようじ", "きざみのり", "すりごま・塩", "ハバネロパウダー"];
+const voSame = (days, txt) => Object.fromEntries(days.map(d => [d, txt]));
+const VO_ENDO = [2, 4, 0]; // 火・木・日（もとは火・木・土）
+const voEndo = (a, b, c) => ({ 2: a, 4: b, 0: c });
+const VO_DATA = [
+  { v: "中日本フーズ", items: [
+    { n: "肩ロース", use: "4本", r: { 1: "19本以上", 3: "13本以上", 4: "13本以上", 5: "19本以上", 0: "13本以上" } }] },
+  { v: "ジャパンフロントファーム", note: "旧・柴商（11月から）", items: [
+    { n: "奴ネギ", use: "6P", r: { 2: "10袋合わせ（木曜納品）", 3: "10袋合わせ（金曜納品）", 4: "15袋合わせ（土曜納品）", 6: "10袋合わせ（月曜納品）", 0: "15袋合わせ（火曜納品）" } }] },
+  { v: "太伸", items: [
+    { n: "旨赤卵", use: "0.6箱", r: { 1: "2ケース合わせ（火曜納品）", 3: "2ケース合わせ（木曜納品）", 5: "2ケース合わせ（土曜納品）" } },
+    { n: "ムキ玉子", use: "8袋", r: { 1: "39袋合わせ（木曜納品）", 3: "48袋合わせ（土曜納品）", 6: "39袋合わせ（火曜納品）" } }] },
+  { v: "丸善", items: [
+    { n: "木耳スライス", use: "1箱", r: { 1: "2袋以上", 3: "2袋以上", 5: "3袋以上" } },
+    { n: "強化スープ", use: "8枚", r: { 1: "16枚以上", 3: "16枚以上", 5: "24枚以上" } },
+    { n: "秘伝返し", r: voSame([1, 3, 5], "2個以上") },
+    ...[["味玉のタレ", "1袋"], ["M黒マー油"], ["赤虎のタレ", "1袋"], ["マー油"]].map(([n, use]) => ({ n, use, r: { 1: "残り2個で発注", 3: "残り2個で発注", 5: "残り3個で発注" } }))] },
+  { v: "KCC", items: ["おしぼり", "紙エプロン", "ポリ袋NO.20", "ニトリル各種"].map(n => ({ n, r: {
+    1: "予備がなければ（水）に発注　※エプロンは20個で頼む", 3: "予備がなければ（木）に発注　※エプロンは20個で頼む", 4: "予備がなければ（金）に発注　※エプロンは20個で頼む" } })) },
+  { v: "森岡商店", items: [
+    { n: "割りばし", r: voSame([1, 2, 3, 6, 0], "2階の在庫がなくなれば2日後に発注") }] },
+  { v: "今井商店", tel: "078-303-3031", note: "インフォマート外（電話）", items: [
+    { n: "瓶ビール", r: { 1: "2ケース発注", 3: "補充後1ケース以下で発注", 5: "2ケース発注", 0: "補充後1ケース以下で発注（水曜と同じ）" } }] },
+  { v: "兼光産業", items: ["キクロン", "チャッカマン", "タマゴ半分こ", "ハサミ"].map(n => ({ n, r: { 5: "予備がなければ（月）に発注" } })) },
+  { v: "エンド商事", note: "土曜の発注は日曜に", items: [
+    { n: "玉ねぎ醤油", r: voEndo("3本合わせ", "4本合わせ", "3本合わせ") },
+    { n: "紅生姜", r: voEndo("2袋合わせ", "3袋合わせ", "2袋合わせ") },
+    { n: "オレンジジュース", r: voEndo("6本合わせ", "8本合わせ", "6本合わせ") },
+    { n: "キッチンペーパー", r: voSame(VO_ENDO, "予備1個") },
+    { n: "ゴミ袋", r: voEndo("3袋合わせ", "4袋合わせ", "3袋合わせ") },
+    { n: "テッシュ", r: voEndo("10個以上", "14個以上", "10個以上") },
+    { n: "焼き海苔", r: voSame(VO_ENDO, "3袋合わせ") },
+    { n: "みりん・醤油", r: voSame(VO_ENDO, "5本以下で発注") },
+    { n: "炭酸水", r: voSame(VO_ENDO, "予備1ケース") },
+    { n: "コーラ", r: voSame(VO_ENDO, "1ケース以上") },
+    { n: "一味・上白糖", r: voSame(VO_ENDO, "1個以上") },
+    ...["おろしにんにく", "ラップ", "レモン・角瓶"].map(n => ({ n, r: voSame(VO_ENDO, "予備1本") })),
+    ...["酢", "サラダ油"].map(n => ({ n, r: voSame(VO_ENDO, "半分以下で発注") })),
+    ...VO_REST.map(n => ({ n, r: voSame(VO_ENDO, "予備なければ発注") }))] }
+];
+const VO_WEEK = [1, 2, 3, 4, 5, 6, 0]; // 表の並び（月〜日）
+// 同じ基準が続く品目はまとめて1行に
+function voGroup(items, d) {
+  const out = [];
+  items.forEach(it => { const t = it.r[d]; if (!t) return; const last = out[out.length - 1];
+    if (last && last.t === t) last.names.push(it.n); else out.push({ t, names: [it.n], use: it.use }); });
+  return out;
+}
+function voVendorsOn(d) { return VO_DATA.filter(x => x.items.some(it => it.r[d])); }
+
+function VendorOrderApp({ go }) {
+  const todayD = new Date().getDay();
+  const [d, setD] = useState(todayD);
+  const [all, setAll] = useState(false);
+  const vs = voVendorsOn(d);
+  const chip = (on) => ({ flexShrink: 0, border: "none", borderRadius: 999, padding: "8px 0", width: 42, fontSize: 13.5, fontWeight: 700, cursor: "pointer", background: on ? C.ink : C.card, color: on ? "#fff" : C.sub, boxShadow: on ? "none" : `inset 0 0 0 1px ${C.line}` });
+  const vHead = (x) => h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, padding: "12px 14px 8px", borderBottom: `1px solid ${C.lineSoft}` } },
+    h("div", { style: { minWidth: 0 } },
+      h("span", { style: { fontSize: 15.5, fontWeight: 800 } }, x.v),
+      x.note && h("span", { style: { marginLeft: 8, fontSize: 11.5, color: C.sub, fontWeight: 600 } }, x.note)),
+    x.tel && h("a", { href: "tel:" + x.tel.replace(/-/g, ""), style: { fontSize: 13, fontWeight: 700, color: C.cyanDeep, whiteSpace: "nowrap", textDecoration: "none" } }, "☎ " + x.tel));
+  const dayView = vs.map(x => h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
+    vHead(x),
+    voGroup(x.items, d).map((g, i) => h("div", { key: i, style: { display: "flex", gap: 10, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", alignItems: "flex-start" } },
+      h("div", { style: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, lineHeight: 1.5 } }, g.names.join("・"),
+        g.names.length === 1 && g.use && h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 500 } }, `使用量目安 ${g.use}`)),
+      h("div", { style: { flex: 1.1, minWidth: 0, fontSize: 14, fontWeight: 700, color: C.ink, lineHeight: 1.5, textAlign: "right" } }, g.t)))));
+  const allView = VO_DATA.map(x => h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
+    vHead(x),
+    x.items.map((it, i) => h("div", { key: it.n, style: { padding: "9px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
+      h("div", { style: { fontSize: 14, fontWeight: 700 } }, it.n, it.use && h("span", { style: { marginLeft: 6, fontSize: 11.5, color: C.subLight, fontWeight: 500 } }, `目安 ${it.use}`)),
+      h("div", { style: { display: "flex", flexWrap: "wrap", gap: "4px 10px", marginTop: 3 } },
+        VO_WEEK.filter(w => it.r[w]).map(w => h("span", { key: w, style: { fontSize: 12.5, color: w === todayD ? C.drop : C.sub, fontWeight: w === todayD ? 800 : 600 } }, `${WD[w]}：${it.r[w]}`)))))));
+  return h("div", { className: "fk-page" },
+    h(Header, null, h(BackHome, { go }), h(AppTitle, { title: "業者の発注表" })),
+    h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(110px + env(safe-area-inset-bottom))" } },
+      h("div", { style: { display: "flex", gap: 6, marginBottom: 12 } },
+        h("button", { type: "button", className: "fk-tap", onClick: () => setAll(false), style: { flex: 1, minHeight: 40, borderRadius: 10, border: !all ? "none" : `1.5px solid ${C.line}`, background: !all ? C.ink : C.card, color: !all ? "#fff" : C.ink, fontSize: 14, fontWeight: 700, cursor: "pointer" } }, "曜日ごと"),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setAll(true), style: { flex: 1, minHeight: 40, borderRadius: 10, border: all ? "none" : `1.5px solid ${C.line}`, background: all ? C.ink : C.card, color: all ? "#fff" : C.ink, fontSize: 14, fontWeight: 700, cursor: "pointer" } }, "全部（取引先別）")),
+      !all && h(React.Fragment, null,
+        h("div", { style: { display: "flex", gap: 6, justifyContent: "space-between", marginBottom: 12 } },
+          VO_WEEK.map(w => h("button", { key: w, type: "button", className: "fk-tap", onClick: () => setD(w), style: chip(w === d) }, WD[w]))),
+        h("div", { style: { fontSize: 20, fontWeight: 800, margin: "4px 4px 4px" } }, `${d === todayD ? "今日（" + WD[d] + "）" : WD[d] + "曜日"}の発注`),
+        h("div", { style: { fontSize: 12.5, color: C.sub, margin: "0 4px 12px" } }, vs.length ? vs.map(x => x.v).join("・") : "発注する取引先はありません"),
+        dayView),
+      all && allView,
+      h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.ink, color: "#fff", fontSize: 15, fontWeight: 700, textDecoration: "none", marginTop: 6 } }, "インフォマートを開く"),
+      h("div", { style: { fontSize: 12, color: C.sub, margin: "10px 4px 0", lineHeight: 1.7 } }, "「合わせ」＝在庫と合わせてその数になるように発注。", h("br"), "紙の発注基準表と同じ内容です（11/17：奴ネギの取引先とエンド商事の日曜を反映）")));
+}
+
+function HomeVendorOrder({ go }) {
+  const vs = voVendorsOn(new Date().getDay());
+  const p = PAGES.find(x => x.k === "order");
+  return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: "業者の発注表", badge: vs.length ? `今日 ${vs.length}社` : "今日はなし", onClick: () => go("vorder") });
+}
+
 function HomeOrder({ go }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const master = readStored(OR_MASTER_KEY, orMasterSeed), log = readStored(OR_LOG_KEY, orLogSeed);
@@ -3384,7 +3487,7 @@ function HomeOrder({ go }) {
 function App() {
   const [, setTick] = useState(0);
   useEffect(() => { const f = () => setTick(t => t + 1); storeBus.add(f); return () => storeBus.delete(f); }, []);
-  const valid = ["home", "staff", ...PAGES.map(p => p.k)];
+  const valid = ["home", "staff", "vorder", ...PAGES.map(p => p.k)];
   const [mkIn, setMkIn] = useState(() => { const m = /^#mk=([A-Za-z0-9_-]+)/.exec(location.hash || ""); if (!m) return null; const d = mkDecode(m[1]); try { history.replaceState(null, "", location.pathname + location.search + "#shift"); } catch (e) {} return d; });
   const init = (() => { if (mkIn) return "shift"; const s = (location.hash || "").slice(1); return valid.includes(s) ? s : "home"; })();
   const [mode, setMode] = useState(init);
@@ -3421,7 +3524,7 @@ function App() {
       button:focus-visible{outline:2px solid ${C.cyan};outline-offset:2px;}
       @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
     `),
-    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r" }) : mode === "lost" ? h(LostApp, { go }) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : mode === "order" ? h(OrderApp, { go }) : h(Placeholder, { page, go, key: mode }),
+    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r" }) : mode === "lost" ? h(LostApp, { go }) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : mode === "order" ? h(OrderApp, { go }) : mode === "vorder" ? h(VendorOrderApp, { go }) : h(Placeholder, { page, go, key: mode }),
     h("nav", { style: { position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 45, background: "rgba(255,255,255,.94)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: `1px solid ${C.line}`, paddingBottom: "env(safe-area-inset-bottom, 0px)" } },
       h("div", { style: { maxWidth: 640, margin: "0 auto", display: "flex", padding: "6px 6px 4px" } },
         NAV.map(k => { const on = k === navFor; const p = PAGES.find(x => x.k === k);
