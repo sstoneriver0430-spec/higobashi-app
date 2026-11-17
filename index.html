@@ -3243,6 +3243,8 @@ function OrderSettings({ master, saveMaster }) {
   const upd = (id, patch) => saveMaster({ ...master, items: master.items.map(it => it.id === id ? { ...it, ...patch } : it) });
   const inp = { width: 70, minHeight: 40, borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "6px 8px", fontSize: 15, textAlign: "right", color: C.ink, background: C.card, outline: "none" };
   return h("div", null,
+    h("div", { style: { marginTop: -22, marginBottom: 26 } }, h(OrderWeekEditor, { master, saveMaster })),
+    h("div", { style: { fontSize: 12.5, fontWeight: 700, color: C.sub, marginBottom: 6 } }, "使用量"),
     h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 12 } }, "使用量は「売上10万円（税抜）あたり、いくつ使うか」です。10/1〜11/12のペルゴの納品書と売上から出しました。"),
     h("div", { style: { ...cardStyle, overflow: "hidden" } },
       master.items.map((it, i) => h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
@@ -3254,10 +3256,51 @@ function OrderSettings({ master, saveMaster }) {
               h("input", { inputMode: "numeric", value: it.pq, onChange: e => upd(it.id, { pq: Number(e.target.value.replace(/[^\d]/g, "")) || 0 }), style: { ...inp, width: 48 } }))
           : h(React.Fragment, null, h("span", { style: { fontSize: 12, color: C.sub } }, "10万円あたり"),
               h("input", { inputMode: "decimal", defaultValue: it.rate, onBlur: e => { const v = Number(e.target.value); if (v > 0) upd(it.id, { rate: v }); }, style: inp }))))),
-    h(OrderExEditor, { master, saveMaster }),
     h("label", { style: { display: "block", marginTop: 18 } },
       h("div", { style: { fontSize: 12.5, fontWeight: 700, color: C.sub, marginBottom: 6 } }, "ASPITのリンク"),
       h("input", { type: "url", defaultValue: master.aspit, onBlur: e => saveMaster({ ...master, aspit: e.target.value.trim() }), style: { ...inp, width: "100%", textAlign: "left", fontSize: 14 } })));
+}
+
+// 配送変則：ペルゴの紙と同じく「入力日 → 届く日」を1週間ぶん並べ、タップで選ぶ
+function OrderWeekEditor({ master, saveMaster }) {
+  const base = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return orAdd(d, -((d.getDay() + 1) % 7)); })(); // 直近の土曜
+  const [wk, setWk] = useState(0);
+  const start = orAdd(base, wk * 7);
+  const ex = master.ex || {};
+  const plain = { ...master, ex: {} };
+  const put = (d, del, days) => {
+    const k = orYmd(d), n = orOrderOn(plain, d), nx = { ...ex };
+    const same = del == null ? !n : n && orYmd(n.delDate) === orYmd(del) && n.days === days;
+    if (same) delete nx[k]; else nx[k] = del == null ? { skip: true } : { del: orYmd(del), days };
+    saveMaster({ ...master, ex: nx });
+  };
+  const chip = (on, label, onClick, warn) => h("button", { type: "button", onClick, style: { minWidth: 52, minHeight: 38, padding: "0 8px", borderRadius: 10, border: on ? "none" : `1.5px solid ${C.line}`, background: on ? (warn ? C.drop : C.ink) : C.card, color: on ? "#fff" : C.ink, fontSize: 13, fontWeight: 600, cursor: "pointer" } }, label);
+  const changed = [...Array(7)].some((_, i) => ex[orYmd(orAdd(start, i))]);
+  return h("div", { style: { marginTop: 22 } },
+    h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 } },
+      h("div", { style: { fontSize: 12.5, fontWeight: 700, color: C.sub } }, "配送変則（ペルゴの紙のとおりに）"),
+      changed && h("button", { type: "button", onClick: () => { const nx = { ...ex }; for (let i = 0; i < 7; i++) delete nx[orYmd(orAdd(start, i))]; saveMaster({ ...master, ex: nx }); }, style: { border: "none", background: "transparent", color: C.drop, fontSize: 12.5, fontWeight: 600, cursor: "pointer" } }, "いつも通りに戻す")),
+    h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 } },
+      h("button", { type: "button", "aria-label": "前の週", onClick: () => setWk(wk - 1), style: { width: 38, height: 38, borderRadius: 999, border: `1px solid ${C.line}`, background: C.card, cursor: "pointer", fontSize: 16 } }, "‹"),
+      h("div", { style: { flex: 1, textAlign: "center", fontSize: 14.5, fontWeight: 700 } }, `${orMD(start)}〜${orMD(orAdd(start, 6))}`),
+      h("button", { type: "button", "aria-label": "次の週", onClick: () => setWk(wk + 1), style: { width: 38, height: 38, borderRadius: 999, border: `1px solid ${C.line}`, background: C.card, cursor: "pointer", fontSize: 16 } }, "›")),
+    h("div", { style: { fontSize: 12, color: C.sub, lineHeight: 1.6, marginBottom: 8 } }, "左が店舗WEB入力日（発注する日）、右が届く日。紙と違う日だけタップで直します。灰色の文字は「いつも通り」です"),
+    h("div", { style: { ...cardStyle, overflow: "hidden" } }, [...Array(7)].map((_, i) => {
+      const d = orAdd(start, i), cur = orOrderOn(master, d), isEx = !!ex[orYmd(d)];
+      const we = d.getDay() === 0 || d.getDay() === 6;
+      return h("div", { key: i, style: { padding: "10px 12px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: isEx ? "#FFF6F5" : "transparent" } },
+        h("div", { style: { display: "flex", alignItems: "baseline", gap: 8, marginBottom: 7 } },
+          h("span", { style: { fontSize: 14.5, fontWeight: 700, color: we ? C.drop : C.ink } }, orMD(d)),
+          h("span", { style: { fontSize: 12, fontWeight: 600, color: isEx ? C.drop : C.subLight } }, isEx ? "変則" : "いつも通り"),
+          h("span", { style: { marginLeft: "auto", fontSize: 12.5, color: C.sub } }, cur ? `→ ${orMD(cur.delDate)}着・${cur.label}` : "発注休み")),
+        h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6 } },
+          chip(!cur, "休み", () => put(d, null), isEx),
+          [1, 2, 3, 4].map(n => { const dd = orAdd(d, n), on = cur && orYmd(cur.delDate) === orYmd(dd);
+            return h(React.Fragment, { key: n }, chip(on, `${dd.getDate()}（${WD[dd.getDay()]}）着`, () => put(d, dd, on ? cur.days : (cur ? cur.days : 1)), isEx)); })),
+        cur && h("div", { style: { display: "flex", gap: 6, marginTop: 6, alignItems: "center" } },
+          h("span", { style: { fontSize: 12, color: C.sub, marginRight: 2 } }, "何日分"),
+          [1, 2, 3].map(n => h(React.Fragment, { key: n }, chip(cur.days === n, `${n}日分`, () => put(d, cur.delDate, n), isEx)))));
+    })));
 }
 
 function OrderExEditor({ master, saveMaster }) {
