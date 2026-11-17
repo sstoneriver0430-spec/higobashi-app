@@ -3008,8 +3008,7 @@ const orMasterSeed = () => ({
     { id: "kome",   grp: "物流",         name: "米",         unit: "袋", rate: 0.703 },
     { id: "goma",   grp: "物流",         name: "ゴマ油",     unit: "本", point: 1, pq: 1 },
     { id: "akanegi",grp: "物流",         name: "赤葱",       unit: "袋", point: 1, pq: 1 },
-    { id: "takana", grp: "物流",         name: "高菜",       unit: "P",  rate: 0.59 },
-    { id: "kimuchi",grp: "物流",         name: "キムチタレ", unit: "本", point: 1, pq: 1 }
+    { id: "takana", grp: "物流",         name: "高菜",       unit: "P",  rate: 0.59 }
   ]
 });
 // 発注日（getDay）→ 届く日・何日分
@@ -3104,7 +3103,7 @@ function orCalc(master, log, slot, basis, stock, timing) {
 
 function OrderApp({ go }) {
   const [masterRaw, saveMaster] = useStored(OR_MASTER_KEY, orMasterSeed);
-  const master = (() => { const sd = orMasterSeed().items; return { ...masterRaw, items: masterRaw.items.map(it => { const s = sd.find(x => x.id === it.id) || {}; return { cu: s.cu, per: s.per, ...it }; }) }; })();
+  const master = (() => { const sd = orMasterSeed().items; return { ...masterRaw, items: masterRaw.items.filter(it => it.id !== "kimuchi").map(it => { const s = sd.find(x => x.id === it.id) || {}; return { cu: s.cu, per: s.per, ...it }; }) }; })();
   const [log, saveLog] = useStored(OR_LOG_KEY, orLogSeed);
   const [me] = useMe();
   const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
