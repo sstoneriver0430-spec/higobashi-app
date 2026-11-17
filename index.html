@@ -2982,7 +2982,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/17 19:10版";
+const APP_VER = "11/17 19:35版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3456,6 +3456,15 @@ function voCalc(it, D, basis, stock, log) {
   return { need, pending, del, nextDel, qty, L };
 }
 
+// 同じ基準の品目をまとめる（並び順は最初に出た順）
+function voByRule(items, d) {
+  const out = [];
+  items.forEach(it => { const t = it.r[d]; if (!t) return; const g = out.find(x => x.t === t); if (g) g.names.push(it.n); else out.push({ t, names: [it.n] }); });
+  return out;
+}
+// 「10袋合わせ（木曜納品）」→ 本文と納品曜日に分ける
+const voSplit = (t) => { const m = /^(.*)（(.)曜納品）$/.exec(t); return m ? { body: m[1], del: m[2] } : { body: t, del: "" }; };
+
 function VendorOrderApp({ go }) {
   const todayD = new Date().getDay();
   const [d, setD] = useState(todayD);
@@ -3470,67 +3479,108 @@ function VendorOrderApp({ go }) {
   useEffect(() => { try { if (Object.keys(stock).length || Object.keys(over).length) localStorage.setItem(draftKey, JSON.stringify({ stock, over })); } catch (e) {} }, [stock, over, draftKey]);
   useEffect(() => { if (!msg) return; const t = setTimeout(() => setMsg(""), 2200); return () => clearTimeout(t); }, [msg]);
   const basis = orSalesBasis(today0);
-  const linked = []; VO_DATA.forEach(x => x.items.forEach(it => { if (VO_LINK[it.n] && it.r[d]) linked.push(it); }));
+  const linkedBy = vs.map(x => ({ x, items: x.items.filter(it => VO_LINK[it.n] && it.r[d]) })).filter(g => g.items.length);
+  const linked = linkedBy.flatMap(g => g.items);
   const calcOf = (it) => voCalc(it, D, basis, stock[VO_LINK[it.n].id], vlog);
   const qtyOf = (it) => { const id = VO_LINK[it.n].id; return over[id] != null ? over[id] : calcOf(it).qty; };
   const rec = vlog[dKey];
   const record = () => { const q = {}; linked.forEach(it => { const v = qtyOf(it); if (v != null) q[VO_LINK[it.n].id] = v; }); saveVlog({ ...vlog, [dKey]: q }); setMsg("発注を記録しました"); };
-  const stepBtn = { width: 32, height: 32, borderRadius: 999, border: "none", background: C.lineSoft, color: C.ink, fontSize: 18, fontWeight: 600, cursor: "pointer", display: "grid", placeItems: "center", lineHeight: 1 };
-  const linkRow = (it, i) => { const c = calcOf(it), L = c.L, q = qtyOf(it), id = L.id, sv = stock[id];
-    return h("div", { key: "L" + id, style: { padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
-      h("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
-        h("div", { style: { flex: 1, minWidth: 0 } },
-          h("div", { style: { fontSize: 15, fontWeight: 800 } }, it.n),
-          h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2, lineHeight: 1.5 } }, `${orMD(c.nextDel)}の納品まで 約${orR(c.need)}${L.unit}使う`, c.pending ? `（間に届く ${c.pending}${L.unit}）` : ""),
-          h("div", { style: { fontSize: 11, color: C.subLight } }, `表：${it.r[d]}`, L.per ? `／発注は${L.ou}（${L.per}${L.unit}入り）` : "")),
-        h("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 1 } },
-          h("input", { type: "text", inputMode: "decimal", value: sv == null ? "" : String(sv), placeholder: "在庫", "aria-label": `${it.n}の今の在庫`, onFocus: e => e.target.select(),
-            onChange: e => { const v = e.target.value.replace(/[^\d.]/g, ""); setStock(s => ({ ...s, [id]: v })); setOver(o => { const n = { ...o }; delete n[id]; return n; }); },
-            style: { width: 58, minHeight: 42, borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "6px 6px", fontSize: 17, fontWeight: 600, textAlign: "center", color: C.ink, background: C.card, outline: "none", fontFamily: FONT } }),
-          h("span", { style: { fontSize: 10.5, color: C.subLight } }, `在庫（${L.unit}）`)),
-        h("div", { style: { width: 100, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 } },
-          q == null ? h("span", { style: { fontSize: 12, color: C.subLight, textAlign: "center" } }, "在庫を入力")
-          : h(React.Fragment, null,
-            h("button", { type: "button", "aria-label": "1つ減らす", style: stepBtn, onClick: () => setOver(o => ({ ...o, [id]: Math.max(0, q - 1) })) }, "−"),
-            h("span", { style: { minWidth: 24, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.1 } }, h("span", { style: { fontSize: 22, fontWeight: 800, color: q === 0 ? C.subLight : C.ink } }, q === 0 ? "／" : q), h("span", { style: { fontSize: 10.5, color: C.subLight } }, L.ou || L.unit)),
-            h("button", { type: "button", "aria-label": "1つ増やす", style: stepBtn, onClick: () => setOver(o => ({ ...o, [id]: q + 1 })) }, "+")))));
-  };
-  const chip = (on) => ({ flexShrink: 0, border: "none", borderRadius: 999, padding: "8px 0", width: 42, fontSize: 13.5, fontWeight: 700, cursor: "pointer", background: on ? C.ink : C.card, color: on ? "#fff" : C.sub, boxShadow: on ? "none" : `inset 0 0 0 1px ${C.line}` });
-  const vHead = (x) => h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, padding: "12px 14px 8px", borderBottom: `1px solid ${C.lineSoft}` } },
+  const isToday = d === todayD;
+  const sec = (t, sub) => h("div", { style: { margin: "22px 4px 10px" } },
+    h("div", { style: { fontSize: 15, fontWeight: 900, color: C.ink } }, t),
+    sub && h("div", { style: { fontSize: 12, color: C.sub, marginTop: 3, lineHeight: 1.6 } }, sub));
+  const seg = (on, label, onClick) => h("button", { type: "button", className: "fk-tap", onClick, style: { flex: 1, minHeight: 40, borderRadius: 10, border: "none", background: on ? C.card : "transparent", boxShadow: on ? "0 1px 3px rgba(0,0,0,.12)" : "none", color: on ? C.ink : C.sub, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT } }, label);
+  const telLink = (x) => x.tel && h("a", { href: "tel:" + x.tel.replace(/-/g, ""), style: { fontSize: 13, fontWeight: 800, color: C.cyanDeep, whiteSpace: "nowrap", textDecoration: "none", border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px" } }, "電話する");
+  const vHead = (x) => h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 16px 10px", borderBottom: `1px solid ${C.lineSoft}` } },
     h("div", { style: { minWidth: 0 } },
-      h("span", { style: { fontSize: 15.5, fontWeight: 800 } }, x.v),
-      x.note && h("span", { style: { marginLeft: 8, fontSize: 11.5, color: C.sub, fontWeight: 600 } }, x.note)),
-    x.tel && h("a", { href: "tel:" + x.tel.replace(/-/g, ""), style: { fontSize: 13, fontWeight: 700, color: C.cyanDeep, whiteSpace: "nowrap", textDecoration: "none" } }, "☎ " + x.tel));
-  const dayView = vs.map(x => h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
-    vHead(x),
-    voGroup(x.items, d).map((g, i) => g.names.length === 1 && VO_LINK[g.names[0]] ? linkRow(x.items.find(it => it.n === g.names[0]), i) : h("div", { key: i, style: { display: "flex", gap: 10, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", alignItems: "flex-start" } },
-      h("div", { style: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, lineHeight: 1.5 } }, g.names.join("・"),
-        g.names.length === 1 && g.use && h("div", { style: { fontSize: 11.5, color: C.subLight, fontWeight: 500 } }, `使用量目安 ${g.use}`)),
-      h("div", { style: { flex: 1.1, minWidth: 0, fontSize: 14, fontWeight: 700, color: C.ink, lineHeight: 1.5, textAlign: "right" } }, g.t)))));
-  const allView = VO_DATA.map(x => h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } },
-    vHead(x),
-    x.items.map((it, i) => h("div", { key: it.n, style: { padding: "9px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
-      h("div", { style: { fontSize: 14, fontWeight: 700 } }, it.n, it.use && h("span", { style: { marginLeft: 6, fontSize: 11.5, color: C.subLight, fontWeight: 500 } }, `目安 ${it.use}`)),
-      h("div", { style: { display: "flex", flexWrap: "wrap", gap: "4px 10px", marginTop: 3 } },
-        VO_WEEK.filter(w => it.r[w]).map(w => h("span", { key: w, style: { fontSize: 12.5, color: w === todayD ? C.drop : C.sub, fontWeight: w === todayD ? 800 : 600 } }, `${WD[w]}：${it.r[w]}`)))))));
+      h("div", { style: { fontSize: 16, fontWeight: 900 } }, x.v),
+      x.note && h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2 } }, x.note)),
+    telLink(x));
+
+  // ── 売上連動（在庫を入れる）
+  const step = { width: 30, height: 30, borderRadius: 999, border: "none", background: C.lineSoft, color: C.ink, fontSize: 17, fontWeight: 700, cursor: "pointer", display: "grid", placeItems: "center", lineHeight: 1, padding: 0 };
+  const linkRow = (it, i) => {
+    const c = calcOf(it), L = c.L, q = qtyOf(it), id = L.id, sv = stock[id], b = voSplit(it.r[d]);
+    return h("div", { key: id, style: { display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
+      h("div", { style: { flex: 1, minWidth: 0 } },
+        h("div", { style: { fontSize: 16, fontWeight: 800, lineHeight: 1.3 } }, it.n),
+        h("div", { style: { fontSize: 12, color: C.sub, marginTop: 3, lineHeight: 1.45 } }, `見込み ${orR(c.need)}${L.unit}`, c.pending ? ` − 届く分${c.pending}` : ""),
+        h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.45 } }, `基準 ${b.body}`)),
+      h("div", { style: { width: 60, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 } },
+        h("input", { type: "text", inputMode: "decimal", value: sv == null ? "" : String(sv), placeholder: "—", "aria-label": `${it.n}の今の在庫`, onFocus: e => e.target.select(),
+          onChange: e => { const v = e.target.value.replace(/[^\d.]/g, ""); setStock(s => ({ ...s, [id]: v })); setOver(o => { const n = { ...o }; delete n[id]; return n; }); },
+          style: { width: 60, height: 44, boxSizing: "border-box", borderRadius: 10, border: `1.5px solid ${sv ? C.cyan : C.line}`, padding: 0, fontSize: 18, fontWeight: 700, textAlign: "center", color: C.ink, background: C.card, outline: "none", fontFamily: FONT } }),
+        h("span", { style: { fontSize: 10.5, color: C.subLight, whiteSpace: "nowrap" } }, L.unit)),
+      h("div", { style: { width: 104, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 } },
+        q == null ? h("span", { style: { fontSize: 12, color: C.subLight, width: "100%", textAlign: "center" } }, "在庫を入れる")
+        : h(React.Fragment, null,
+          h("button", { type: "button", "aria-label": "1つ減らす", style: step, onClick: () => setOver(o => ({ ...o, [id]: Math.max(0, q - 1) })) }, "−"),
+          h("div", { style: { width: 38, textAlign: "center", lineHeight: 1.05 } },
+            h("div", { style: { fontSize: 24, fontWeight: 900, color: q === 0 ? C.subLight : C.ink, fontVariantNumeric: "tabular-nums" } }, q === 0 ? "0" : q),
+            h("div", { style: { fontSize: 10.5, color: C.sub, fontWeight: 700, whiteSpace: "nowrap" } }, L.ou || L.unit)),
+          h("button", { type: "button", "aria-label": "1つ増やす", style: step, onClick: () => setOver(o => ({ ...o, [id]: q + 1 })) }, "+"))));
+  };
+  const linkedCard = linkedBy.length > 0 && h("div", { style: { ...cardStyle, overflow: "hidden" } },
+    h("div", { style: { display: "flex", gap: 10, padding: "8px 14px", background: C.lineSoft, fontSize: 11, fontWeight: 800, color: C.sub } },
+      h("span", { style: { flex: 1 } }, "品目"), h("span", { style: { width: 60, textAlign: "center" } }, "今の在庫"), h("span", { style: { width: 104, textAlign: "center" } }, "発注数")),
+    linkedBy.map(g => h(React.Fragment, { key: g.x.v },
+      h("div", { style: { padding: "8px 14px 0", fontSize: 11.5, fontWeight: 800, color: C.cyanDeep, letterSpacing: ".04em" } }, g.x.v),
+      g.items.map(linkRow))));
+
+  // ── 基準で確認する品目（売上連動以外）
+  const ruleCards = vs.map(x => { const rest = x.items.filter(it => !(VO_LINK[it.n] && it.r[d])); const gs = voByRule(rest, d); if (!gs.length) return null;
+    return h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } }, vHead(x),
+      gs.map((g, i) => { const b = voSplit(g.t);
+        return h("div", { key: i, style: { padding: "12px 16px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
+          h("div", { style: { display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" } },
+            h("span", { style: { fontSize: 15.5, fontWeight: 900, color: C.ink, lineHeight: 1.45 } }, b.body),
+            b.del && h("span", { style: { fontSize: 11.5, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "2px 8px" } }, `${b.del}曜に届く`)),
+          h("div", { style: { fontSize: 13, color: C.sub, marginTop: 4, lineHeight: 1.65 } }, g.names.join("、"))); })); }).filter(Boolean);
+
+  // ── 基準表（取引先別）
+  const wBadge = (w) => h("span", { style: { flexShrink: 0, width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", fontSize: 13, fontWeight: 900, background: w === todayD ? C.ink : C.lineSoft, color: w === todayD ? "#fff" : C.ink } }, WD[w]);
+  const allView = VO_DATA.map(x => {
+    const ws = VO_WEEK.filter(w => x.items.some(it => it.r[w]));
+    const rows = []; x.items.forEach(it => { const key = ws.map(w => it.r[w] || "").join("|"); const r = rows.find(z => z.key === key); if (r) r.names.push(it.n); else rows.push({ key, names: [it.n], it }); });
+    const nameLine = (r) => h("div", { style: { fontSize: 15, fontWeight: 900, lineHeight: 1.5 } }, r.names.join("、"),
+      VO_LINK[r.names[0]] && h("span", { style: { marginLeft: 8, fontSize: 10.5, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "2px 7px", fontWeight: 800, verticalAlign: "middle" } }, "売上連動"));
+    return h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } }, vHead(x),
+      rows.map((r, ri) => { const days = ws.filter(w => r.it.r[w]); const vals = days.map(w => r.it.r[w]); const same = vals.every(v => v === vals[0]);
+        return h("div", { key: ri, style: { padding: "12px 16px", borderTop: ri ? `1px solid ${C.lineSoft}` : "none" } },
+          nameLine(r),
+          same
+            ? h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" } },
+                h("div", { style: { display: "flex", gap: 4 } }, days.map(w => h(React.Fragment, { key: w }, wBadge(w)))),
+                h("span", { style: { fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.5 } }, vals[0]))
+            : h("div", { style: { marginTop: 6 } }, days.map(w => { const b = voSplit(r.it.r[w]);
+                return h("div", { key: w, style: { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" } },
+                  wBadge(w),
+                  h("span", { style: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 800, color: C.ink } }, b.body),
+                  b.del && h("span", { style: { fontSize: 11.5, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" } }, `${b.del}曜に届く`)); }))); })); });
+
   return h("div", { className: "fk-page" },
     h(Header, null, h(BackHome, { go }), h(AppTitle, { title: "インフォマート発注" })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(110px + env(safe-area-inset-bottom))" } },
-      h("div", { style: { display: "flex", gap: 6, marginBottom: 12 } },
-        h("button", { type: "button", className: "fk-tap", onClick: () => setAll(false), style: { flex: 1, minHeight: 40, borderRadius: 10, border: !all ? "none" : `1.5px solid ${C.line}`, background: !all ? C.ink : C.card, color: !all ? "#fff" : C.ink, fontSize: 14, fontWeight: 700, cursor: "pointer" } }, "曜日ごと"),
-        h("button", { type: "button", className: "fk-tap", onClick: () => setAll(true), style: { flex: 1, minHeight: 40, borderRadius: 10, border: all ? "none" : `1.5px solid ${C.line}`, background: all ? C.ink : C.card, color: all ? "#fff" : C.ink, fontSize: 14, fontWeight: 700, cursor: "pointer" } }, "全部（取引先別）")),
+      h("div", { style: { display: "flex", gap: 4, padding: 4, background: C.lineSoft, borderRadius: 12, marginBottom: 14 } },
+        seg(!all, "曜日ごとの発注", () => setAll(false)), seg(all, "基準表（取引先別）", () => setAll(true))),
       !all && h(React.Fragment, null,
-        h("div", { style: { display: "flex", gap: 6, justifyContent: "space-between", marginBottom: 12 } },
-          VO_WEEK.map(w => h("button", { key: w, type: "button", className: "fk-tap", onClick: () => setD(w), style: chip(w === d) }, WD[w]))),
-        h("div", { style: { fontSize: 20, fontWeight: 800, margin: "4px 4px 4px" } }, `${d === todayD ? "今日（" + WD[d] + "）" : WD[d] + "曜日"}の発注`),
-        h("div", { style: { fontSize: 12.5, color: C.sub, margin: "0 4px 12px" } }, vs.length ? vs.map(x => x.v).join("・") : "発注する取引先はありません"),
-        linked.length > 0 && h("div", { style: { fontSize: 12.5, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "太字の品目は売上と連動しています。今の在庫を入れると発注数が出ます（直近2週の曜日別売上＋1割で計算）"),
-        dayView,
-        linked.length > 0 && h("button", { type: "button", className: "fk-tap", onClick: record, style: { width: "100%", minHeight: 52, borderRadius: 12, border: "none", background: C.ink, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", marginBottom: 6 } }, rec ? `${orMD(D)}の記録を上書き` : `${orMD(D)}の発注を記録`),
-        linked.length > 0 && h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 14px", lineHeight: 1.6 } }, rec ? "記録済み。" : "", "記録した数は、次の発注で「間に届く分」として使います")),
-      all && allView,
-      h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.ink, color: "#fff", fontSize: 15, fontWeight: 700, textDecoration: "none", marginTop: 6 } }, "インフォマートを開く"),
-      h("div", { style: { fontSize: 12, color: C.sub, margin: "10px 4px 0", lineHeight: 1.7 } }, "「合わせ」＝在庫と合わせてその数になるように発注。", h("br"), "紙の発注基準表と同じ内容です（11/17：奴ネギの取引先とエンド商事の日曜を反映）")),
+        h("div", { style: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5 } },
+          VO_WEEK.map(w => { const on = w === d, n = voVendorsOn(w).length;
+            return h("button", { key: w, type: "button", className: "fk-tap", onClick: () => setD(w), style: { border: "none", borderRadius: 12, padding: "8px 0 6px", cursor: "pointer", fontFamily: FONT, background: on ? C.ink : C.card, color: on ? "#fff" : C.ink, boxShadow: on ? "none" : `inset 0 0 0 1px ${C.line}` } },
+              h("div", { style: { fontSize: 15, fontWeight: 900 } }, WD[w]),
+              h("div", { style: { fontSize: 10, fontWeight: 700, opacity: .7, marginTop: 1 } }, w === todayD ? "今日" : `${n}社`)); })),
+        h("div", { style: { ...cardStyle, padding: "14px 16px", marginTop: 14 } },
+          h("div", { style: { fontSize: 12.5, color: C.sub, fontWeight: 700 } }, `${orMD(D)}${isToday ? "・今日" : ""}`),
+          h("div", { style: { fontSize: 21, fontWeight: 900, marginTop: 2 } }, vs.length ? `${vs.length}社に発注` : "発注はありません"),
+          vs.length > 0 && h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 } }, vs.map(x => h("span", { key: x.v, style: { fontSize: 12.5, fontWeight: 800, color: C.ink, background: C.lineSoft, borderRadius: 999, padding: "4px 10px" } }, x.v)))),
+        linkedBy.length > 0 && h(React.Fragment, null,
+          sec("在庫を入れて発注数を出す", "売上と連動する品目です。直近2週の曜日別売上（＋1割）から、次の納品までに使う量を計算します"),
+          linkedCard,
+          h("button", { type: "button", className: "fk-tap", onClick: record, style: { width: "100%", minHeight: 52, borderRadius: 12, border: "none", background: C.ink, color: "#fff", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 12, fontFamily: FONT } }, rec ? "記録を上書きする" : "インフォマートで発注した（記録）"),
+          h("div", { style: { fontSize: 12, color: rec ? C.done : C.sub, fontWeight: rec ? 800 : 500, margin: "8px 4px 0", lineHeight: 1.6 } }, rec ? "記録済みです。次の発注で「届く分」として差し引きます" : "記録すると、次の発注で「届く分」として差し引きます")),
+        ruleCards.length > 0 && h(React.Fragment, null, sec("基準を見て発注する", "在庫を見て、下の基準に当てはまれば発注します"), ruleCards)),
+      all && h(React.Fragment, null, h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "濃い曜日が今日。「合わせ」＝在庫と合わせてその数になるように発注"), allView),
+      h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.card, border: `1.5px solid ${C.line}`, color: C.ink, fontSize: 15, fontWeight: 800, textDecoration: "none", marginTop: 18 } }, "インフォマートを開く")),
     h(Toast, { text: msg }));
 }
 
@@ -3546,56 +3596,62 @@ const RC_KUBUN = ["麺類", "サイド", "トッピング", "ドリンク", "そ
 function rcFind(name) { return RC_DATA.m.find(x => x.n === name) || RC_DATA.s.find(x => x.n === name) || null; }
 function RecipeDetail({ r, onOpen }) {
   const isPrep = r.y != null;
+  const head = (t, n) => h("div", { style: { display: "flex", alignItems: "baseline", gap: 6, margin: "4px 2px 8px" } },
+    h("span", { style: { fontSize: 15, fontWeight: 900 } }, t), n != null && h("span", { style: { fontSize: 12, color: C.sub, fontWeight: 700 } }, n));
   return h("div", null,
-    h("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 } },
+    h("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 } },
       h(Pill, { text: isPrep ? "仕込み" : (r.k || "メニュー"), color: C.cyanDeep, bg: C.cyanSoft }),
-      isPrep && r.y && !/未指定/.test(r.y) && h(Pill, { text: `出来上がり ${r.y}`, color: C.sub, bg: C.lineSoft })),
-    h("div", { style: { fontSize: 13, fontWeight: 800, color: C.sub, margin: "0 2px 6px" } }, "材料・分量"),
-    r.r.length ? h("div", { style: { ...cardStyle, overflow: "hidden", marginBottom: 18 } },
+      isPrep && r.y && !/未指定/.test(r.y) && h(Pill, { text: `出来上がり ${r.y}`, color: C.ink, bg: C.card })),
+    head("材料・分量", r.r.length ? `${r.r.length}品` : null),
+    r.r.length ? h("div", { style: { ...cardStyle, overflow: "hidden", marginBottom: 22 } },
       r.r.map((x, i) => { const link = x[0] === "S" && rcFind(x[1]);
-        return h("div", { key: i, onClick: link ? () => onOpen(link) : undefined, style: { display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", cursor: link ? "pointer" : "default" } },
+        return h("div", { key: i, onClick: link ? () => onOpen(link) : undefined, className: link ? "fk-tap" : undefined, style: { display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", cursor: link ? "pointer" : "default" } },
           h("div", { style: { flex: 1, minWidth: 0 } },
-            h("div", { style: { fontSize: 15, fontWeight: 700, color: link ? C.cyanDeep : C.ink, lineHeight: 1.4 } }, x[1], link && h("span", { style: { fontSize: 12, marginLeft: 4 } }, "›")),
-            (x[2] || x[0] === "S") && h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 1 } }, x[0] === "S" ? "仕込み" : x[2])),
-          h("div", { style: { fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } }, x[3])); }))
-      : h("div", { style: { fontSize: 13, color: C.sub, margin: "0 2px 18px" } }, "材料は登録されていません"),
-    h("div", { style: { fontSize: 13, fontWeight: 800, color: C.sub, margin: "0 2px 6px" } }, "手順"),
-    r.s.length ? h("ol", { style: { listStyle: "none", margin: 0, padding: 0 } },
-      r.s.map((t, i) => h("li", { key: i, style: { display: "flex", gap: 10, padding: "9px 2px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
-        h("span", { style: { flexShrink: 0, width: 24, height: 24, borderRadius: 999, background: C.ink, color: "#fff", fontSize: 12, fontWeight: 800, display: "grid", placeItems: "center", marginTop: 1 } }, i + 1),
-        h("span", { style: { fontSize: 14.5, lineHeight: 1.65 } }, t))))
-      : h("div", { style: { fontSize: 13, color: C.sub, margin: "0 2px" } }, "手順は登録されていません（上の材料を組み合わせます）"));
+            h("div", { style: { fontSize: 15.5, fontWeight: 800, color: C.ink, lineHeight: 1.4 } }, x[1]),
+            link ? h("div", { style: { fontSize: 11.5, color: C.cyanDeep, fontWeight: 800, marginTop: 2 } }, "仕込み方を見る ›")
+              : x[0] === "S" ? h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 2 } }, "仕込み品")
+              : x[2] && h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 2 } }, x[2])),
+          h("div", { style: { fontSize: 18, fontWeight: 900, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" } }, x[3])); }))
+      : h("div", { style: { fontSize: 13, color: C.sub, margin: "0 2px 22px" } }, "材料は登録されていません"),
+    head("手順", r.s.length ? `${r.s.length}ステップ` : null),
+    r.s.length ? h("div", { style: { ...cardStyle, padding: "4px 14px" } },
+      r.s.map((t, i) => h("div", { key: i, style: { display: "flex", gap: 12, padding: "12px 0", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
+        h("span", { style: { flexShrink: 0, width: 26, height: 26, borderRadius: 999, background: C.ink, color: "#fff", fontSize: 12.5, fontWeight: 900, display: "grid", placeItems: "center" } }, i + 1),
+        h("span", { style: { fontSize: 15, lineHeight: 1.75, paddingTop: 1 } }, t))))
+      : h("div", { style: { fontSize: 13, color: C.sub, margin: "0 2px", lineHeight: 1.6 } }, "手順は登録されていません。上の材料（仕込み品）を組み合わせて作ります。"));
 }
+const RC_FILTERS = ["すべて", "麺類", "サイド", "トッピング", "その他", "仕込み"];
 function RecipeApp({ go }) {
-  const [tab, setTab] = useState("m");
+  const [f, setF] = useState("すべて");
   const [q, setQ] = useState("");
   const [stack, setStack] = useState([]);
   const cur = stack[stack.length - 1];
   const open = (r) => setStack(s => [...s, r]);
   const hit = (r) => !q || r.n.includes(q) || r.r.some(x => x[1].includes(q));
-  const listRow = (r, i) => h("button", { key: r.n, type: "button", className: "fk-tap", onClick: () => setStack([r]),
-    style: { width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", background: "transparent", border: "none", borderTop: i ? `1px solid ${C.lineSoft}` : "none", textAlign: "left", cursor: "pointer", color: C.ink, fontFamily: FONT } },
-    h("span", { style: { flex: 1, minWidth: 0 } },
-      h("span", { style: { display: "block", fontSize: 15.5, fontWeight: 700 } }, r.n),
-      h("span", { style: { display: "block", fontSize: 11.5, color: C.subLight, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, r.r.map(x => x[1]).join("・") || "—")),
-    h(Icon, { name: "chev", size: 18, sw: 2, color: C.subLight }));
-  const seg = (k, label) => h("button", { type: "button", className: "fk-tap", onClick: () => setTab(k), style: { flex: 1, minHeight: 40, borderRadius: 10, border: tab === k ? "none" : `1.5px solid ${C.line}`, background: tab === k ? C.ink : C.card, color: tab === k ? "#fff" : C.ink, fontSize: 14, fontWeight: 700, cursor: "pointer" } }, label);
-  const menus = RC_DATA.m.filter(hit), preps = RC_DATA.s.filter(hit);
+  const card = (r) => { const isPrep = r.y != null;
+    const meta = [isPrep && r.y && !/未指定/.test(r.y) ? `出来上がり ${r.y}` : null, `材料${r.r.length}`, r.s.length ? `手順${r.s.length}` : "手順なし"].filter(Boolean).join("・");
+    return h("button", { key: r.n, type: "button", className: "fk-tap", onClick: () => setStack([r]),
+      style: { ...cardStyle, display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 8, minHeight: 84, padding: "12px 14px", textAlign: "left", cursor: "pointer", color: C.ink, fontFamily: FONT } },
+      h("span", { style: { fontSize: 15.5, fontWeight: 900, lineHeight: 1.35 } }, r.n),
+      h("span", { style: { fontSize: 11.5, color: C.sub, fontWeight: 700 } }, meta)); };
+  const groups = (f === "すべて" ? RC_KUBUN.concat(["仕込み"]) : [f]).map(k => ({ k, arr: (k === "仕込み" ? RC_DATA.s : RC_DATA.m.filter(r => r.k === k)).filter(hit).slice().sort((x, y) => { const f = (n) => ["神虎", "黒虎", "赤虎"].findIndex(t => n.startsWith(t)); const fx = f(x.n), fy = f(y.n); return (fx < 0 ? 9 : fx) - (fy < 0 ? 9 : fy) || x.n.length - y.n.length; }) })).filter(g => g.arr.length);
   return h("div", { className: "fk-page" },
     h(Header, null, h(BackHome, { go }), h(AppTitle, { title: "レシピ" })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(110px + env(safe-area-inset-bottom))" } },
-      h("div", { style: { display: "flex", gap: 6, marginBottom: 10 } }, seg("m", `メニュー（${RC_DATA.m.length}）`), seg("s", `仕込み（${RC_DATA.s.length}）`)),
-      h("input", { type: "search", value: q, onChange: e => setQ(e.target.value), placeholder: "メニュー名・材料で探す", style: { width: "100%", boxSizing: "border-box", minHeight: 44, borderRadius: 12, border: `1.5px solid ${C.line}`, padding: "10px 14px", fontSize: 16, fontFamily: FONT, background: C.card, color: C.ink, outline: "none", marginBottom: 6 } }),
-      tab === "m" ? RC_KUBUN.map(k => { const arr = menus.filter(r => r.k === k); if (!arr.length) return null;
-          return h(React.Fragment, { key: k }, h("div", { style: { margin: "16px 4px 8px", fontSize: 13, fontWeight: 800, color: C.sub } }, k), h("div", { style: { ...cardStyle, overflow: "hidden" } }, arr.map(listRow))); })
-        : h("div", { style: { ...cardStyle, overflow: "hidden", marginTop: 12 } }, preps.map(listRow)),
-      (tab === "m" ? !menus.length : !preps.length) && h(Empty, { text: "見つかりません" }),
-      h("div", { style: { fontSize: 12, color: C.subLight, margin: "14px 4px 0", lineHeight: 1.7 } }, "インフォマートのメニュー管理（分量表・調理工程）から作成（11/17時点）。写真は入っていません。")),
+      h("input", { type: "search", value: q, onChange: e => setQ(e.target.value), placeholder: "メニュー名・材料で探す", style: { width: "100%", boxSizing: "border-box", minHeight: 46, borderRadius: 12, border: `1.5px solid ${C.line}`, padding: "10px 14px", fontSize: 16, fontFamily: FONT, background: C.card, color: C.ink, outline: "none" } }),
+      h("div", { style: { display: "flex", gap: 6, overflowX: "auto", padding: "12px 0 2px" } },
+        RC_FILTERS.map(k => { const on = k === f; return h("button", { key: k, type: "button", className: "fk-tap", onClick: () => setF(k), style: { flexShrink: 0, border: "none", borderRadius: 999, padding: "8px 14px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: FONT, background: on ? C.ink : C.card, color: on ? "#fff" : C.ink, boxShadow: on ? "none" : `inset 0 0 0 1px ${C.line}` } }, k); })),
+      groups.map(g => h(React.Fragment, { key: g.k },
+        h("div", { style: { display: "flex", alignItems: "baseline", gap: 6, margin: "20px 4px 10px" } }, h("span", { style: { fontSize: 15, fontWeight: 900 } }, g.k), h("span", { style: { fontSize: 12, color: C.sub, fontWeight: 700 } }, `${g.arr.length}`)),
+        h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } }, g.arr.map(card)))),
+      !groups.length && h(Empty, { text: "見つかりません" }),
+      h("div", { style: { fontSize: 12, color: C.subLight, margin: "18px 4px 0", lineHeight: 1.7 } }, "インフォマートのメニュー管理（分量表・調理工程）から作成（11/17時点）。")),
     h(Sheet, { open: !!cur, onClose: () => setStack([]), title: cur ? cur.n : "" },
       cur && h(React.Fragment, null,
-        stack.length > 1 && h("button", { type: "button", onClick: () => setStack(s => s.slice(0, -1)), style: { border: "none", background: "transparent", color: C.cyanDeep, fontSize: 13.5, fontWeight: 800, padding: "0 0 10px", cursor: "pointer" } }, `‹ ${stack[stack.length - 2].n}に戻る`),
+        stack.length > 1 && h("button", { type: "button", className: "fk-tap", onClick: () => setStack(s => s.slice(0, -1)), style: { border: `1px solid ${C.line}`, background: C.card, borderRadius: 999, color: C.ink, fontSize: 13, fontWeight: 800, padding: "6px 12px", marginBottom: 14, cursor: "pointer", fontFamily: FONT } }, `‹ ${stack[stack.length - 2].n}に戻る`),
         h(RecipeDetail, { key: cur.n, r: cur, onOpen: open }))));
 }
+
 function HomeRecipe({ go }) {
   const p = PAGES.find(x => x.k === "recipe");
   return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: "レシピ", badge: `${RC_DATA.m.length}品`, onClick: () => go("recipe") });
