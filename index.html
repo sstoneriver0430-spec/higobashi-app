@@ -3290,29 +3290,38 @@ function OrderWeekEditor({ master, saveMaster }) {
     h("span", { style: { fontSize: 15, fontWeight: 700 } }, top), h("span", { style: { fontSize: 11, fontWeight: 600 } }, bottom));
   const changed = [...Array(7)].some((_, i) => ex[orYmd(orAdd(start, i))]);
   const navBtn = { width: 40, height: 40, borderRadius: 999, border: `1px solid ${C.line}`, background: C.card, cursor: "pointer", fontSize: 18, color: C.ink };
+  // 届く日の列は全行で同じ（土曜始まりの週なら 日〜翌週の日 の8日）
+  const cols = [...Array(8)].map((_, i) => orAdd(start, i + 1));
+  const red = (x) => x.getDay() === 0 || x.getDay() === 6;
+  const grid = { display: "grid", gridTemplateColumns: "50px 36px repeat(8, minmax(0, 1fr))", gap: 3, alignItems: "center" };
+  const cellBtn = (on, onClick, warn, label) => h("button", { type: "button", onClick, "aria-label": label, "aria-pressed": on, style: { height: 40, borderRadius: 8, border: on ? "none" : `1.5px solid ${C.line}`, background: on ? (warn ? C.drop : C.ink) : C.card, color: "#fff", cursor: "pointer", padding: 0, display: "grid", placeItems: "center" } }, on ? h(Icon, { name: "check", size: 16, sw: 3, color: "#fff" }) : null);
   return h("div", null,
     h("div", { style: { ...cardStyle, padding: "12px 14px", fontSize: 13, lineHeight: 1.7, marginBottom: 12 } },
       h("div", { style: { fontWeight: 700, marginBottom: 2 } }, "ペルゴの「配送変則」の紙を見ながら"),
-      h("div", null, "① 紙の「店舗WEB入力日」と同じ日の行を探す"),
-      h("div", null, "② 紙の「通常商品」の段に書いてある日をタップ（2日なら2つとも）"),
+      h("div", null, "① 左の「WEB入力日」が、紙の店舗WEB入力日"),
+      h("div", null, "② 上の日付が届く日。紙の「通常商品」に書いてある日のマスをタップ（2日なら2つとも）"),
       h("div", null, "③ 「発注休み」の日は「休み」をタップ")),
     h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } },
       h("button", { type: "button", "aria-label": "前の週", onClick: () => setWk(wk - 1), style: navBtn }, "‹"),
-      h("div", { style: { flex: 1, textAlign: "center", fontSize: 15, fontWeight: 700 } }, `${start.getMonth() + 1}/${start.getDate()}（土）〜${orAdd(start, 6).getMonth() + 1}/${orAdd(start, 6).getDate()}（金）`),
+      h("div", { style: { flex: 1, textAlign: "center", fontSize: 15, fontWeight: 700 } }, `${start.getMonth() + 1}/${start.getDate()}（土）〜${orAdd(start, 6).getMonth() + 1}/${orAdd(start, 6).getDate()}（金）の入力`),
       h("button", { type: "button", "aria-label": "次の週", onClick: () => setWk(wk + 1), style: navBtn }, "›")),
-    h("div", { style: { ...cardStyle, overflow: "hidden" } },
-      h("div", { style: { display: "flex", gap: 10, padding: "8px 12px", fontSize: 11.5, fontWeight: 700, color: C.sub, borderBottom: `1px solid ${C.line}` } },
-        h("span", { style: { width: 54 } }, "WEB入力日"), h("span", null, "通常商品（届く日・使う日）")),
+    h("div", { style: { ...cardStyle, padding: "10px 8px" } },
+      h("div", { style: { ...grid, paddingBottom: 6, borderBottom: `1px solid ${C.line}`, marginBottom: 4 } },
+        h("span", { style: { fontSize: 10.5, fontWeight: 700, color: C.sub, lineHeight: 1.3 } }, "WEB", h("br"), "入力日"),
+        h("span", null),
+        cols.map((x, i) => h("div", { key: i, style: { textAlign: "center", lineHeight: 1.2, color: red(x) ? C.drop : C.ink } },
+          h("div", { style: { fontSize: 14, fontWeight: 700 } }, x.getDate()), h("div", { style: { fontSize: 10.5, fontWeight: 600 } }, WD[x.getDay()])))),
       [...Array(7)].map((_, i) => {
         const d = orAdd(start, i), cur = orOrderOn(master, d), isEx = !!ex[orYmd(d)];
         const inSel = (dd) => cur && dd >= cur.delDate && dd < orAdd(cur.delDate, cur.days);
-        return h("div", { key: i, "data-exrow": "1", style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: isEx ? "#FFF6F5" : "transparent" } },
-          h("div", { style: { width: 54, flexShrink: 0 } },
-            h("div", { style: { fontSize: 15, fontWeight: 700, color: d.getDay() === 0 || d.getDay() === 6 ? C.drop : C.ink, lineHeight: 1.25 } }, `${d.getMonth() + 1}/${d.getDate()}`, h("br"), h("span", { style: { fontSize: 12.5 } }, `（${WD[d.getDay()]}）`)),
-            h("div", { style: { fontSize: 11, fontWeight: 600, color: isEx ? C.drop : C.subLight, marginTop: 1 } }, isEx ? "変則" : "いつも通り")),
-          h("div", { style: { display: "flex", gap: 3 } },
-            dayBtn(!cur, "休み", "", false, () => save(d, []), isEx),
-            [1, 2, 3, 4, 5].map(n => { const dd = orAdd(d, n); return h(React.Fragment, { key: n }, dayBtn(inSel(dd), dd.getDate(), WD[dd.getDay()], dd.getDay() === 0 || dd.getDay() === 6, () => tap(d, cur, dd), isEx)); })));
+        return h("div", { key: i, "data-exrow": "1", style: { ...grid, padding: "5px 0", borderTop: i ? `1px solid ${C.lineSoft}` : "none", background: isEx ? "#FFF6F5" : "transparent", borderRadius: 6 } },
+          h("div", { style: { lineHeight: 1.2 } },
+            h("div", { style: { fontSize: 14, fontWeight: 700, color: red(d) ? C.drop : C.ink } }, `${d.getMonth() + 1}/${d.getDate()}`, h("span", { style: { fontSize: 11 } }, `（${WD[d.getDay()]}）`)),
+            h("div", { style: { fontSize: 10, fontWeight: 700, color: isEx ? C.drop : C.subLight } }, isEx ? "変則" : "いつも通り")),
+          h("button", { type: "button", onClick: () => save(d, []), style: { height: 40, borderRadius: 8, border: !cur ? "none" : `1.5px solid ${C.line}`, background: !cur ? (isEx ? C.drop : C.ink) : C.card, color: !cur ? "#fff" : C.ink, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: 0 } }, "休み"),
+          cols.map((x, j) => x <= d || x > orAdd(d, 5)
+            ? h("span", { key: j, style: { height: 40, borderRadius: 8, background: C.lineSoft, opacity: .5 } })
+            : h(React.Fragment, { key: j }, cellBtn(inSel(x), () => tap(d, cur, x), isEx, `${orMD(d)}の発注で${orMD(x)}`))));
       })),
     changed && h("button", { type: "button", onClick: () => { const nx = { ...ex }; for (let i = 0; i < 7; i++) delete nx[orYmd(orAdd(start, i))]; saveMaster({ ...master, ex: nx }); }, style: { ...subBtn, width: "100%", marginTop: 12, minHeight: 46, color: C.drop } }, "この週をいつも通りに戻す"),
     h("div", { style: { fontSize: 12, color: C.sub, lineHeight: 1.6, marginTop: 10 } }, "選んだ一番早い日が届く日です。入れた内容はすぐ発注表に反映されます"));
