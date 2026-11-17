@@ -3082,7 +3082,8 @@ function orCalc(master, log, slot, basis, stock, timing) {
   master.items.forEach(it => {
     const st = stock[it.id], has = st !== "" && st != null && !isNaN(Number(st));
     if (it.point != null) {
-      out[it.id] = { point: true, has, qty: has ? (Number(st) <= it.point ? it.pq : 0) : null };
+      let pend = 0; mid.forEach(({ d }) => { const rec = log[orYmd(d)]; if (rec && rec.qty && rec.qty[it.id]) pend += Number(rec.qty[it.id]) || 0; });
+      out[it.id] = { point: true, has, pending: pend, qty: has ? (Number(st) + pend <= it.point ? it.pq : 0) : null };
       return;
     }
     const use = (d, oneDay) => it.rate * orDaySales(basis, d, oneDay) / 1e5;
@@ -3130,23 +3131,38 @@ function OrderApp({ go }) {
   };
   const numIn = { width: 64, minHeight: 44, borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "8px 10px", fontSize: 17, fontWeight: 600, textAlign: "right", fontVariantNumeric: "tabular-nums", color: C.ink, background: C.card, outline: "none" };
   const stepBtn = { width: 34, height: 34, borderRadius: 999, border: "none", background: C.lineSoft, color: C.ink, fontSize: 18, fontWeight: 600, cursor: "pointer", display: "grid", placeItems: "center", lineHeight: 1 };
-  const row = (it, i, arr) => {
+  // 間に届く納品（「翌日納品」の列）
+  const mids = []; for (let od = orAdd(slot.orderDate, -5); od < slot.orderDate; od = orAdd(od, 1)) { const o = orOrderOn(master, od); if (o && o.delDate > slot.orderDate && o.delDate < slot.delDate) mids.push(o.delDate); }
+  const midLabel = !mids.length ? "途中の納品" : mids.length === 1 && orYmd(mids[0]) === orYmd(orAdd(slot.orderDate, 1)) ? "翌日納品" : mids.map(d => `${d.getMonth() + 1}/${d.getDate()}`).join("・") + "納品";
+  const order = master.items.map(it => it.id);
+  const timers = useRef({});
+  const focusNext = (id) => { const i = order.indexOf(id), nx = order[i + 1]; const el = nx && document.getElementById("or-st-" + nx); if (el) { el.focus(); el.select && el.select(); } else if (document.activeElement) document.activeElement.blur(); };
+  const onStock = (id, raw) => {
+    const v = raw.replace(/[^\d.]/g, "");
+    setStock(s => ({ ...s, [id]: v })); setOver(o => { const n = { ...o }; delete n[id]; return n; });
+    clearTimeout(timers.current[id]);
+    // 打ち終わったら次の品目へ（2桁は続けて打てば入る）
+    if (v !== "") timers.current[id] = setTimeout(() => focusNext(id), v.length >= 2 ? 150 : 700);
+  };
+  const COLW = { st: 62, mid: 58, q: 104 };
+  const colHead = h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: `1px solid ${C.lineSoft}`, fontSize: 11, color: C.subLight, fontWeight: 700 } },
+    h("span", { style: { flex: 1 } }, "品目"),
+    h("span", { style: { width: COLW.st, textAlign: "center" } }, "今の在庫"),
+    h("span", { style: { width: COLW.mid, textAlign: "center" } }, midLabel),
+    h("span", { style: { width: COLW.q, textAlign: "center" } }, "発注数"));
+  const row = (it, i) => {
     const c = calc[it.id], q = qtyOf(it.id), changed = over[it.id] != null;
-    const sub = it.point != null ? `在庫${it.point}以下なら${it.pq}${it.unit}`
-      : c.has ? `届く日の朝の見込み ${orR(Math.max(0, c.proj))}／必要 ${orR(c.need)}`
-      : `必要 ${orR(c.need)}（在庫を入れると差し引きます）`;
-    return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
+    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}` : `必要 ${orR(c.need)}`;
+    return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
       h("div", { style: { flex: 1, minWidth: 0 } },
-        h("div", { style: { fontSize: 15.5, fontWeight: 700 } }, it.name, h("span", { style: { fontSize: 12, color: C.sub, fontWeight: 500, marginLeft: 6 } }, it.unit)),
-        h("div", { style: { fontSize: 12, color: C.sub, marginTop: 3, lineHeight: 1.45 } }, sub)),
-      h("label", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2 } },
-        h("span", { style: { fontSize: 10.5, color: C.subLight, fontWeight: 600 } }, "今の在庫"),
-        h("input", { type: "text", inputMode: "decimal", value: stock[it.id] == null ? "" : String(stock[it.id]), placeholder: "—", "aria-label": `${it.name}の今の在庫`,
-          onChange: e => { const v = e.target.value.replace(/[^\d.]/g, ""); setStock(s => ({ ...s, [it.id]: v })); setOver(o => { const n = { ...o }; delete n[it.id]; return n; }); }, style: numIn })),
-      h("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, width: 104 } },
-        h("span", { style: { fontSize: 10.5, color: C.subLight, fontWeight: 600 } }, changed ? "発注（手で変更）" : "発注"),
-        q == null ? h("div", { style: { fontSize: 13, color: C.subLight, height: 40, display: "grid", placeItems: "center" } }, "在庫を入力")
-        : h("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
+        h("div", { style: { fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, it.name, h("span", { style: { fontSize: 12, color: C.sub, fontWeight: 500, marginLeft: 4 } }, it.unit)),
+        h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2 } }, sub, changed && h("span", { style: { marginLeft: 6, color: C.drop } }, "手で変更"))),
+      h("input", { id: "or-st-" + it.id, type: "text", inputMode: "decimal", enterKeyHint: "next", value: stock[it.id] == null ? "" : String(stock[it.id]), placeholder: "—", "aria-label": `${it.name}の今の在庫`,
+        onChange: e => onStock(it.id, e.target.value), onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timers.current[it.id]); focusNext(it.id); } }, onFocus: e => e.target.select(), style: { ...numIn, width: COLW.st, textAlign: "center" } }),
+      h("span", { style: { width: COLW.mid, textAlign: "center", fontSize: 17, fontWeight: 600, color: c.pending ? C.ink : C.subLight, fontVariantNumeric: "tabular-nums" } }, mids.length ? (c.pending ? Math.round(c.pending) : "／") : "—"),
+      h("div", { style: { width: COLW.q, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 } },
+        q == null ? h("span", { style: { fontSize: 12.5, color: C.subLight } }, "在庫を入力")
+        : h(React.Fragment, null,
           h("button", { type: "button", "aria-label": "1つ減らす", style: stepBtn, onClick: () => setOver(o => ({ ...o, [it.id]: Math.max(0, q - 1) })) }, "−"),
           h("span", { style: { minWidth: 26, textAlign: "center", fontSize: 24, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: q === 0 ? C.subLight : C.ink } }, q === 0 ? "／" : q),
           h("button", { type: "button", "aria-label": "1つ増やす", style: stepBtn, onClick: () => setOver(o => ({ ...o, [it.id]: q + 1 })) }, "+"))));
@@ -3175,7 +3191,7 @@ function OrderApp({ go }) {
       groups.map(g => { const arr = master.items.filter(it => it.grp === g);
         return h(React.Fragment, { key: g },
           h("div", { style: { margin: "18px 4px 8px", fontSize: 13, fontWeight: 700, color: C.sub } }, g),
-          h("div", { style: { ...cardStyle, overflow: "hidden" } }, arr.map(row))); }),
+          h("div", { style: { ...cardStyle, overflow: "hidden" } }, colHead, arr.map(row))); }),
       !anyStock && h("div", { style: { fontSize: 12, color: C.sub, margin: "10px 4px 0", lineHeight: 1.6 } }, "在庫が空欄の品目は、売上からの目安だけを出しています"),
       // ボタン
       h("div", { style: { display: "flex", gap: 10, marginTop: 18 } },
