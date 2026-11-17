@@ -3112,7 +3112,7 @@ function OrderApp({ go }) {
   const rec = log[delKey];
   const [stock, setStock] = useState(() => (rec && rec.stock) || {});
   const [over, setOver] = useState({});
-  const [timing, setTiming] = useState(1);
+  const timing = 1; // 発注は朝一に麺場が行う（営業前に在庫を数える）
   const [setOpen, setSetOpen] = useState(false);
   const [msg, setMsg] = useState("");
   useEffect(() => { const r = log[delKey]; setStock((r && r.stock) || {}); setOver({}); }, [delKey]);
@@ -3170,12 +3170,7 @@ function OrderApp({ go }) {
         h("div", { style: { fontSize: 22, fontWeight: 700, marginTop: 4, letterSpacing: "-.01em" } }, `${orMD(slot.delDate)}に届く分`),
         h("div", { style: { fontSize: 13, color: C.ink, marginTop: 8, lineHeight: 1.6 } }, "紙の物流発注表の ", h("b", null, `${slot.delDate.getDate()}日（${WD[slot.delDate.getDay()]}）の列`), " に書いて、ASPITに入力してください"),
         rec && h("div", { style: { marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: C.done, background: C.doneSoft, borderRadius: 999, padding: "5px 11px" } }, h(Icon, { name: "check", size: 15, sw: 2.6 }), `記録済み${rec.by ? `（${rec.by}）` : ""}`)),
-      // 在庫を数えたタイミング
-      h("div", { style: { margin: "16px 4px 8px", fontSize: 13, fontWeight: 700 } }, "在庫を数えたのは"),
-      h("div", { style: { display: "flex", gap: 6, background: C.lineSoft, borderRadius: 10, padding: 3 } },
-        [[1, "営業前"], [0.5, "営業中"], [0, "閉店後"]].map(([v, l]) => { const on = v === timing;
-          return h("button", { key: l, type: "button", onClick: () => setTiming(v), style: { flex: 1, border: "none", borderRadius: 8, padding: "8px 0", fontSize: 13, fontWeight: 600, cursor: "pointer", background: on ? C.card : "transparent", color: on ? C.ink : C.sub, boxShadow: on ? "0 1px 3px rgba(0,0,0,.12)" : "none" } }, l); })),
-      h("div", { style: { fontSize: 12, color: C.sub, margin: "6px 4px 0", lineHeight: 1.6 } }, "今日このあと使う分と、届く日までに使う分・間に届く分を差し引いて計算します"),
+      h("div", { style: { fontSize: 12.5, color: C.sub, margin: "12px 4px 0", lineHeight: 1.6 } }, "朝一（営業前）に数えた在庫を入れてください。今日使う分・届く日までに使う分・間に届く分を差し引いて計算します"),
       // 品目
       groups.map(g => { const arr = master.items.filter(it => it.grp === g);
         return h(React.Fragment, { key: g },
