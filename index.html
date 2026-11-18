@@ -511,7 +511,7 @@ const PHOTO_PH = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="ht
 function sharedKind(key) {
   const m = { [A_KEY]: "list", [B_KEY]: "list", [L_KEY]: "list", [BD_KEY]: "list",
     [P_KEY]: "single", [STAFF_KEY]: "single", [QSA_KEY]: "single", [SHIFT_KEY]: "single", [SHN_KEY]: "single", [CL_MASTER_KEY]: "single", [DC_ITEMS_KEY]: "single",
-    [OR_MASTER_KEY]: "single", [OR_LOG_KEY]: "single", [VO_LOG_KEY]: "single", [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map" };
+    [OR_MASTER_KEY]: "single", [OR_LOG_KEY]: "single", [VO_LOG_KEY]: "single", [VO_HOL_KEY]: "single", [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map" };
   return m[key] || null;
 }
 function prodSeed(key, seed) {
@@ -2982,7 +2982,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/18 13:40版";
+const APP_VER = "11/18 14:20版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3450,28 +3450,31 @@ const voLt = (L, w) => typeof L.lt === "object" ? (L.lt[w] || 1) : L.lt;
 // 翌日より後に届く品目だけ記録が要る（間に届く分を差し引くため）
 const voNeedRec = (L) => typeof L.lt === "object" ? Object.values(L.lt).some(v => v > 1) : L.lt > 1;
 const VO_LOG_KEY = "higo_vorder_log_v1";
+const VO_HOL_KEY = "higo_vorder_hol_v1"; // 祝日・業者の休み { list: [{ d: 届かない日, v: 業者名 or "*", alt: 代わりに届く日 or "" }] }
 const VO_LOG_START = new Date(2026, 10, 14); // これより前の発注は聞かない
 const VO_BUF = 1.1; // 売上のぶれ用に1割上乗せ
 // D（発注日）に頼む数：届く日の翌の発注分が届くまでに使う量 −（今の在庫＋間に届く分）
-function voCalc(it, D, basis, stock, log) {
+function voCalc(it, D, basis, stock, log, v, hol) {
   const L = VO_LINK[it.n], days = Object.keys(it.r).map(Number);
-  let nx = orAdd(D, 1); while (!days.includes(nx.getDay())) nx = orAdd(nx, 1);
-  const del = orAdd(D, voLt(L, D.getDay())), nextDel = orAdd(nx, voLt(L, nx.getDay()));
+  const dl = voDel(it, D, v, hol);
+  // 次の発注日（届かない日にあたる発注日は飛ばす＝その分を今日の発注でまかなう）
+  let nx = orAdd(D, 1), guard = 0; while ((!days.includes(nx.getDay()) || voDel(it, nx, v, hol).off) && guard++ < 21) nx = orAdd(nx, 1);
+  const del = dl.date, nextDel = voDel(it, nx, v, hol).date;
   const u = (d) => L.rate * orDaySales(basis, d, false) / 1e5 * VO_BUF;
   let need = 0;
   if (L.fixed) { for (let d = D; d < nextDel; d = orAdd(d, 1)) need += L.fixed; }
   else { need = 0.5 * u(D); for (let d = orAdd(D, 1); d < nextDel; d = orAdd(d, 1)) need += u(d); }
   let pending = 0; const missing = [];
   for (let p = orAdd(D, -7); p < D; p = orAdd(p, 1)) {
-    const pd = orAdd(p, voLt(L, p.getDay())); if (!(pd > D && pd < nextDel)) continue;
+    const pdl = voDel(it, p, v, hol); if (pdl.off) continue; const pd = pdl.date; if (!(pd > D && pd < nextDel)) continue;
     const q = ((log[orYmd(p)] || {})[L.id]);
     if (q != null) pending += q * (L.per || 1);
     else if (days.includes(p.getDay()) && p >= VO_LOG_START) missing.push({ p, pd }); // 発注日なのに記録がない
   }
   const has = stock !== "" && stock != null;
-  const raw = has ? Math.max(0, Math.ceil((need - Number(stock) - pending) / (L.per || 1) - 1e-9)) : null;
+  const raw = dl.off ? null : has ? Math.max(0, Math.ceil((need - Number(stock) - pending) / (L.per || 1) - 1e-9)) : null;
   const qty = raw == null ? null : L.step ? Math.ceil(raw / L.step) * L.step : raw;
-  return { need, pending, missing, del, nextDel, qty, L };
+  return { need, pending, missing, del, nextDel, qty, L, off: dl.off, shift: dl.shift, base: dl.base };
 }
 
 // 同じ基準の品目をまとめる（並び順は最初に出た順）
@@ -3490,6 +3493,16 @@ function voDelOf(it, D) {
   if ((m = /(\d)日後に発注/.exec(t))) return orAdd(D, Number(m[1]));
   const L = VO_LINK[it.n]; return orAdd(D, L ? voLt(L, D.getDay()) : 1);
 }
+const voYmdD = (y) => { const [a, b, c] = y.split("-").map(Number); return new Date(a, b - 1, c); };
+const voHolOf = (hol, v, ymd) => ((hol && hol.list) || []).find(e => e.d === ymd && (e.v === "*" || e.v === v));
+// 祝日・休みを反映した届く日。off＝その日は届かない（発注なし）、shift＝代わりの日に届く
+function voDel(it, D, v, hol) {
+  const b = voDelOf(it, D), e = voHolOf(hol, v, orYmd(b));
+  if (!e) return { date: b, base: b };
+  if (e.alt) return { date: voYmdD(e.alt), base: b, shift: true };
+  return { date: b, base: b, off: true };
+}
+const voVendorOf = (n) => (VO_DATA.find(x => x.items.some(it => it.n === n)) || {}).v;
 const voSplit = (t) => { const m = /^(.*)（(.)曜納品）$/.exec(t); return m ? { body: m[1], del: m[2] } : { body: t, del: "" }; };
 
 function VendorOrderApp({ go }) {
@@ -3501,6 +3514,8 @@ function VendorOrderApp({ go }) {
   const D = (() => { let x = new Date(today0); while (x.getDay() !== d) x = orAdd(x, 1); return x; })();
   const dKey = orYmd(D), draftKey = "higo_vorder_draft_" + dKey;
   const [vlog, saveVlog] = useStored(VO_LOG_KEY, () => ({}));
+  const [hol, saveHol] = useStored(VO_HOL_KEY, () => ({ list: [] }));
+  const [holOpen, setHolOpen] = useState(false);
   const [stock, setStock] = useState({}); const [over, setOver] = useState({}); const [msg, setMsg] = useState("");
   const [pastIn, setPastIn] = useState({});
   const savePast = (p, id) => { const k = orYmd(p) + "_" + id, v = pastIn[k]; if (v === "" || v == null) return; saveVlog({ ...vlog, [orYmd(p)]: { ...(vlog[orYmd(p)] || {}), [id]: Number(v) } }); setPastIn(o => { const n = { ...o }; delete n[k]; return n; }); setMsg(`${orMD(p)}の発注を記録しました`); };
@@ -3510,7 +3525,7 @@ function VendorOrderApp({ go }) {
   const basis = orSalesBasis(today0);
   const linkedBy = vs.map(x => ({ x, items: x.items.filter(it => VO_LINK[it.n] && it.r[d]) })).filter(g => g.items.length);
   const linked = linkedBy.flatMap(g => g.items);
-  const calcOf = (it) => voCalc(it, D, basis, stock[VO_LINK[it.n].id], vlog);
+  const calcOf = (it) => voCalc(it, D, basis, stock[VO_LINK[it.n].id], vlog, voVendorOf(it.n), hol);
   const qtyOf = (it) => { const id = VO_LINK[it.n].id; return over[id] != null ? over[id] : calcOf(it).qty; };
   const dayLog = vlog[dKey] || {}, doneMap = dayLog._done || {};
   // 業者ごとの「完了」（発注した・発注不要を確認した）。2日以上先に届く品目は、このとき発注数も記録する（次の発注で「届く分」に使う）
@@ -3534,7 +3549,10 @@ function VendorOrderApp({ go }) {
     telLink(x));
 
   const isPhone = (x) => !!x.tel;
-  const colChip = (it, x) => isPhone(x) ? null : h("span", { style: { display: "inline-block", fontSize: 11.5, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "2px 8px", marginTop: 4, whiteSpace: "nowrap" } }, `${orMD(voDelOf(it, D))}の欄`);
+  const colChip = (it, x) => { if (isPhone(x)) return null; const dl = voDel(it, D, x.v, hol);
+    const warn = dl.off || dl.shift;
+    return h("span", { style: { display: "inline-block", fontSize: 11.5, fontWeight: 800, color: warn ? "#fff" : C.cyanDeep, background: warn ? C.drop : C.cyanSoft, borderRadius: 999, padding: "2px 8px", marginTop: 4, whiteSpace: "nowrap" } },
+      dl.off ? `${orMD(dl.base)}は休み・発注なし` : dl.shift ? `${orMD(dl.date)}の欄（${orMD(dl.base)}の振替）` : `${orMD(dl.date)}の欄`); };
   // ── 売上連動（在庫を入れる）
   const step = { width: 30, height: 30, borderRadius: 999, border: "none", background: C.lineSoft, color: C.ink, fontSize: 17, fontWeight: 700, cursor: "pointer", display: "grid", placeItems: "center", lineHeight: 1, padding: 0 };
   const linkRow = (it, i, x) => {
@@ -3558,7 +3576,8 @@ function VendorOrderApp({ go }) {
           style: { width: 60, height: 44, boxSizing: "border-box", borderRadius: 10, border: `1.5px solid ${sv ? C.cyan : C.line}`, padding: 0, fontSize: 18, fontWeight: 700, textAlign: "center", color: C.ink, background: C.card, outline: "none", fontFamily: FONT } }),
         h("span", { style: { fontSize: 10.5, color: C.subLight, whiteSpace: "nowrap" } }, L.unit)),
       h("div", { style: { width: 104, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 } },
-        q == null ? h("span", { style: { fontSize: 12, color: C.subLight, width: "100%", textAlign: "center" } }, "在庫を入れる")
+        c.off ? h("span", { style: { fontSize: 12, color: C.drop, fontWeight: 800, width: "100%", textAlign: "center" } }, "休み")
+        : q == null ? h("span", { style: { fontSize: 12, color: C.subLight, width: "100%", textAlign: "center" } }, "在庫を入れる")
         : h(React.Fragment, null,
           h("button", { type: "button", "aria-label": "1つ減らす", style: step, onClick: () => setOver(o => ({ ...o, [id]: Math.max(0, q - (L.step || 1)) })) }, "−"),
           h("div", { style: { width: 38, textAlign: "center", lineHeight: 1.05 } },
@@ -3572,7 +3591,7 @@ function VendorOrderApp({ go }) {
   const vendorCard = (x) => {
     const lk = x.items.filter(it => VO_LINK[it.n] && it.r[d]);
     const rest = x.items.filter(it => !VO_LINK[it.n] && it.r[d]);
-    const gs = []; rest.forEach(it => { const col = isPhone(x) ? "" : orYmd(voDelOf(it, D)), k = it.r[d] + "|" + col, g = gs.find(z => z.k === k); if (g) g.its.push(it); else gs.push({ k, its: [it] }); });
+    const gs = []; rest.forEach(it => { const dlx = voDel(it, D, x.v, hol), col = isPhone(x) ? "" : orYmd(dlx.date) + (dlx.off ? "off" : ""), k = it.r[d] + "|" + col, g = gs.find(z => z.k === k); if (g) g.its.push(it); else gs.push({ k, its: [it] }); });
     const done = !!doneMap[x.v];
     return h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12, opacity: done ? .55 : 1 } },
       h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 14px 10px", borderBottom: `1px solid ${C.lineSoft}` } },
@@ -3630,14 +3649,41 @@ function VendorOrderApp({ go }) {
           h("div", { style: { fontSize: 12.5, color: C.sub, fontWeight: 700 } }, `${orMD(D)}${isToday ? "・今日" : ""}`),
           h("div", { style: { fontSize: 21, fontWeight: 900, marginTop: 2 } }, vs.length ? `${vs.length}社に発注` : "発注はありません"),
           vs.length > 0 && h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 } }, vs.map(x => h("span", { key: x.v, style: { fontSize: 12.5, fontWeight: 800, color: C.ink, background: C.lineSoft, borderRadius: 999, padding: "4px 10px" } }, x.v)))),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setHolOpen(true), style: { width: "100%", minHeight: 46, marginTop: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, background: C.card, color: C.ink, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
+          "祝日・業者の休みを入れる", ((hol && hol.list) || []).some(e => e.d >= orYmd(today0)) && h("span", { style: { fontSize: 12, color: "#fff", background: C.drop, borderRadius: 999, padding: "2px 8px" } }, "入力あり")),
         vs.length > 0 && h(React.Fragment, null,
           sec(`業者ごとの発注（${doneN}/${vs.length}社 完了）`, "在庫を入れると発注数が出ます。インフォマートでは「◯日の欄」の日付の列に入れてください。業者ごとに、発注した・不要だったを確認したら「完了」を押します（2日以上先に届く品目は、このとき発注数も記録されます）"),
           mainCards,
           checkCards.length > 0 && sec("発注があるか確認する業者", "毎回は頼みません。予備を見て、要るものだけ発注します。要らなければそのまま「完了」"),
           checkCards)),
       all && h(React.Fragment, null, h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "濃い曜日が今日。「合わせ」＝在庫と合わせてその数になるように発注"), allView),
+      h(Sheet, { open: holOpen, onClose: () => setHolOpen(false), title: "祝日・業者の休み" }, holOpen && h(VoHolEditor, { hol, saveHol, today0 })),
       h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.card, border: `1.5px solid ${C.line}`, color: C.ink, fontSize: 15, fontWeight: 800, textDecoration: "none", marginTop: 18 } }, "インフォマートを開く")),
     h(Toast, { text: msg }));
+}
+
+// 祝日・業者の休み：届かない日（と、代わりに届く日）を業者ごとに入れる
+function VoHolEditor({ hol, saveHol, today0 }) {
+  const vendors = VO_DATA.filter(x => !x.tel).map(x => x.v);
+  const [dd, setDd] = useState(""); const [vv, setVv] = useState("*"); const [alt, setAlt] = useState("");
+  const list = ((hol && hol.list) || []).filter(e => e.d >= orYmd(orAdd(today0, -7))).sort((a, b) => a.d < b.d ? -1 : 1);
+  const add = () => { if (!dd) return; const rest = ((hol && hol.list) || []).filter(e => !(e.d === dd && e.v === vv)); saveHol({ list: [...rest, { d: dd, v: vv, alt }] }); setDd(""); setAlt(""); };
+  const del = (e) => saveHol({ list: ((hol && hol.list) || []).filter(z => !(z.d === e.d && z.v === e.v)) });
+  const inp = { width: "100%", height: 44, boxSizing: "border-box", borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "0 10px", fontSize: 16, color: C.ink, background: C.card, fontFamily: FONT };
+  const lab = (t) => h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.sub, margin: "12px 2px 6px" } }, t);
+  return h("div", null,
+    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7 } }, "業者が届けない日を入れます。代わりに届く日があれば入れてください。", h("br"), "代わりの日なし → その日に届く発注は「休み・発注なし」になり、前の発注で多めに出します。"),
+    lab("届かない日"), h("input", { type: "date", value: dd, onChange: e => setDd(e.target.value), style: inp }),
+    lab("業者"), h("select", { value: vv, onChange: e => setVv(e.target.value), style: inp }, h("option", { value: "*" }, "全業者"), vendors.map(v => h("option", { key: v, value: v }, v))),
+    lab("代わりに届く日（なければ空）"), h("input", { type: "date", value: alt, onChange: e => setAlt(e.target.value), style: inp }),
+    h("button", { type: "button", className: "fk-tap", onClick: add, disabled: !dd, style: { width: "100%", minHeight: 48, marginTop: 14, borderRadius: 12, border: "none", background: dd ? C.ink : C.line, color: "#fff", fontSize: 15, fontWeight: 800, cursor: dd ? "pointer" : "default", fontFamily: FONT } }, "追加する"),
+    h("div", { style: { fontSize: 13, fontWeight: 900, margin: "20px 2px 8px" } }, "入っている休み"),
+    list.length === 0 ? h("div", { style: { fontSize: 13, color: C.subLight } }, "まだありません")
+    : list.map(e => h("div", { key: e.d + e.v, style: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", marginBottom: 6, borderRadius: 12, background: C.card, border: `1px solid ${C.line}` } },
+        h("div", { style: { flex: 1, minWidth: 0 } },
+          h("div", { style: { fontSize: 14.5, fontWeight: 800 } }, `${orMD(voYmdD(e.d))}　${e.v === "*" ? "全業者" : e.v}`),
+          h("div", { style: { fontSize: 12, color: C.sub, marginTop: 2 } }, e.alt ? `${orMD(voYmdD(e.alt))}に振替` : "届かない（発注なし）")),
+        h("button", { type: "button", onClick: () => del(e), style: { minHeight: 34, padding: "0 12px", borderRadius: 999, border: `1px solid ${C.line}`, background: C.card, color: C.drop, fontSize: 12.5, fontWeight: 800, cursor: "pointer", fontFamily: FONT } }, "消す"))));
 }
 
 function HomeVendorOrder({ go }) {
