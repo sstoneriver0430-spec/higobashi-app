@@ -2982,7 +2982,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/18 14:20版";
+const APP_VER = "11/18 14:45版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3502,6 +3502,10 @@ function voDel(it, D, v, hol) {
   if (e.alt) return { date: voYmdD(e.alt), base: b, shift: true };
   return { date: b, base: b, off: true };
 }
+// 文の途中で改行されないように、句読点・全角スペースの後と「（」の前でだけ折り返す
+function voJp(t) { const out = []; let cur = ""; for (const ch of String(t || "")) { if (ch === "（" && cur && !cur.endsWith("「")) { out.push(cur); cur = ""; } cur += ch; if ("。、　".includes(ch)) { out.push(cur); cur = ""; } } if (cur) out.push(cur);
+  return out.map((c, i) => h("span", { key: i, style: { display: "inline-block" } }, c)); }
+const voNames = (ns) => voJp(ns.join("、"));
 const voVendorOf = (n) => (VO_DATA.find(x => x.items.some(it => it.n === n)) || {}).v;
 const voSplit = (t) => { const m = /^(.*)（(.)曜納品）$/.exec(t); return m ? { body: m[1], del: m[2] } : { body: t, del: "" }; };
 
@@ -3539,13 +3543,13 @@ function VendorOrderApp({ go }) {
   const isToday = d === todayD;
   const sec = (t, sub) => h("div", { style: { margin: "22px 4px 10px" } },
     h("div", { style: { fontSize: 15, fontWeight: 900, color: C.ink } }, t),
-    sub && h("div", { style: { fontSize: 12, color: C.sub, marginTop: 3, lineHeight: 1.6 } }, sub));
+    sub && h("div", { style: { fontSize: 12, color: C.sub, marginTop: 3, lineHeight: 1.6 } }, voJp(sub)));
   const seg = (on, label, onClick) => h("button", { type: "button", className: "fk-tap", onClick, style: { flex: 1, minHeight: 40, borderRadius: 10, border: "none", background: on ? C.card : "transparent", boxShadow: on ? "0 1px 3px rgba(0,0,0,.12)" : "none", color: on ? C.ink : C.sub, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT } }, label);
   const telLink = (x) => x.tel && h("a", { href: "tel:" + x.tel.replace(/-/g, ""), style: { fontSize: 13, fontWeight: 800, color: C.cyanDeep, whiteSpace: "nowrap", textDecoration: "none", border: `1px solid ${C.line}`, borderRadius: 999, padding: "4px 10px" } }, "電話する");
   const vHead = (x) => h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 16px 10px", borderBottom: `1px solid ${C.lineSoft}` } },
     h("div", { style: { minWidth: 0 } },
       h("div", { style: { fontSize: 16, fontWeight: 900 } }, x.v),
-      x.note && h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2 } }, x.note)),
+      x.note && h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2, lineHeight: 1.5 } }, voJp(x.note))),
     telLink(x));
 
   const isPhone = (x) => !!x.tel;
@@ -3558,18 +3562,20 @@ function VendorOrderApp({ go }) {
   const linkRow = (it, i, x) => {
     const c = calcOf(it), L = c.L, q = qtyOf(it), id = L.id, sv = stock[id], b = voSplit(it.r[d]);
     const miss = c.missing.map(m => { const k = orYmd(m.p) + "_" + id;
-      return h("div", { key: k, style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", margin: "0 14px 12px", padding: "10px 12px", borderRadius: 10, background: C.cyanSoft } },
-        h("div", { style: { flex: 1, minWidth: 150, fontSize: 12.5, fontWeight: 800, color: C.ink, lineHeight: 1.5 } }, `${orMD(m.p)}の発注が未記録`, h("div", { style: { fontSize: 11.5, fontWeight: 500, color: C.sub } }, `${orMD(m.pd)}に届く分。入れると見込みから差し引きます`)),
+      return h("div", { key: k, style: { margin: "0 14px 12px", padding: "10px 12px", borderRadius: 10, background: C.cyanSoft } },
+        h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.ink, lineHeight: 1.5 } }, `${orMD(m.p)}の発注数が未記録`),
+        h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginTop: 6 } },
+        h("div", { style: { flex: 1, minWidth: 0, fontSize: 11.5, color: C.sub, lineHeight: 1.5 } }, voJp(`${orMD(m.pd)}着の分。`), voJp("入れると差し引きます")),
         h("input", { type: "text", inputMode: "numeric", value: pastIn[k] || "", placeholder: "数", "aria-label": `${orMD(m.p)}の${it.n}の発注数`, onChange: e => { const v = e.target.value.replace(/[^\d]/g, ""); setPastIn(o => ({ ...o, [k]: v })); },
           style: { width: 56, height: 38, boxSizing: "border-box", borderRadius: 10, border: `1.5px solid ${C.line}`, fontSize: 16, fontWeight: 700, textAlign: "center", color: C.ink, background: C.card, outline: "none", fontFamily: FONT } }),
         h("span", { style: { fontSize: 12, color: C.sub } }, L.ou || L.unit),
-        h("button", { type: "button", className: "fk-tap", onClick: () => savePast(m.p, id), style: { minHeight: 38, padding: "0 14px", borderRadius: 10, border: "none", background: C.ink, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: FONT } }, "記録")); });
+        h("button", { type: "button", className: "fk-tap", onClick: () => savePast(m.p, id), style: { minHeight: 38, padding: "0 14px", borderRadius: 10, border: "none", background: C.ink, color: "#fff", fontSize: 13.5, fontWeight: 800, cursor: "pointer", fontFamily: FONT, flexShrink: 0 } }, "記録"))); });
     return h(React.Fragment, { key: id }, h("div", { style: { display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
       h("div", { style: { flex: 1, minWidth: 0 } },
         h("div", { style: { fontSize: 16, fontWeight: 800, lineHeight: 1.3 } }, it.n),
         colChip(it, x),
         h("div", { style: { fontSize: 12, color: C.sub, marginTop: 3, lineHeight: 1.45 } }, `見込み ${orR(c.need)}${L.unit}`, c.pending ? ` − 届く分${c.pending}` : ""),
-        h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.45 } }, `基準 ${b.body}`)),
+        h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.45 } }, voJp(`基準 ${b.body}`))),
       h("div", { style: { width: 60, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 } },
         h("input", { type: "text", inputMode: "decimal", value: sv == null ? "" : String(sv), placeholder: "—", "aria-label": `${it.n}の今の在庫`, onFocus: e => e.target.select(),
           onChange: e => { const v = e.target.value.replace(/[^\d.]/g, ""); setStock(s => ({ ...s, [id]: v })); setOver(o => { const n = { ...o }; delete n[id]; return n; }); },
@@ -3597,7 +3603,7 @@ function VendorOrderApp({ go }) {
       h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 14px 10px", borderBottom: `1px solid ${C.lineSoft}` } },
         h("div", { style: { minWidth: 0 } },
           h("div", { style: { fontSize: 16, fontWeight: 900, textDecoration: done ? "line-through" : "none" } }, x.v),
-          x.note && h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2 } }, x.note)),
+          x.note && h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2, lineHeight: 1.5 } }, voJp(x.note))),
         h("div", { style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 } },
           telLink(x),
           h("button", { type: "button", className: "fk-tap", onClick: () => toggleDone(x), "aria-pressed": done,
@@ -3607,9 +3613,9 @@ function VendorOrderApp({ go }) {
       gs.map((g, i) => { const b = voSplit(g.its[0].r[d]);
         return h("div", { key: g.k, style: { padding: "12px 16px", borderTop: (i || lk.length) ? `1px solid ${C.lineSoft}` : "none" } },
           h("div", { style: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } },
-            h("span", { style: { fontSize: 15, fontWeight: 900, color: C.ink, lineHeight: 1.45 } }, g.its.map(it => it.n).join("、")),
+            h("span", { style: { fontSize: 15, fontWeight: 900, color: C.ink, lineHeight: 1.45 } }, voNames(g.its.map(it => it.n))),
             colChip(g.its[0], x)),
-          h("div", { style: { fontSize: 13, color: C.sub, marginTop: 3, lineHeight: 1.6 } }, b.body)); }));
+          h("div", { style: { fontSize: 13, color: C.sub, marginTop: 3, lineHeight: 1.6 } }, voJp(b.body))); }));
   };
   const mainCards = vs.filter(x => !x.check).map(vendorCard), checkCards = vs.filter(x => x.check).map(vendorCard);
 
@@ -3618,7 +3624,7 @@ function VendorOrderApp({ go }) {
   const allView = VO_DATA.map(x => {
     const ws = VO_WEEK.filter(w => x.items.some(it => it.r[w]));
     const rows = []; x.items.forEach(it => { const key = ws.map(w => it.r[w] || "").join("|"); const r = rows.find(z => z.key === key); if (r) r.names.push(it.n); else rows.push({ key, names: [it.n], it }); });
-    const nameLine = (r) => h("div", { style: { fontSize: 15, fontWeight: 900, lineHeight: 1.5 } }, r.names.join("、"),
+    const nameLine = (r) => h("div", { style: { fontSize: 15, fontWeight: 900, lineHeight: 1.5 } }, voNames(r.names),
       VO_LINK[r.names[0]] && h("span", { style: { marginLeft: 8, fontSize: 10.5, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "2px 7px", fontWeight: 800, verticalAlign: "middle" } }, "売上連動"));
     return h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12 } }, vHead(x),
       rows.map((r, ri) => { const days = ws.filter(w => r.it.r[w]); const vals = days.map(w => r.it.r[w]); const same = vals.every(v => v === vals[0]);
@@ -3627,11 +3633,11 @@ function VendorOrderApp({ go }) {
           same
             ? h("div", { style: { display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" } },
                 h("div", { style: { display: "flex", gap: 4 } }, days.map(w => h(React.Fragment, { key: w }, wBadge(w)))),
-                h("span", { style: { fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.5 } }, vals[0]))
+                h("span", { style: { fontSize: 14, fontWeight: 800, color: C.ink, lineHeight: 1.5 } }, voJp(vals[0])))
             : h("div", { style: { marginTop: 6 } }, days.map(w => { const b = voSplit(r.it.r[w]);
                 return h("div", { key: w, style: { display: "flex", alignItems: "center", gap: 10, padding: "5px 0" } },
                   wBadge(w),
-                  h("span", { style: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 800, color: C.ink } }, b.body),
+                  h("span", { style: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 800, color: C.ink } }, voJp(b.body)),
                   b.del && h("span", { style: { fontSize: 11.5, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" } }, `${b.del}曜に届く`)); }))); })); });
 
   return h("div", { className: "fk-page" },
@@ -3647,14 +3653,19 @@ function VendorOrderApp({ go }) {
               h("div", { style: { fontSize: 10, fontWeight: 700, opacity: .7, marginTop: 1 } }, w === todayD ? "今日" : `${n}社`)); })),
         h("div", { style: { ...cardStyle, padding: "14px 16px", marginTop: 14 } },
           h("div", { style: { fontSize: 12.5, color: C.sub, fontWeight: 700 } }, `${orMD(D)}${isToday ? "・今日" : ""}`),
-          h("div", { style: { fontSize: 21, fontWeight: 900, marginTop: 2 } }, vs.length ? `${vs.length}社に発注` : "発注はありません"),
-          vs.length > 0 && h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 } }, vs.map(x => h("span", { key: x.v, style: { fontSize: 12.5, fontWeight: 800, color: C.ink, background: C.lineSoft, borderRadius: 999, padding: "4px 10px" } }, x.v)))),
+          vs.length ? h(React.Fragment, null,
+            h("div", { style: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginTop: 2 } },
+              h("div", { style: { fontSize: 21, fontWeight: 900 } }, `${vs.length}社に発注`),
+              h("div", { style: { fontSize: 14, fontWeight: 800, color: doneN === vs.length ? C.done : C.sub } }, doneN === vs.length ? "✓ すべて完了" : `${doneN}社 完了`)),
+            h("div", { style: { height: 6, borderRadius: 99, background: C.lineSoft, marginTop: 10, overflow: "hidden" } },
+              h("div", { style: { width: `${Math.round(doneN / vs.length * 100)}%`, height: "100%", background: doneN === vs.length ? C.done : C.cyan, borderRadius: 99, transition: "width .3s" } })))
+          : h("div", { style: { fontSize: 21, fontWeight: 900, marginTop: 2 } }, "発注はありません")),
         h("button", { type: "button", className: "fk-tap", onClick: () => setHolOpen(true), style: { width: "100%", minHeight: 46, marginTop: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, background: C.card, color: C.ink, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
           "祝日・業者の休みを入れる", ((hol && hol.list) || []).some(e => e.d >= orYmd(today0)) && h("span", { style: { fontSize: 12, color: "#fff", background: C.drop, borderRadius: 999, padding: "2px 8px" } }, "入力あり")),
         vs.length > 0 && h(React.Fragment, null,
-          sec(`業者ごとの発注（${doneN}/${vs.length}社 完了）`, "在庫を入れると発注数が出ます。インフォマートでは「◯日の欄」の日付の列に入れてください。業者ごとに、発注した・不要だったを確認したら「完了」を押します（2日以上先に届く品目は、このとき発注数も記録されます）"),
+          sec("業者ごとの発注", "在庫を入れると発注数が出ます。インフォマートは「◯日の欄」の列に入れます。終わった業者は「完了」を押します。"),
           mainCards,
-          checkCards.length > 0 && sec("発注があるか確認する業者", "毎回は頼みません。予備を見て、要るものだけ発注します。要らなければそのまま「完了」"),
+          checkCards.length > 0 && sec("発注があるか確認する業者", "予備を見て、要るものだけ発注します。要らなければそのまま「完了」。"),
           checkCards)),
       all && h(React.Fragment, null, h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "濃い曜日が今日。「合わせ」＝在庫と合わせてその数になるように発注"), allView),
       h(Sheet, { open: holOpen, onClose: () => setHolOpen(false), title: "祝日・業者の休み" }, holOpen && h(VoHolEditor, { hol, saveHol, today0 })),
@@ -3672,7 +3683,7 @@ function VoHolEditor({ hol, saveHol, today0 }) {
   const inp = { width: "100%", height: 44, boxSizing: "border-box", borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "0 10px", fontSize: 16, color: C.ink, background: C.card, fontFamily: FONT };
   const lab = (t) => h("div", { style: { fontSize: 12.5, fontWeight: 800, color: C.sub, margin: "12px 2px 6px" } }, t);
   return h("div", null,
-    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7 } }, "業者が届けない日を入れます。代わりに届く日があれば入れてください。", h("br"), "代わりの日なし → その日に届く発注は「休み・発注なし」になり、前の発注で多めに出します。"),
+    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7 } }, voJp("業者が届けない日を入れます。"), voJp("代わりに届く日があれば、それも入れます。"), h("br"), voJp("代わりの日がなければ、その日に届く分は発注なしになり、"), voJp("前の発注で多めに出します。")),
     lab("届かない日"), h("input", { type: "date", value: dd, onChange: e => setDd(e.target.value), style: inp }),
     lab("業者"), h("select", { value: vv, onChange: e => setVv(e.target.value), style: inp }, h("option", { value: "*" }, "全業者"), vendors.map(v => h("option", { key: v, value: v }, v))),
     lab("代わりに届く日（なければ空）"), h("input", { type: "date", value: alt, onChange: e => setAlt(e.target.value), style: inp }),
