@@ -2982,7 +2982,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/18 13:20版";
+const APP_VER = "11/18 13:25版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3399,13 +3399,13 @@ const VO_DATA = [
     { n: "強化スープ", use: "8枚", r: { 1: "16枚以上", 3: "16枚以上", 5: "24枚以上" } },
     { n: "秘伝返し", r: voSame([1, 3, 5], "2個以上") },
     ...[["味玉のタレ", "1袋"], ["M黒マー油"], ["赤虎のタレ", "1袋"], ["マー油"]].map(([n, use]) => ({ n, use, r: { 1: "残り2個で発注", 3: "残り2個で発注", 5: "残り3個で発注" } }))] },
-  { v: "KCC", items: ["おしぼり", "紙エプロン", "ポリ袋NO.20", "ニトリル各種"].map(n => ({ n, r: {
+  { v: "KCC", check: true, items: ["おしぼり", "紙エプロン", "ポリ袋NO.20", "ニトリル各種"].map(n => ({ n, r: {
     1: "予備がなければ発注　※エプロンは20個で頼む（水曜納品）", 3: "予備がなければ発注　※エプロンは20個で頼む（金曜納品）", 4: "予備がなければ発注　※エプロンは20個で頼む（月曜納品）" } })) },
-  { v: "森岡商店", items: [
+  { v: "森岡商店", check: true, items: [
     { n: "割りばし", r: voSame([1, 2, 3, 6, 0], "2階の在庫がなくなれば2日後に発注") }] },
   { v: "今井商店", tel: "078-303-3031", note: "インフォマート外（電話）", items: [
     { n: "瓶ビール", r: { 1: "2ケース発注", 3: "補充後1ケース以下で発注", 5: "2ケース発注", 0: "補充後1ケース以下で発注（水曜と同じ）" } }] },
-  { v: "兼光産業", items: ["キクロン", "チャッカマン", "タマゴ半分こ", "ハサミ"].map(n => ({ n, r: { 5: "予備がなければ（月）に発注" } })) },
+  { v: "兼光産業", check: true, items: ["キクロン", "チャッカマン", "タマゴ半分こ", "ハサミ"].map(n => ({ n, r: { 5: "予備がなければ（月）に発注" } })) },
   { v: "エンド商事", note: "土曜の発注は日曜に", items: [
     { n: "玉ねぎ醤油", r: voEndo("3本合わせ", "4本合わせ", "3本合わせ") },
     { n: "紅生姜", r: voEndo("2袋合わせ", "3袋合わせ", "2袋合わせ") },
@@ -3567,7 +3567,7 @@ function VendorOrderApp({ go }) {
   // ── 業者ごとのカード（売上連動の品目 → 基準で見る品目）
   const colHead = h("div", { style: { display: "flex", gap: 10, padding: "8px 14px", background: C.lineSoft, fontSize: 11, fontWeight: 800, color: C.sub } },
     h("span", { style: { flex: 1 } }, "品目"), h("span", { style: { width: 60, textAlign: "center" } }, "今の在庫"), h("span", { style: { width: 104, textAlign: "center" } }, "発注数"));
-  const vendorCards = vs.map(x => {
+  const vendorCard = (x) => {
     const lk = x.items.filter(it => VO_LINK[it.n] && it.r[d]);
     const rest = x.items.filter(it => !VO_LINK[it.n] && it.r[d]);
     const gs = []; rest.forEach(it => { const col = isPhone(x) ? "" : orYmd(voDelOf(it, D)), k = it.r[d] + "|" + col, g = gs.find(z => z.k === k); if (g) g.its.push(it); else gs.push({ k, its: [it] }); });
@@ -3589,7 +3589,8 @@ function VendorOrderApp({ go }) {
             h("span", { style: { fontSize: 15, fontWeight: 900, color: C.ink, lineHeight: 1.45 } }, g.its.map(it => it.n).join("、")),
             colChip(g.its[0], x)),
           h("div", { style: { fontSize: 13, color: C.sub, marginTop: 3, lineHeight: 1.6 } }, b.body)); }));
-  });
+  };
+  const mainCards = vs.filter(x => !x.check).map(vendorCard), checkCards = vs.filter(x => x.check).map(vendorCard);
 
   // ── 基準表（取引先別）
   const wBadge = (w) => h("span", { style: { flexShrink: 0, width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", fontSize: 13, fontWeight: 900, background: w === todayD ? C.ink : C.lineSoft, color: w === todayD ? "#fff" : C.ink } }, WD[w]);
@@ -3629,7 +3630,9 @@ function VendorOrderApp({ go }) {
           vs.length > 0 && h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 } }, vs.map(x => h("span", { key: x.v, style: { fontSize: 12.5, fontWeight: 800, color: C.ink, background: C.lineSoft, borderRadius: 999, padding: "4px 10px" } }, x.v)))),
         vs.length > 0 && h(React.Fragment, null,
           sec(`業者ごとの発注（${doneN}/${vs.length}社 完了）`, "在庫を入れると発注数が出ます。インフォマートでは「◯日の欄」の日付の列に入れてください。業者ごとに、発注した・不要だったを確認したら「完了」を押します（2日以上先に届く品目は、このとき発注数も記録されます）"),
-          vendorCards)),
+          mainCards,
+          checkCards.length > 0 && sec("発注があるか確認する業者", "毎回は頼みません。予備を見て、要るものだけ発注します。要らなければそのまま「完了」"),
+          checkCards)),
       all && h(React.Fragment, null, h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "濃い曜日が今日。「合わせ」＝在庫と合わせてその数になるように発注"), allView),
       h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.card, border: `1.5px solid ${C.line}`, color: C.ink, fontSize: 15, fontWeight: 800, textDecoration: "none", marginTop: 18 } }, "インフォマートを開く")),
     h(Toast, { text: msg }));
