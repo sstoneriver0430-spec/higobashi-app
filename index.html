@@ -2982,7 +2982,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/18 11:50版";
+const APP_VER = "11/18 13:15版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3511,12 +3511,12 @@ function VendorOrderApp({ go }) {
   const calcOf = (it) => voCalc(it, D, basis, stock[VO_LINK[it.n].id], vlog);
   const qtyOf = (it) => { const id = VO_LINK[it.n].id; return over[id] != null ? over[id] : calcOf(it).qty; };
   const dayLog = vlog[dKey] || {}, doneMap = dayLog._done || {};
-  // 業者ごとの「発注済み」。2日以上先に届く品目は、このとき発注数も記録する（次の発注で「届く分」に使う）
+  // 業者ごとの「完了」（発注した・発注不要を確認した）。2日以上先に届く品目は、このとき発注数も記録する（次の発注で「届く分」に使う）
   const toggleDone = (x) => {
     const on = !doneMap[x.v], nd = { ...doneMap }; if (on) nd[x.v] = true; else delete nd[x.v];
     const q = { ...dayLog, _done: nd };
     if (on) x.items.forEach(it => { const L = VO_LINK[it.n]; if (L && it.r[d] && voNeedRec(L)) { const v = qtyOf(it); if (v != null) q[L.id] = v; } });
-    saveVlog({ ...vlog, [dKey]: q }); setMsg(on ? `${x.v}：発注済みにしました` : `${x.v}：チェックを外しました`);
+    saveVlog({ ...vlog, [dKey]: q }); setMsg(on ? `${x.v}：完了にしました` : `${x.v}：チェックを外しました`);
   };
   const ordVs = vs.filter(x => !x.tel), doneN = vs.filter(x => doneMap[x.v]).length;
   const isToday = d === todayD;
@@ -3580,7 +3580,7 @@ function VendorOrderApp({ go }) {
         h("div", { style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 } },
           telLink(x),
           h("button", { type: "button", className: "fk-tap", onClick: () => toggleDone(x), "aria-pressed": done,
-            style: { minHeight: 36, padding: "0 12px", borderRadius: 999, border: done ? "none" : `1.5px solid ${C.line}`, background: done ? C.done : C.card, color: done ? "#fff" : C.ink, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: FONT, whiteSpace: "nowrap" } }, done ? "✓ 発注済み" : "発注済みにする"))),
+            style: { minHeight: 36, padding: "0 12px", borderRadius: 999, border: done ? "none" : `1.5px solid ${C.line}`, background: done ? C.done : C.card, color: done ? "#fff" : C.ink, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: FONT, whiteSpace: "nowrap" } }, done ? "✓ 完了" : "完了"))),
       lk.length > 0 && colHead,
       lk.map((it, i) => linkRow(it, i, x)),
       gs.map((g, i) => { const b = voSplit(g.its[0].r[d]);
@@ -3628,7 +3628,7 @@ function VendorOrderApp({ go }) {
           h("div", { style: { fontSize: 21, fontWeight: 900, marginTop: 2 } }, vs.length ? `${vs.length}社に発注` : "発注はありません"),
           vs.length > 0 && h("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 } }, vs.map(x => h("span", { key: x.v, style: { fontSize: 12.5, fontWeight: 800, color: C.ink, background: C.lineSoft, borderRadius: 999, padding: "4px 10px" } }, x.v)))),
         vs.length > 0 && h(React.Fragment, null,
-          sec(`業者ごとの発注（${doneN}/${vs.length}社 済み）`, "在庫を入れると発注数が出ます。インフォマートでは「◯日の欄」の日付の列に入れてください。終わったら業者ごとに「発注済みにする」を押します（2日以上先に届く品目は、このとき発注数も記録されます）"),
+          sec(`業者ごとの発注（${doneN}/${vs.length}社 完了）`, "在庫を入れると発注数が出ます。インフォマートでは「◯日の欄」の日付の列に入れてください。業者ごとに、発注した・不要だったを確認したら「完了」を押します（2日以上先に届く品目は、このとき発注数も記録されます）"),
           vendorCards)),
       all && h(React.Fragment, null, h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "濃い曜日が今日。「合わせ」＝在庫と合わせてその数になるように発注"), allView),
       h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.card, border: `1.5px solid ${C.line}`, color: C.ink, fontSize: 15, fontWeight: 800, textDecoration: "none", marginTop: 18 } }, "インフォマートを開く")),
