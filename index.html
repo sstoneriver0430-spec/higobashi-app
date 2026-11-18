@@ -2982,7 +2982,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/18 14:45版";
+const APP_VER = "11/18 16:50版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3385,7 +3385,7 @@ const voSame = (days, txt) => Object.fromEntries(days.map(d => [d, txt]));
 const VO_ENDO = [2, 4, 0]; // 火・木・日（もとは火・木・土）
 const voEndo = (a, b, c) => ({ 2: a, 4: b, 0: c });
 const VO_DATA = [
-  { v: "中日本フーズ", items: [
+  { v: "中日本フード", items: [
     { n: "肩ロース", use: "6本", r: { 1: "18本合わせ（1日6本×3日）", 3: "12本合わせ（1日6本×2日）", 4: "12本合わせ（1日6本×2日）", 5: "18本合わせ（1日6本×3日）", 0: "12本合わせ（1日6本×2日）" } }] },
   { v: "ジャパンフロントファーム", note: "旧・柴商（11月から）。水曜休み", items: [
     { n: "奴ネギ", use: "6P", r: { 2: "10袋合わせ（木曜納品）", 3: "10袋合わせ（金曜納品）", 4: "15袋合わせ（土曜納品）", 6: "10袋合わせ（月曜納品）", 0: "15袋合わせ（火曜納品）" } }] },
@@ -3432,7 +3432,10 @@ function voGroup(items, d) {
     if (last && last.t === t) last.names.push(it.n); else out.push({ t, names: [it.n], use: it.use }); });
   return out;
 }
-function voVendorsOn(d) { return VO_DATA.filter(x => x.items.some(it => it.r[d])); }
+// インフォマートの取引先の並び（電話の業者は最後）
+const VO_ORDER = ["エンド商事", "福島鰹", "セーフティー・クライシス", "兼光産業", "森岡商店", "丸善", "ジャパンフロントファーム", "ピー・ディー・シー", "エスペランザ", "KCC", "太伸", "中日本フード"];
+const voRank = (x) => x.tel ? 999 : (VO_ORDER.indexOf(x.v) + 1 || 900);
+function voVendorsOn(d) { return VO_DATA.filter(x => x.items.some(it => it.r[d])).sort((a, b) => voRank(a) - voRank(b)); }
 
 // 売上と連動させる品目（率＝税抜売上10万円あたりの使用量。10/19〜11/15の発注実績÷売上から。lt＝発注から納品までの日数）
 const VO_LINK = {
@@ -3554,9 +3557,11 @@ function VendorOrderApp({ go }) {
 
   const isPhone = (x) => !!x.tel;
   const colChip = (it, x) => { if (isPhone(x)) return null; const dl = voDel(it, D, x.v, hol);
-    const warn = dl.off || dl.shift;
-    return h("span", { style: { display: "inline-block", fontSize: 11.5, fontWeight: 800, color: warn ? "#fff" : C.cyanDeep, background: warn ? C.drop : C.cyanSoft, borderRadius: 999, padding: "2px 8px", marginTop: 4, whiteSpace: "nowrap" } },
-      dl.off ? `${orMD(dl.base)}は休み・発注なし` : dl.shift ? `${orMD(dl.date)}の欄（${orMD(dl.base)}の振替）` : `${orMD(dl.date)}の欄`); };
+    const gap = Math.round((dl.date - D) / 864e5), base = { display: "inline-block", fontSize: 11.5, fontWeight: 800, borderRadius: 999, padding: "2px 8px", marginTop: 4, whiteSpace: "nowrap" };
+    if (dl.off) return h("span", { style: { ...base, color: "#fff", background: C.drop } }, `${orMD(dl.base)}は休み・発注なし`);
+    if (dl.shift) return h("span", { style: { ...base, color: "#fff", background: C.drop } }, `${orMD(dl.date)}の欄（${orMD(dl.base)}の振替）`);
+    if (gap <= 1) return h("span", { style: { ...base, fontWeight: 600, color: C.subLight, padding: "0", background: "none" } }, `${orMD(dl.date)}の欄`); // 翌日はいつも通りなので控えめに
+    return h("span", { style: { ...base, color: "#fff", background: C.cyanDeep } }, `${orMD(dl.date)}の欄・${gap}日後`); };
   // ── 売上連動（在庫を入れる）
   const step = { width: 30, height: 30, borderRadius: 999, border: "none", background: C.lineSoft, color: C.ink, fontSize: 17, fontWeight: 700, cursor: "pointer", display: "grid", placeItems: "center", lineHeight: 1, padding: 0 };
   const linkRow = (it, i, x) => {
@@ -3602,7 +3607,8 @@ function VendorOrderApp({ go }) {
     return h("div", { key: x.v, style: { ...cardStyle, overflow: "hidden", marginBottom: 12, opacity: done ? .55 : 1 } },
       h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 14px 10px", borderBottom: `1px solid ${C.lineSoft}` } },
         h("div", { style: { minWidth: 0 } },
-          h("div", { style: { fontSize: 16, fontWeight: 900, textDecoration: done ? "line-through" : "none" } }, x.v),
+          h("div", { style: { fontSize: 16, fontWeight: 900, textDecoration: done ? "line-through" : "none" } }, x.v,
+            x.check && h("span", { style: { marginLeft: 8, fontSize: 11, fontWeight: 800, color: C.sub, background: C.lineSoft, borderRadius: 999, padding: "2px 8px", verticalAlign: "middle", textDecoration: "none", display: "inline-block" } }, "確認だけ")),
           x.note && h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2, lineHeight: 1.5 } }, voJp(x.note))),
         h("div", { style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 } },
           telLink(x),
@@ -3617,7 +3623,7 @@ function VendorOrderApp({ go }) {
             colChip(g.its[0], x)),
           h("div", { style: { fontSize: 13, color: C.sub, marginTop: 3, lineHeight: 1.6 } }, voJp(b.body))); }));
   };
-  const mainCards = vs.filter(x => !x.check).map(vendorCard), checkCards = vs.filter(x => x.check).map(vendorCard);
+  const cards = vs.map(vendorCard);
 
   // ── 基準表（取引先別）
   const wBadge = (w) => h("span", { style: { flexShrink: 0, width: 26, height: 26, borderRadius: 8, display: "grid", placeItems: "center", fontSize: 13, fontWeight: 900, background: w === todayD ? C.ink : C.lineSoft, color: w === todayD ? "#fff" : C.ink } }, WD[w]);
@@ -3663,10 +3669,8 @@ function VendorOrderApp({ go }) {
         h("button", { type: "button", className: "fk-tap", onClick: () => setHolOpen(true), style: { width: "100%", minHeight: 46, marginTop: 12, borderRadius: 12, border: `1.5px solid ${C.line}`, background: C.card, color: C.ink, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: FONT, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
           "祝日・業者の休みを入れる", ((hol && hol.list) || []).some(e => e.d >= orYmd(today0)) && h("span", { style: { fontSize: 12, color: "#fff", background: C.drop, borderRadius: 999, padding: "2px 8px" } }, "入力あり")),
         vs.length > 0 && h(React.Fragment, null,
-          sec("業者ごとの発注", "在庫を入れると発注数が出ます。インフォマートは「◯日の欄」の列に入れます。終わった業者は「完了」を押します。"),
-          mainCards,
-          checkCards.length > 0 && sec("発注があるか確認する業者", "予備を見て、要るものだけ発注します。要らなければそのまま「完了」。"),
-          checkCards)),
+          sec("業者ごとの発注", "インフォマートと同じ並びです。在庫を入れると発注数が出ます。翌日より先の欄に入れる品目は色で目立たせています。終わった業者は「完了」を押します。"),
+          cards)),
       all && h(React.Fragment, null, h("div", { style: { fontSize: 12, color: C.sub, margin: "0 4px 12px", lineHeight: 1.6 } }, "濃い曜日が今日。「合わせ」＝在庫と合わせてその数になるように発注"), allView),
       h(Sheet, { open: holOpen, onClose: () => setHolOpen(false), title: "祝日・業者の休み" }, holOpen && h(VoHolEditor, { hol, saveHol, today0 })),
       h("a", { href: VO_INFOMART, target: "_blank", rel: "noopener noreferrer", className: "fk-tap", style: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 52, borderRadius: 12, background: C.card, border: `1.5px solid ${C.line}`, color: C.ink, fontSize: 15, fontWeight: 800, textDecoration: "none", marginTop: 18 } }, "インフォマートを開く")),
