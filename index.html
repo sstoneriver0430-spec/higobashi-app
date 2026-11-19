@@ -3064,7 +3064,7 @@ function orSlotFor(master, today, idx) {
 // 1日分の見込み売上（1日分の枠は一番売れた日、2日分の枠は平均）
 const orDaySales = (basis, d, oneDay) => oneDay ? basis.max[d.getDay()] : basis.avg[d.getDay()];
 
-const OR_SAFE_DAYS = 0.5;
+const OR_SAFE_DAYS = 0.3;
 function orCalc(master, log, slot, basis, stock, timing) {
   const out = {};
   const cover = [...Array(slot.days)].map((_, i) => orAdd(slot.delDate, i));
@@ -3080,7 +3080,7 @@ function orCalc(master, log, slot, basis, stock, timing) {
       return;
     }
     const use = (d, oneDay) => it.rate * orDaySales(basis, d, oneDay) / 1e5;
-    // 安全在庫：届く日の分に、平均的な1日の使用量 × safeDays を上乗せ（在庫を入れたときだけ。初期は半日分）
+    // 安全在庫：届く日の分に、平均的な1日の使用量 × safeDays を上乗せ（在庫を入れたときだけ。初期は0.3日分）
     const safe = (master.safeDays != null ? master.safeDays : OR_SAFE_DAYS) * use(slot.delDate, false);
     const need = cover.reduce((s, d) => s + use(d, slot.days === 1), 0);
     const usedBefore = use(slot.orderDate, false) * timing + before.reduce((s, d) => s + use(d, false), 0);
