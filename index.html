@@ -975,13 +975,13 @@ function AttTab({ toast }) {
         onDelete: () => { save(list.filter(x => x.id !== detail.id)); setDetailId(null); toast("削除しました"); } })));
 }
 
-function ReportApp({ initialTab }) {
+function ReportApp({ initialTab, go }) {
   const [tab, setTab] = useState(initialTab || "att");
   const [msg, setMsg] = useState("");
   useEffect(() => { if (!msg) return; const id = setTimeout(() => setMsg(""), 2400); return () => clearTimeout(id); }, [msg]);
   const TABS = [["att", "勤怠"], ["break", "破損"]];
   return h("div", { className: "fk-page" },
-    h(Header, null,
+    h(Header, null, go && h(BackHome, { go }),
       h(AppTitle, { title: "勤怠・破損" }),
       h("div", { style: { display: "flex", gap: 3, marginTop: 12, marginBottom: -14 } },
         TABS.map(([k, l]) => { const on = k === tab;
@@ -1318,7 +1318,7 @@ function BoardApp({ go }) {
   const detail = list.find(p => p.id === detailId);
   const editing = list.find(p => p.id === editId);
   return h("div", { className: "fk-page" },
-    h(Header, null, h(AppTitle, { title: "共有事項掲示板" })),
+    h(Header, null, go && h(BackHome, { go }), h(AppTitle, { title: "共有事項掲示板" })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "16px 14px calc(104px + env(safe-area-inset-bottom))" } },
       h("button", { type: "button", className: "fk-tap", onClick: () => setFormOpen(true), style: primaryBtn }, h(Icon, { name: "plus", size: 20, sw: 2.2 }), "新しく掲示する"),
       meName && (mine.length
@@ -2735,7 +2735,15 @@ const PAGES = [
     lead: "お客様の忘れ物を見つけた時点で登録し、保管から返却・処分までを記録します。",
     rows: [["見つけたらすぐ登録", "日時・席・品名・写真"], ["保管場所と保管期限を表示", "期限が近いものは色で知らせる"], ["返却・警察への届出を記録", "受け取った人と日時を残す"], ["処分は店長の承認制", "誤って捨てるのを防ぐ"]] }
 ];
-const NAV = ["home", "shift", "clean", "kinshu", "report", "board"];
+const NAV = ["home", "shift", "order", "clean", "kinshu"];
+// 発注タブ：ペルゴとインフォマートを上で切り替える（タブを押したときは、昼12時まではペルゴ・12時からはインフォマート）
+function orderTabTarget() { return new Date().getHours() < 12 ? "order" : "vorder"; }
+function OrderSwitch({ cur, go }) {
+  return h("div", { style: { display: "flex", gap: 3, marginTop: 12, padding: 3, background: "rgba(255,255,255,.10)", borderRadius: 12 } },
+    [["order", "ペルゴ"], ["vorder", "インフォマート"]].map(([k, l]) => { const on = k === cur;
+      return h("button", { key: k, type: "button", className: "fk-tap", onClick: () => { if (!on) go(k); },
+        style: { flex: 1, border: "none", borderRadius: 9, padding: "8px 0", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: on ? "#fff" : "transparent", color: on ? C.ink : "rgba(255,255,255,.78)" } }, l); }));
+}
 
 const cardStyle = { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18 };
 
@@ -2812,6 +2820,80 @@ function HomeStat({ label, value, sub, color, big }) {
 }
 
 // 今日のシフト（ホーム用の短い一覧）
+// 今日のやること（ホームの今日のシフトの下）。ランチ／アイドル／ディナーに分け、各ページの記録から終わったかどうかを自動で判定する
+const TODO_BANDS = [
+  { k: "lunch", l: "ランチ", to: 14 * 60 },
+  { k: "idle", l: "アイドル", to: 17 * 60 },
+  { k: "dinner", l: "ディナー", to: 99 * 60 }
+];
+function HomeTodo({ go }) {
+  const now = new Date(), today = new Date(now); today.setHours(0, 0, 0, 0);
+  const ymd = todayYMD(), wd = now.getDay(), nowMin = now.getHours() * 60 + now.getMinutes();
+  const rows = [];
+  try { // ペルゴ（発注日だけ）
+    const master = readStored(OR_MASTER_KEY, orMasterSeed), log = readStored(OR_LOG_KEY, orLogSeed);
+    const sl = orOrderOn(master, today);
+    if (sl) rows.push({ b: "lunch", k: "pergo", title: "ペルゴ発注", sub: `${sl.label}・オープン後すぐ`, done: !!log[orYmd(sl.delDate)], go: "order" });
+  } catch (e) {}
+  try { // 日次チェック（時間帯ごと）
+    const items = readStored(DC_ITEMS_KEY, seedDaily), dd = readStored(DC_DONE_KEY, () => ({}))[ymd] || {};
+    TODO_BANDS.forEach((b, bi) => { const from = bi ? TODO_BANDS[bi - 1].to : 0;
+      const its = items.filter(it => { const m = dcMin(it.time); return m >= from && m < b.to; });
+      if (!its.length) return; const n = its.filter(it => dd[it.id]).length;
+      rows.push({ b: b.k, k: "daily_" + b.k, title: "日次チェック", sub: `${[...new Set(its.map(it => it.time))].join("・")}　${n}/${its.length}項目`, done: n >= its.length, go: "clean" }); });
+  } catch (e) {}
+  try { // 掃除箇所（アイドル＝im・iy、ディナー＝ポジション清掃）
+    const sc = readStored(CL_SCHED_KEY, clSchedSeed)[ymd] || {}, dn = readStored(CL_DONE_KEY, clDoneSeed)[ymd] || {};
+    [["idle", "アイドルの掃除", ["im", "iy"]], ["dinner", "ポジション清掃", ["dm", "dy", "dh"]]].forEach(([b, t, ks]) => {
+      const on = ks.filter(k => sc[k]); if (!on.length) return; const n = on.filter(k => dn[k]).length;
+      rows.push({ b, k: "clean_" + b, title: t, sub: on.map(k => sc[k]).join("・"), done: n >= on.length, go: "clean" }); });
+  } catch (e) {}
+  try { // インフォマート
+    const vs = voVendorsOn(wd); const dl = (readStored(VO_LOG_KEY, () => ({}))[ymd] || {})._done || {};
+    const n = vs.filter(x => dl[x.v]).length;
+    if (vs.length) rows.push({ b: "idle", k: "vorder", title: "インフォマート発注", sub: `14〜16時ごろ　${n}/${vs.length}社 完了`, done: n >= vs.length, go: "vorder" });
+  } catch (e) {}
+  try { // 金種（締め）
+    const { data } = loadMonth(); const e = data[String(now.getDate())] || data[now.getDate()];
+    rows.push({ b: "dinner", k: "kinshu", title: "金種・ツナグの日報", sub: "締め", done: !!(e && e.uday !== "" && e.uday != null), go: "kinshu" });
+  } catch (e) {}
+  if (!rows.length) return null;
+  const ord = ["pergo", "vorder", "clean_idle", "clean_dinner", "daily_lunch", "daily_idle", "daily_dinner", "kinshu"];
+  const doneN = rows.filter(r => r.done).length;
+  const curBand = (TODO_BANDS.find(b => nowMin < b.to) || TODO_BANDS[2]).k;
+  const [openB, setOpenB] = useState(null);
+  const gauge = (rs, past) => h("div", { style: { display: "flex", gap: 3, flex: 1, minWidth: 0 } },
+    rs.slice().sort((x, y) => (y.done ? 1 : 0) - (x.done ? 1 : 0)).map(r => h("span", { key: r.k, style: { flex: 1, height: 10, borderRadius: 99, background: r.done ? C.done : past ? "#F2D3CC" : C.lineSoft } })));
+  return h("div", { style: { ...cardStyle, marginTop: 10, overflow: "hidden" } },
+    h("div", { style: { padding: "12px 14px 10px" } },
+      h("div", { style: { display: "flex", alignItems: "baseline", gap: 8 } },
+        h("span", { style: { fontSize: 15, fontWeight: 900 } }, "今日のやること"),
+        h("span", { style: { marginLeft: "auto", fontSize: 13, fontWeight: 800, color: doneN === rows.length ? C.done : C.sub, fontVariantNumeric: "tabular-nums" } }, doneN === rows.length ? "すべて完了" : `${doneN}/${rows.length}`)),
+      h("div", { style: { marginTop: 8, height: 8, borderRadius: 99, background: C.lineSoft, overflow: "hidden" } },
+        h("div", { style: { width: `${Math.round(doneN / rows.length * 100)}%`, height: "100%", borderRadius: 99, background: C.done, transition: "width .3s" } }))),
+    TODO_BANDS.map(b => { const rs = rows.filter(r => r.b === b.k).sort((x, y) => ord.indexOf(x.k) - ord.indexOf(y.k)); if (!rs.length) return null;
+      const past = nowMin >= b.to, cur = b.k === curBand, left = rs.filter(r => !r.done), n = rs.length - left.length;
+      const open = openB === b.k, next = cur && left[0];
+      return h("div", { key: b.k, style: { borderTop: `1px solid ${C.lineSoft}`, background: cur ? C.cyanSoft : "transparent", display: "flow-root" } },
+        h("button", { type: "button", className: "fk-tap", onClick: () => setOpenB(open ? null : b.k),
+          style: { width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", background: "transparent", border: "none", cursor: "pointer", color: C.ink, textAlign: "left" } },
+          h("span", { style: { width: 62, flexShrink: 0, fontSize: 13, fontWeight: 900, color: cur ? C.cyanDeep : C.sub } }, b.l),
+          gauge(rs, past),
+          h("span", { style: { width: 44, flexShrink: 0, textAlign: "right", fontSize: 12.5, fontWeight: 900, fontVariantNumeric: "tabular-nums", color: !left.length ? C.done : past ? C.drop : C.sub } }, !left.length ? "完了" : `${n}/${rs.length}`),
+          h("span", { style: { flexShrink: 0, display: "inline-block", transform: open ? "rotate(90deg)" : "none", transition: "transform .15s" } }, h(Icon, { name: "chev", size: 15, sw: 2, color: C.subLight }))),
+        !open && next && h("button", { type: "button", className: "fk-tap", onClick: () => go(next.go),
+          style: { display: "flex", alignItems: "center", gap: 6, margin: "-4px 14px 0 86px", paddingBottom: 10, padding: 0, background: "transparent", border: "none", cursor: "pointer", color: C.cyanDeep, fontSize: 12.5, fontWeight: 800, textAlign: "left" } },
+          `次：${next.title}`, h(Icon, { name: "chev", size: 13, sw: 2.2 })),
+        open && h("div", { style: { padding: "0 14px 8px" } },
+          rs.map(r => h("button", { key: r.k, type: "button", className: "fk-tap", onClick: () => go(r.go),
+            style: { width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 4px", background: "transparent", border: "none", borderTop: `1px solid ${C.lineSoft}`, textAlign: "left", cursor: "pointer", color: C.ink } },
+            h("span", { style: { width: 20, height: 20, borderRadius: 99, flexShrink: 0, display: "grid", placeItems: "center", background: r.done ? C.done : "transparent", border: r.done ? "none" : `2px solid ${past ? C.drop : C.line}`, color: "#fff" } }, r.done && h(Icon, { name: "check", size: 13, sw: 2.8 })),
+            h("span", { style: { flex: 1, minWidth: 0 } },
+              h("span", { style: { display: "block", fontSize: 14, fontWeight: 800, color: r.done ? C.subLight : C.ink, textDecoration: r.done ? "line-through" : "none" } }, r.title),
+              h("span", { style: { display: "block", fontSize: 11.5, color: C.sub, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, r.sub)),
+            h(Icon, { name: "chev", size: 14, sw: 2, color: C.subLight }))))); }));
+}
+
 function HomeShift({ people, me, go, onName }) {
   const work = people.filter(p => shSpan(p) && shHours(p) > 0).sort(shSortFn);
   const groups = [
@@ -2944,13 +3026,17 @@ function Home({ go }) {
         demo && h("div", { style: { gridColumn: "1 / -1", fontSize: 12, color: C.subLight, fontWeight: 700 } }, "サンプルの数値です")),
       h(HomeUnread, { go, me, onPickMe: () => setMeOpen(true) }),
       h(HomeShift, { people: shDay, me, go, onName: setPerson }),
-      // 下のタブにないもの
-      h("div", { style: { ...cardStyle, marginTop: 14, overflow: "hidden" } },
-        h(HomeOrder, { go }),
-        h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } }),
-        h(HomeVendorOrder, { go }),
+      h(HomeTodo, { go }),
+      // 下のタブにないもの（その他）
+      h("div", { style: { fontSize: 12, fontWeight: 800, color: C.subLight, margin: "20px 4px 8px" } }, "その他"),
+      h("div", { style: { ...cardStyle, overflow: "hidden" } },
+        (() => { const p = PAGES.find(x => x.k === "board"); const bl = readStored(BD_KEY, seedBoard); const n = me ? bdMine(bl, me, staff).length : 0;
+          return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: "掲示板", badge: n ? `未読 ${n}` : "", badgeWarn: n > 0, onClick: () => go("board") }); })(),
         h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } }),
         h(HomeRecipe, { go }),
+        h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } }),
+        (() => { const p = PAGES.find(x => x.k === "report"); const n = readStored(A_KEY, seedAtt).filter(r => r.status === "open").length;
+          return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: "勤怠・破損の報告", badge: n ? `確認待ち ${n}` : "", onClick: () => go("report") }); })(),
         h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } }),
         (() => { const p = PAGES.find(x => x.k === "lost");
           return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: p.title, badge: lostNear ? `期限間近 ${lostNear}` : lost.length ? `保管中 ${lost.length}` : "", badgeWarn: lostNear > 0, onClick: () => go("lost") }); })()),
@@ -2984,7 +3070,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/19 11:00版";
+const APP_VER = "11/19 17:40版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3195,10 +3281,10 @@ function OrderApp({ go }) {
   const groups = ["ファクトリー", "物流"];
   const hist = Object.keys(log);
   return h("div", { className: "fk-page" },
-    h(Header, null, h(BackHome, { go }),
+    h(Header, null,
       h("div", { style: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 8 } },
-        h(AppTitle, { title: "ペルゴ発注" }),
-        h("button", { type: "button", className: "fk-tap", onClick: () => setSetOpen(true), style: { flexShrink: 0, minHeight: 36, background: C.card, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 4 } }, "設定"))),
+        h(AppTitle, { title: "発注" }),
+        h("button", { type: "button", className: "fk-tap", onClick: () => setSetOpen(true), style: { flexShrink: 0, minHeight: 36, background: C.card, color: C.ink, border: `1px solid ${C.line}`, borderRadius: 999, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 4 } }, "設定")), h(OrderSwitch, { cur: "order", go })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(110px + env(safe-area-inset-bottom))" } },
       // 発注日の切り替え
       h("div", { style: { display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4, marginBottom: 10 } },
@@ -3660,7 +3746,7 @@ function VendorOrderApp({ go }) {
                   b.del && h("span", { style: { fontSize: 11.5, fontWeight: 800, color: C.cyanDeep, background: C.cyanSoft, borderRadius: 999, padding: "2px 8px", whiteSpace: "nowrap" } }, `${b.del}曜に届く`)); }))); })); });
 
   return h("div", { className: "fk-page" },
-    h(Header, null, h(BackHome, { go }), h(AppTitle, { title: "インフォマート発注" })),
+    h(Header, null, h(AppTitle, { title: "発注" }), h(OrderSwitch, { cur: "vorder", go })),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(110px + env(safe-area-inset-bottom))" } },
       h("div", { style: { display: "flex", gap: 4, padding: 4, background: C.lineSoft, borderRadius: 12, marginBottom: 14 } },
         seg(!all, "曜日ごとの発注", () => setAll(false)), seg(all, "基準表（取引先別）", () => setAll(true))),
@@ -3830,7 +3916,7 @@ function App() {
   const [mode, setMode] = useState(init);
   const go = (k) => { setMode(k); window.scrollTo(0, 0); };
   const page = PAGES.find(p => p.k === mode);
-  const navFor = NAV.includes(mode) ? mode : "home";
+  const navFor = mode === "vorder" ? "order" : NAV.includes(mode) ? mode : "home";
   const [meApp] = useMe();
   const navDot = {}, navCnt = {};
   try {
@@ -3862,11 +3948,11 @@ function App() {
       button:focus-visible{outline:2px solid ${C.cyan};outline-offset:2px;}
       @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
     `),
-    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r" }) : mode === "lost" ? h(LostApp, { go }) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : mode === "order" ? h(OrderApp, { go }) : mode === "vorder" ? h(VendorOrderApp, { go }) : mode === "recipe" ? h(RecipeApp, { go }) : h(Placeholder, { page, go, key: mode }),
+    mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r", go }) : mode === "lost" ? h(LostApp, { go }) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : mode === "order" ? h(OrderApp, { go }) : mode === "vorder" ? h(VendorOrderApp, { go }) : mode === "recipe" ? h(RecipeApp, { go }) : h(Placeholder, { page, go, key: mode }),
     h("nav", { style: { position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 45, background: "rgba(255,255,255,.94)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: `1px solid ${C.line}`, paddingBottom: "env(safe-area-inset-bottom, 0px)" } },
       h("div", { style: { maxWidth: 640, margin: "0 auto", display: "flex", padding: "6px 6px 4px" } },
         NAV.map(k => { const on = k === navFor; const p = PAGES.find(x => x.k === k);
-          return h("button", { key: k, onClick: () => go(k), className: "fk-tap", "aria-current": on ? "page" : undefined,
+          return h("button", { key: k, onClick: () => go(k === "order" ? (on ? mode : orderTabTarget()) : k), className: "fk-tap", "aria-current": on ? "page" : undefined,
             style: { flex: 1, minWidth: 0, border: "none", background: "transparent", cursor: "pointer", padding: "2px 0 6px", color: on ? C.ink : C.subLight, fontWeight: 800, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 } },
             h("span", { style: { position: "relative", width: 48, maxWidth: "100%", height: 30, borderRadius: 999, display: "grid", placeItems: "center", background: on ? C.cyanSoft : "transparent", color: on ? C.cyanDeep : C.subLight } },
               h(Icon, { name: p ? p.icon : "home", size: 22, sw: on ? 2 : 1.7 }),
