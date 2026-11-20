@@ -3070,7 +3070,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/20 00:20版";
+const APP_VER = "11/20 10:50版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3082,7 +3082,7 @@ const orMasterSeed = () => ({
     { id: "ekisu",  grp: "ファクトリー", name: "エキス",     unit: "箱", rate: 0.928, cu: "袋", per: 10 },
     { id: "tare",   grp: "ファクトリー", name: "ラーたれ",   unit: "本", rate: 0.241, rateAt: 20261119, cu: "袋", per: 5 },
     { id: "seabura",grp: "ファクトリー", name: "背脂",       unit: "kg", rate: 0.597 },
-    { id: "men",    grp: "ファクトリー", name: "28番麺",     unit: "箱", rate: 1.35, cu: "玉", per: 80 },
+    { id: "men",    grp: "ファクトリー", name: "28番麺",     unit: "箱", rate: 1.35, cu: "玉", per: 80, parts: [["箱", 80], ["袋", 10]] }, // 在庫は「◯箱◯袋」で入れる（1箱＝8袋、1袋＝10玉。11/20 しょーご）
     { id: "gyoza",  grp: "物流",         name: "餃子の皮",   unit: "P",  rate: 0.942 },
     { id: "kome",   grp: "物流",         name: "米",         unit: "袋", rate: 0.905, rateAt: 20261119 },
     { id: "goma",   grp: "物流",         name: "ゴマ油",     unit: "本", point: 0.3, pointAt: 20261119, pq: 1 },
@@ -3187,7 +3187,7 @@ function orCalc(master, log, slot, basis, stock, timing) {
 
 function OrderApp({ go }) {
   const [masterRaw, saveMaster] = useStored(OR_MASTER_KEY, orMasterSeed);
-  const master = (() => { const sd = orMasterSeed().items; return { ...masterRaw, items: masterRaw.items.filter(it => it.id !== "kimuchi").map(it => { const s = sd.find(x => x.id === it.id) || {}; const m = { cu: s.cu, per: s.per, ...it }; if (s.rateAt && (it.rateAt || 0) < s.rateAt) { m.rate = s.rate; m.rateAt = s.rateAt; } if (s.pointAt && (it.pointAt || 0) < s.pointAt) { m.point = s.point; m.pointAt = s.pointAt; } return m; }) }; })();
+  const master = (() => { const sd = orMasterSeed().items; return { ...masterRaw, items: masterRaw.items.filter(it => it.id !== "kimuchi").map(it => { const s = sd.find(x => x.id === it.id) || {}; const m = { cu: s.cu, per: s.per, parts: s.parts, ...it }; if (s.rateAt && (it.rateAt || 0) < s.rateAt) { m.rate = s.rate; m.rateAt = s.rateAt; } if (s.pointAt && (it.pointAt || 0) < s.pointAt) { m.point = s.point; m.pointAt = s.pointAt; } return m; }) }; })();
   const [log, saveLog] = useStored(OR_LOG_KEY, orLogSeed);
   const [me] = useMe();
   const today = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
@@ -3246,6 +3246,18 @@ function OrderApp({ go }) {
     const done = v.includes(".") || v.length >= maxLen; // 小数を打ち終えた or 桁がそろった
     timers.current[id] = setTimeout(() => focusNext(id), done ? 250 : 900);
   };
+  // 「◯箱◯袋」のように単位を分けて入れる品目。中では玉に直して stock[id] に入れる
+  const partVal = (it, i) => { const k = it.id + "_p" + i; if (stock[k] != null) return stock[k];
+    const t = stock[it.id]; if (t === "" || t == null || isNaN(Number(t))) return ""; let r = Number(t);
+    for (let j = 0; j < i; j++) r = r % it.parts[j][1]; return String(Math.floor(r / it.parts[i][1])); };
+  const onPart = (it, i, raw) => {
+    const v = raw.replace(/[^\d]/g, "").slice(0, 2), id = it.id;
+    setStock(s => { const n = { ...s }; it.parts.forEach((_, j) => { if (n[id + "_p" + j] == null) n[id + "_p" + j] = partVal(it, j); }); n[id + "_p" + i] = v;
+      const vals = it.parts.map((_, j) => n[id + "_p" + j]); n[id] = vals.every(x => x === "" || x == null) ? "" : String(it.parts.reduce((a, [, m], j) => a + (Number(vals[j]) || 0) * m, 0)); return n; });
+    setOver(o => { const n = { ...o }; delete n[id]; return n; });
+    clearTimeout(timers.current[id]); if (v === "") return;
+    timers.current[id] = setTimeout(() => { if (i < it.parts.length - 1) { const el = document.getElementById("or-st-" + id + "-p" + (i + 1)); if (el) { el.focus(); el.select && el.select(); } } else focusNext(id); }, 450);
+  };
   const COLW = { st: 62, mid: 58, q: 104 };
   const colHead = h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: `1px solid ${C.lineSoft}`, fontSize: 11, color: C.subLight, fontWeight: 700 } },
     h("span", { style: { flex: 1 } }, "品目"),
@@ -3254,16 +3266,20 @@ function OrderApp({ go }) {
     h("span", { style: { width: COLW.q, textAlign: "center" } }, "発注数"));
   const row = (it, i) => {
     const c = calc[it.id], q = qtyOf(it.id), changed = over[it.id] != null && over[it.id] !== c.qty;
-    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}${it.unit}` : c.has && c.safe ? `必要 ${orR(c.need)}＋安全 ${orR(c.safe)}${it.unit}` : `必要 ${orR(c.need)}${it.unit}`;
-    const projL = it.point == null && c.has ? `届く朝 約${orR(Math.max(0, c.proj) * (it.per || 1))}${it.cu || it.unit}` : "";
-    const conv = it.per ? `1${it.unit}＝${it.per}${it.cu}` : "";
+    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}${it.unit}` : c.has && c.safe ? `必要 ${orR(c.need + c.safe)}${it.unit}` : `必要 ${orR(c.need)}${it.unit}`;
+    const projL = it.point == null && c.has ? (it.parts ? `届く朝 約${orR(Math.max(0, c.proj) * it.per / it.parts[1][1])}${it.parts[1][0]}` : `届く朝 約${orR(Math.max(0, c.proj) * (it.per || 1))}${it.cu || it.unit}`) : "";
+    const conv = it.parts ? `1${it.parts[0][0]}＝${it.parts[0][1] / it.parts[1][1]}${it.parts[1][0]}` : it.per ? `1${it.unit}＝${it.per}${it.cu}` : "";
     return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
       h("div", { style: { flex: 1, minWidth: 0 } },
         h("div", { style: { fontSize: 15.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, it.name),
-        h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2, whiteSpace: "nowrap" } }, sub),
-        projL && h("div", { style: { fontSize: 11, color: C.cyanDeep, fontWeight: 700, whiteSpace: "nowrap" } }, projL),
+        h("div", { style: { fontSize: 11.5, color: C.sub, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, sub),
+        projL && h("div", { style: { fontSize: 11, color: C.cyanDeep, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" } }, projL),
         conv && h("div", { style: { fontSize: 11, color: C.subLight, whiteSpace: "nowrap" } }, conv),
         changed && h("div", { style: { fontSize: 11, color: C.drop, fontWeight: 700, whiteSpace: "nowrap" } }, "手で変更")),
+      it.parts ? h("div", { style: { width: COLW.st, display: "flex", flexDirection: "column", gap: 4 } }, it.parts.map(([u], i) => h("div", { key: u, style: { display: "flex", alignItems: "center", gap: 3 } },
+        h("input", { id: "or-st-" + it.id + (i ? "-p" + i : ""), type: "text", inputMode: "numeric", enterKeyHint: "next", value: partVal(it, i), placeholder: "—", "aria-label": `${it.name}の今の在庫（${u}）`,
+          onChange: e => onPart(it, i, e.target.value), onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timers.current[it.id]); if (i < it.parts.length - 1) { const el = document.getElementById("or-st-" + it.id + "-p" + (i + 1)); el && el.focus(); } else focusNext(it.id); } }, onFocus: e => e.target.select(), style: { ...numIn, width: 44, minHeight: 40, padding: "6px 4px", textAlign: "center" } }),
+        h("span", { style: { fontSize: 11, color: C.ink, fontWeight: 700 } }, u)))) :
       h("div", { style: { width: COLW.st, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 } },
       h("input", { id: "or-st-" + it.id, type: "text", inputMode: "decimal", enterKeyHint: "next", value: stock[it.id] == null ? "" : String(stock[it.id]), placeholder: "—", "aria-label": `${it.name}の今の在庫`,
         onChange: e => onStock(it.id, e.target.value), onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timers.current[it.id]); focusNext(it.id); } }, onFocus: e => e.target.select(), style: { ...numIn, width: COLW.st, textAlign: "center" } }),
