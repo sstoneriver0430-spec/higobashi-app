@@ -3070,7 +3070,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/20 17:15版";
+const APP_VER = "11/20 17:50版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3326,12 +3326,12 @@ function OrderApp({ go }) {
         h("button", { type: "button", className: "fk-tap", onClick: record, style: { flex: 1.3, minHeight: 52, borderRadius: 12, border: "none", background: C.ink, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer" } }, rec ? "記録を上書き" : "発注した（記録）")),
       h("div", { style: { fontSize: 12, color: C.sub, margin: "8px 4px 0", lineHeight: 1.6 } }, "記録した数は、次の発注で「間に届く分」として使います"),
       // 見込み売上
-      h("div", { style: { margin: "22px 4px 8px", fontSize: 13, fontWeight: 700, color: C.sub } }, "計算に使った売上（税抜）"),
+      h("div", { style: { margin: "22px 4px 8px", fontSize: 13, fontWeight: 700, color: C.sub } }, "計算に使った売上（税込）"),
       h("div", { style: { ...cardStyle, padding: "4px 16px 10px" } },
         [...Array(slot.days)].map((_, i) => { const d = orAdd(slot.delDate, i);
           return h("div", { key: i, style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, padding: "11px 0", borderBottom: `1px solid ${C.lineSoft}` } },
             h("div", null, h("div", { style: { fontSize: 13.5, color: C.sub } }, `${orMD(d)}の見込み`), h("div", { style: { fontSize: 11.5, color: C.subLight, marginTop: 2 } }, slot.days === 1 ? "直近2週で一番売れた日" : "直近2週の平均")),
-            h("div", { style: { fontSize: 17, fontWeight: 700, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, "¥" + Math.round(orDaySales(basis, d, slot.days === 1)).toLocaleString("ja-JP"))); }),
+            h("div", { style: { fontSize: 17, fontWeight: 700, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" } }, "¥" + Math.round(orDaySales(basis, d, slot.days === 1) * 1.1).toLocaleString("ja-JP"))); }),
         h("div", { style: { fontSize: 12, color: basis.sample ? C.drop : C.subLight, paddingTop: 8, lineHeight: 1.6 } },
           basis.sample ? `金種の当日売上が${basis.n}日分しかないため、10〜11月の平均で計算しています` : `金種の当日売上 ${orMD(basis.from)}〜${orMD(basis.to)}（${basis.n}日分）から`)),
       // 発注の記録（紙の物流発注表と同じ形：列＝届く日）
@@ -3378,7 +3378,7 @@ function OrderSettings({ master, saveMaster }) {
   const upd = (id, patch) => saveMaster({ ...master, items: master.items.map(it => it.id === id ? { ...it, ...patch } : it) });
   const inp = { width: 70, minHeight: 40, borderRadius: 10, border: `1.5px solid ${C.line}`, padding: "6px 8px", fontSize: 15, textAlign: "right", color: C.ink, background: C.card, outline: "none" };
   return h("div", null,
-    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 12 } }, "使用量は「売上10万円（税抜）あたり、いくつ使うか」です。10/1〜11/12のペルゴの納品書と売上から出しました。"),
+    h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginBottom: 12 } }, "使用量は「売上10万円（税抜）あたり、いくつ使うか」です（税込なら11万円あたり）。10/1〜11/12のペルゴの納品書と売上から出しました。"),
     h("div", { style: { ...cardStyle, overflow: "hidden" } },
       master.items.map((it, i) => h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
         h("div", { style: { flex: 1, fontSize: 14.5, fontWeight: 600 } }, it.name, h("span", { style: { fontSize: 12, color: C.sub, marginLeft: 4 } }, it.unit + (it.per ? `（在庫は${it.cu}・1${it.unit}=${it.per}${it.cu}）` : ""))),
