@@ -3255,8 +3255,7 @@ function OrderApp({ go }) {
     setStock(s => { const n = { ...s }; it.parts.forEach((_, j) => { if (n[id + "_p" + j] == null) n[id + "_p" + j] = partVal(it, j); }); n[id + "_p" + i] = v;
       const vals = it.parts.map((_, j) => n[id + "_p" + j]); n[id] = vals.every(x => x === "" || x == null) ? "" : String(it.parts.reduce((a, [, m], j) => a + (Number(vals[j]) || 0) * m, 0)); return n; });
     setOver(o => { const n = { ...o }; delete n[id]; return n; });
-    clearTimeout(timers.current[id]); if (v === "") return;
-    timers.current[id] = setTimeout(() => { if (i < it.parts.length - 1) { const el = document.getElementById("or-st-" + id + "-p" + (i + 1)); if (el) { el.focus(); el.select && el.select(); } } else focusNext(id); }, 450);
+    clearTimeout(timers.current[id]); // 自動では次へ移らない。エンターで移る（11/20 しょーご）
   };
   const COLW = { st: 62, mid: 58, q: 104 };
   const colHead = h("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 6px", borderBottom: `1px solid ${C.lineSoft}`, fontSize: 11, color: C.subLight, fontWeight: 700 } },
@@ -3278,7 +3277,7 @@ function OrderApp({ go }) {
         changed && h("div", { style: { fontSize: 11, color: C.drop, fontWeight: 700, whiteSpace: "nowrap" } }, "手で変更")),
       it.parts ? h("div", { style: { width: COLW.st, display: "flex", flexDirection: "column", gap: 4 } }, it.parts.map(([u], i) => h("div", { key: u, style: { display: "flex", alignItems: "center", gap: 3 } },
         h("input", { id: "or-st-" + it.id + (i ? "-p" + i : ""), type: "text", inputMode: "numeric", enterKeyHint: "next", value: partVal(it, i), placeholder: "—", "aria-label": `${it.name}の今の在庫（${u}）`,
-          onChange: e => onPart(it, i, e.target.value), onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timers.current[it.id]); if (i < it.parts.length - 1) { const el = document.getElementById("or-st-" + it.id + "-p" + (i + 1)); el && el.focus(); } else focusNext(it.id); } }, onFocus: e => e.target.select(), style: { ...numIn, width: 44, minHeight: 40, padding: "6px 4px", textAlign: "center" } }),
+          onChange: e => onPart(it, i, e.target.value), onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timers.current[it.id]); if (i < it.parts.length - 1) { const el = document.getElementById("or-st-" + it.id + "-p" + (i + 1)); if (el) { el.focus(); el.select && el.select(); } } else focusNext(it.id); } }, onFocus: e => e.target.select(), style: { ...numIn, width: 44, minHeight: 40, padding: "6px 4px", textAlign: "center" } }),
         h("span", { style: { fontSize: 11, color: C.ink, fontWeight: 700 } }, u)))) :
       h("div", { style: { width: COLW.st, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 } },
       h("input", { id: "or-st-" + it.id, type: "text", inputMode: "decimal", enterKeyHint: "next", value: stock[it.id] == null ? "" : String(stock[it.id]), placeholder: "—", "aria-label": `${it.name}の今の在庫`,
