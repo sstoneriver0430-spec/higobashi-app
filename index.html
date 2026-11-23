@@ -3074,7 +3074,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/23 12:20版";
+const APP_VER = "11/23 12:50版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3993,15 +3993,24 @@ function App() {
   const [kbd, setKbd] = useState(false); const shellRef = useRef(null);
   useEffect(() => {
     const isField = (el) => el && (el.tagName === "TEXTAREA" || el.tagName === "SELECT" || (el.tagName === "INPUT" && !/^(button|submit|checkbox|radio|range|file)$/i.test(el.type || "")));
-    let last = "";
+    // 11/23 昼：iPadの2画面で、となりのアプリのキーボードが閉じても、この画面の高さ（visualViewport・innerHeight）が
+    // 縮んだまま戻らないことがある。そこで「この幅で一度でも測れた一番大きい高さ」を覚えておき、
+    // 自分の画面で入力しているとき以外は、縮んだ値を信じずに一番大きい高さを使う
+    const MAXK = "higo_shell_maxh_v1"; let maxes = {}; try { maxes = JSON.parse(localStorage.getItem(MAXK) || "{}") || {}; } catch (e) {}
+    let last = "", typing = false;
     const fit = () => { const n = shellRef.current; if (!n) return; const vv = window.visualViewport;
-      const hgt = Math.round(vv ? vv.height : window.innerHeight), top = Math.round(vv ? Math.max(0, vv.offsetTop) : 0);
+      const w = Math.round(window.innerWidth), cap = Math.max(screen.height || 0, screen.width || 0) || 99999;
+      const cur = Math.round(Math.max(vv ? vv.height : 0, window.innerHeight || 0));
+      const wk = String(w); if (cur <= cap && cur > (maxes[wk] || 0)) { maxes[wk] = cur; try { localStorage.setItem(MAXK, JSON.stringify(maxes)); } catch (e) {} }
+      let hgt, top;
+      if (typing && vv) { hgt = Math.round(vv.height); top = Math.round(Math.max(0, vv.offsetTop)); } // 自分の画面のキーボードが出ている
+      else { hgt = Math.max(cur, maxes[wk] || 0); top = 0; }
       const key = hgt + "/" + top; if (key === last) return; last = key;
       n.style.height = hgt + "px"; n.style.top = top + "px";
       if (window.scrollY) window.scrollTo(0, 0); };
-    const onIn = (e) => { if (!isField(e.target)) return; setKbd(true);
+    const onIn = (e) => { if (!isField(e.target)) return; setKbd(true); typing = true;
       setTimeout(() => { fit(); try { e.target.scrollIntoView({ block: "center" }); } catch (x) {} }, 320); };
-    const onOut = () => setTimeout(() => { if (!isField(document.activeElement)) setKbd(false); fit(); }, 150);
+    const onOut = () => setTimeout(() => { if (!isField(document.activeElement)) { setKbd(false); typing = false; } fit(); }, 150);
     const vv = window.visualViewport, evs = ["resize", "scroll"];
     document.addEventListener("focusin", onIn); document.addEventListener("focusout", onOut);
     if (vv) evs.forEach(e => vv.addEventListener(e, fit));
