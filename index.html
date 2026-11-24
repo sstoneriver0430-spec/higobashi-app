@@ -3074,7 +3074,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/23 13:10版";
+const APP_VER = "11/24 10:50版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3184,7 +3184,9 @@ function orCalc(master, log, slot, basis, stock, timing) {
     // 足りない分は切り上げ（四捨五入だと 0.4本足りないときに 0 になる）。0.15 未満の端数だけは切り捨て
     const up = (x) => Math.max(0, Math.ceil(x - 0.15));
     const qty = has ? up(need + safe - Math.max(0, proj)) : Math.round(need);
-    out[it.id] = { has, need, safe, usedBefore, pending, pendNote, proj, qty };
+    // 1日使用目安：曜日ごとの平均売上（7曜日の平均）× 使用量（11/24 しょーご「1日使用目安」の表示用）
+    const day = [0, 1, 2, 3, 4, 5, 6].reduce((s, w) => s + it.rate * (basis.avg[w] || 0) / 1e5, 0) / 7;
+    out[it.id] = { has, need, safe, usedBefore, pending, pendNote, proj, qty, day };
   });
   return out;
 }
@@ -3269,8 +3271,10 @@ function OrderApp({ go }) {
     h("span", { style: { width: COLW.q, textAlign: "center" } }, "発注数"));
   const row = (it, i) => {
     const c = calc[it.id], q = qtyOf(it.id), changed = over[it.id] != null && over[it.id] !== c.qty;
-    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}${it.unit}` : c.has && c.safe ? `必要 ${orR(c.need + c.safe)}${it.unit}` : `必要 ${orR(c.need)}${it.unit}`;
-    const projL = it.point == null && c.has ? (it.parts ? `届く朝 約${orR(Math.max(0, c.proj) * it.per / it.parts[1][1])}${it.parts[1][0]}` : `届く朝 約${orR(Math.max(0, c.proj) * (it.per || 1))}${it.cu || it.unit}`) : "";
+    // 11/24 しょーご：「必要」「届く朝」→「1日使用目安」「◯曜朝在庫」（袋などふだん数える単位で表示）
+    const inCu = (x) => it.parts ? `${orR(x * it.per / it.parts[1][1])}${it.parts[1][0]}` : `${orR(x * (it.per || 1))}${it.cu || it.unit}`;
+    const sub = it.point != null ? `在庫${it.point}以下で${it.pq}${it.unit}` : `1日使用目安 約${inCu(c.day || 0)}`;
+    const projL = it.point == null && c.has ? `${WD[slot.delDate.getDay()]}曜朝在庫 約${inCu(Math.max(0, c.proj))}` : "";
     const conv = it.parts ? `1${it.parts[0][0]}＝${it.parts[0][1] / it.parts[1][1]}${it.parts[1][0]}` : it.per ? `1${it.unit}＝${it.per}${it.cu}` : "";
     return h("div", { key: it.id, style: { display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderTop: i ? `1px solid ${C.lineSoft}` : "none" } },
       h("div", { style: { flex: 1, minWidth: 0 } },
@@ -4005,7 +4009,10 @@ function App() {
     let last = "";
     const fit = () => { const n = shellRef.current; if (!n) return;
       let key;
-      if (standalone() && screen.width && screen.height) { const a = Math.max(screen.width, screen.height), b = Math.min(screen.width, screen.height); key = String(land() ? b : a); }
+      // 11/24 iPhoneのホーム画面アプリは、端末の画面の高さで固定すると実際の表示域より長くなり、下に隙間・タブの文字が切れる
+      // → iPhoneはCSS（上0・下0）で表示域いっぱいに合わせる（iPhoneはとなりのアプリがないので縮んだまま戻らない問題は起きない）。固定はiPadだけ
+      const phone = /iPhone|iPod/.test(navigator.userAgent || "") || Math.min(screen.width || 0, screen.height || 0) < 600;
+      if (standalone() && !phone && screen.width && screen.height) { const a = Math.max(screen.width, screen.height), b = Math.min(screen.width, screen.height); key = String(land() ? b : a); }
       else key = "css";
       if (key === last) return; last = key;
       if (key === "css") { n.style.top = "0px"; n.style.bottom = "0px"; n.style.height = "auto"; }
@@ -4037,7 +4044,7 @@ function App() {
     h(UpdateBanner, null),
     h("style", null, `
       *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-      html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;height:100%;overflow:hidden;overscroll-behavior:none;}
+      html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:#fff;}
       #fk-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
       body{font-family:${FONT};color:${C.ink};}
       button,input,textarea,select{font-family:inherit;}
