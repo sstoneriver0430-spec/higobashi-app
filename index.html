@@ -517,7 +517,7 @@ const PHOTO_PH = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="ht
 function sharedKind(key) {
   const m = { [A_KEY]: "list", [B_KEY]: "list", [L_KEY]: "list", [BD_KEY]: "list",
     [P_KEY]: "single", [STAFF_KEY]: "single", [QSA_KEY]: "single", [SHIFT_KEY]: "single", [SHN_KEY]: "single", [CL_MASTER_KEY]: "single", [DC_ITEMS_KEY]: "single",
-    [OR_MASTER_KEY]: "single", [OR_LOG_KEY]: "single", [VO_LOG_KEY]: "single", [VO_HOL_KEY]: "single", [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map" };
+    [OR_MASTER_KEY]: "single", [OR_LOG_KEY]: "single", [VO_LOG_KEY]: "single", [VO_HOL_KEY]: "single", [CL_SCHED_KEY]: "map", [CL_DONE_KEY]: "map", [CL_FREE_KEY]: "map", [DC_DONE_KEY]: "map", [SV_KEY]: "map" };
   return m[key] || null;
 }
 function prodSeed(key, seed) {
@@ -3034,6 +3034,8 @@ function Home({ go }) {
       // 下のタブにないもの（その他）
       h("div", { style: { fontSize: 12, fontWeight: 800, color: C.subLight, margin: "20px 4px 8px" } }, "その他"),
       h("div", { style: { ...cardStyle, overflow: "hidden" } },
+        svOpen() && (() => { const sa = readStored(SV_KEY, () => ({})) || {}; const mineDone = me && svDone(sa[me]); const nd = staff.filter(n => svDone(sa[n])).length;
+          return h(React.Fragment, null, h(MenuRow, { icon: "calendar", tint: "#C24A00", soft: "#FFEEDD", title: "年末年始アンケート", badge: me ? (mineDone ? `回答済み ${nd}/${staff.length}` : `未回答・${SV.deadline.slice(5).replace("-", "/").replace(/^0/, "")}まで`) : `回答 ${nd}/${staff.length}`, badgeWarn: !!me && !mineDone && !svLate(), onClick: () => go("survey") }), h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } })); })(),
         (() => { const p = PAGES.find(x => x.k === "board"); const bl = readStored(BD_KEY, seedBoard); const n = me ? bdMine(bl, me, staff).length : 0;
           return h(MenuRow, { icon: p.icon, tint: p.tint, soft: p.soft, title: "掲示板", badge: n ? `未読 ${n}` : "", badgeWarn: n > 0, onClick: () => go("board") }); })(),
         h("div", { style: { borderTop: `1px solid ${C.lineSoft}` } }),
@@ -3050,6 +3052,123 @@ function Home({ go }) {
           soon.map(p => h("button", { key: p.k, type: "button", onClick: () => go(p.k), style: { border: `1px dashed ${C.line}`, background: "transparent", color: C.sub, borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" } }, p.tile ? p.tile.replace("\n", "・") : p.title))))),
     h(Sheet, { open: !!person, onClose: () => setPerson(null), title: "個人のシフト" }, person && h(PersonShift, { key: person, name: person })),
     h(Sheet, { open: meOpen, onClose: () => { setMeOpen(false); setMeFirst(false); }, title: meFirst ? "あなたの名前を選んでください" : "この端末の設定" }, meOpen && h(React.Fragment, null, h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.sub, marginBottom: 8 } }, "使う人"), h(MePicker, { onDone: () => { if (meFirst) { setMeOpen(false); setMeFirst(false); } } }), h("div", { style: { height: 1, background: C.line, margin: "18px 0 16px" } }), h(ThemePicker, null))));
+}
+
+// ───────── 年末年始の出勤アンケート（回答は全員に見える） ─────────
+const SV_KEY = "higo_survey_nenmatsu2026";
+const SV = {
+  title: "年末年始の出勤アンケート",
+  deadline: "2026-11-28", showUntil: "2027-01-03",
+  days: [["12-30", "12/30", "火"], ["12-31", "12/31", "水"], ["01-01", "1/1", "木"], ["01-02", "1/2", "金"], ["01-03", "1/3", "土"]],
+  opts: [
+    { k: "lunch", l: "ランチ", s: "昼", c: "#B7791F", bg: "#FAF0DC" },
+    { k: "dinner", l: "ディナー", s: "夜", c: "#2563A8", bg: "#E3ECF7" },
+    { k: "free", l: "フリー", s: "◎", c: "#2F7A55", bg: "#E5F2EA" },
+    { k: "off", l: "休み", s: "休", c: "#7F776D", bg: "#F0EDE7" }
+  ]
+};
+const svOpt = (k) => SV.opts.find(o => o.k === k);
+const svOpen = () => todayYMD() <= SV.showUntil;
+const svLate = () => todayYMD() > SV.deadline;
+const svDone = (a) => !!a && SV.days.every(([d]) => a.d && a.d[d]);
+const svDl = () => { const [, m, d] = SV.deadline.split("-").map(Number); const w = WD[new Date(2026, m - 1, d).getDay()]; return `${m}/${d}（${w}）`; };
+
+function SvCell({ v }) {
+  if (!v || !v.o) return h("span", { style: { color: C.line, fontWeight: 800 } }, "—");
+  const o = svOpt(v.o);
+  return h("span", { style: { display: "inline-flex", flexDirection: "column", alignItems: "center", gap: 2 } },
+    h("span", { style: { minWidth: 30, height: 26, padding: "0 5px", borderRadius: 8, background: o.bg, color: o.c, display: "grid", placeItems: "center", fontSize: 13, fontWeight: 900 } }, o.s),
+    v.help && v.o !== "off" && h("span", { style: { fontSize: 10, fontWeight: 900, color: C.cyanDeep, lineHeight: 1 } }, "ヘルプ可"));
+}
+
+function SurveyForm({ name, cur, onSave }) {
+  const [d, setD] = useState(() => JSON.parse(JSON.stringify((cur && cur.d) || {})));
+  const [memo, setMemo] = useState((cur && cur.memo) || "");
+  const [err, setErr] = useState("");
+  const setDay = (day, patch) => setD(x => ({ ...x, [day]: { ...(x[day] || {}), ...patch } }));
+  const submit = () => {
+    const miss = SV.days.filter(([k]) => !(d[k] && d[k].o)).map(x => x[1]);
+    if (miss.length) { setErr(`${miss.join("・")} が未選択です`); return; }
+    onSave({ d, memo: memo.trim(), at: Date.now() });
+  };
+  return h("div", null,
+    h("div", { style: { fontSize: 13, color: C.sub, lineHeight: 1.7, marginBottom: 14 } }, h("b", { style: { color: C.ink } }, `${name}さん`), "の回答です。1日ずつ選んでください。"),
+    SV.days.map(([k, l, w]) => { const v = d[k] || {};
+      return h("div", { key: k, style: { ...cardStyle, padding: "12px 14px", marginBottom: 10 } },
+        h("div", { style: { fontSize: 15, fontWeight: 900, marginBottom: 8 } }, l, h("span", { style: { fontSize: 12.5, color: C.sub, marginLeft: 4 } }, `（${w}）`)),
+        h("div", { style: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 } },
+          SV.opts.map(o => { const on = v.o === o.k;
+            return h("button", { key: o.k, type: "button", className: "fk-tap", onClick: () => setDay(k, { o: on ? "" : o.k }),
+              style: { minHeight: 44, borderRadius: 12, cursor: "pointer", fontSize: 13.5, fontWeight: 800, border: on ? `2px solid ${o.c}` : `1.5px solid ${C.line}`, background: on ? o.bg : C.card, color: on ? o.c : C.ink } }, o.l); })),
+        v.o && v.o !== "off" && h("label", { style: { display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: 13, fontWeight: 800, color: v.help ? C.cyanDeep : C.sub, cursor: "pointer" } },
+          h("input", { type: "checkbox", checked: !!v.help, onChange: (e) => setDay(k, { help: e.target.checked }), style: { width: 20, height: 20, accentColor: C.cyanDeep } }),
+          "他店のヘルプでもOK")); }),
+    h(Field, { label: "ひとこと（任意）", hint: "例：31日は18時まで／1日は夕方から" }, h(TextArea, { id: "sv-memo", value: memo, onChange: setMemo, placeholder: "時間の希望などがあれば" })),
+    err && h("div", { style: { color: C.drop, fontSize: 13, fontWeight: 800, marginBottom: 10 } }, err),
+    h("button", { type: "button", className: "fk-tap", onClick: submit, style: primaryBtn }, h(Icon, { name: "check", size: 20, sw: 2.2 }), cur ? "回答を直す" : "回答する"));
+}
+
+function SurveyApp({ go }) {
+  const [ans, setAns] = useStored(SV_KEY, () => ({}));
+  const [me] = useMe();
+  const staff = readStored(STAFF_KEY, seedStaff).names;
+  const [who, setWho] = useState("");
+  const [open, setOpen] = useState(false);
+  const [toast, setToast] = useState("");
+  const a = ans || {};
+  const names = [...staff, ...Object.keys(a).filter(n => !staff.includes(n))];
+  const done = names.filter(n => svDone(a[n]));
+  const notYet = staff.filter(n => !svDone(a[n]));
+  const startFor = (n) => { setWho(n); setOpen(true); };
+  const save = (v) => { setAns({ ...a, [who]: v }); setOpen(false); setToast(`${who}さんの回答を保存しました`); setTimeout(() => setToast(""), 1800); };
+  // 日ごとの人数（フリーはランチ・ディナーの両方に数える）
+  const cnt = SV.days.map(([k]) => { let L = 0, D = 0, F = 0, O = 0, H = 0;
+    names.forEach(n => { const v = a[n] && a[n].d && a[n].d[k]; if (!v || !v.o) return;
+      if (v.o === "lunch") L++; else if (v.o === "dinner") D++; else if (v.o === "free") F++; else O++;
+      if (v.help && v.o !== "off") H++; });
+    return { L: L + F, D: D + F, O, H }; });
+  const th = { fontSize: 12, fontWeight: 900, color: C.sub, padding: "8px 2px", textAlign: "center", whiteSpace: "nowrap" };
+  return h("div", { className: "fk-page" },
+    h(Header, null, h(BackHome, { go }), h(AppTitle, { title: SV.title })),
+    h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "16px 14px calc(104px + env(safe-area-inset-bottom))" } },
+      h("div", { style: { ...cardStyle, padding: "14px 16px", marginBottom: 12 } },
+        h("div", { style: { fontSize: 14.5, fontWeight: 900, lineHeight: 1.6 } }, "12/30（火）〜1/3（土）の5日間、出られる時間帯を教えてください。"),
+        h("div", { style: { fontSize: 12.5, color: C.sub, lineHeight: 1.7, marginTop: 6 } }, "ランチ／ディナー／フリー（どちらも可）／休み から選び、他店のヘルプに行ける日はチェックを入れてください。回答はスタッフ全員に見えます。"),
+        h("div", { style: { marginTop: 10, display: "inline-block", fontSize: 13, fontWeight: 900, borderRadius: 999, padding: "5px 12px", color: svLate() ? "#fff" : C.drop, background: svLate() ? C.drop : "#FBEAE6" } }, svLate() ? `締切（${svDl()}）を過ぎています` : `締切 ${svDl()}`)),
+      me ? h("button", { type: "button", className: "fk-tap", onClick: () => startFor(me), style: { ...primaryBtn, marginBottom: 8 } }, h(Icon, { name: a[me] ? "edit" : "plus", size: 20, sw: 2.2 }), a[me] ? `${me}さんの回答を直す` : `${me}さんとして回答する`) : null,
+      h("details", { style: { marginBottom: 12 } },
+        h("summary", { style: { fontSize: 13, fontWeight: 800, color: C.sub, cursor: "pointer", padding: "8px 4px" } }, me ? "ほかの人の名前で回答する" : "名前を選んで回答する"),
+        h("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 6 } },
+          staff.map(n => h("button", { key: n, type: "button", className: "fk-tap", onClick: () => startFor(n),
+            style: { minHeight: 46, borderRadius: 12, cursor: "pointer", fontSize: 14, fontWeight: 800, color: C.ink, background: C.card, border: `1.5px solid ${C.line}` } }, n)))),
+      // 全員の回答
+      h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", margin: "8px 4px 8px" } },
+        h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.sub } }, "みんなの回答"),
+        h("div", { style: { fontSize: 12, fontWeight: 800, color: C.sub } }, `回答 ${done.length}／${staff.length}人`)),
+      h("div", { style: { ...cardStyle, overflowX: "auto", marginBottom: 8 } },
+        h("table", { style: { width: "100%", borderCollapse: "collapse", minWidth: 340 } },
+          h("thead", null, h("tr", { style: { borderBottom: `1px solid ${C.line}` } },
+            h("th", { style: { ...th, textAlign: "left", paddingLeft: 12 } }, "名前"),
+            SV.days.map(([k, l, w]) => h("th", { key: k, style: th }, l, h("div", { style: { fontSize: 10.5, fontWeight: 700 } }, w))))),
+          h("tbody", null,
+            names.map(n => { const r = a[n]; const mine = n === me;
+              return h(React.Fragment, { key: n },
+                h("tr", { onClick: () => startFor(n), style: { borderTop: `1px solid ${C.lineSoft}`, background: mine ? C.cyanSoft : "transparent", cursor: "pointer" } },
+                  h("td", { style: { padding: "9px 4px 9px 12px", fontSize: 13.5, fontWeight: 800, whiteSpace: "nowrap" } }, n, !r && h("span", { style: { fontSize: 10.5, fontWeight: 800, color: C.drop, marginLeft: 4 } }, "未回答")),
+                  SV.days.map(([k]) => h("td", { key: k, style: { textAlign: "center", padding: "6px 2px" } }, h(SvCell, { v: r && r.d && r.d[k] })))),
+                r && r.memo && h("tr", { style: { background: mine ? C.cyanSoft : "transparent" } },
+                  h("td", { colSpan: 6, style: { padding: "0 12px 9px", fontSize: 12, color: C.sub, lineHeight: 1.5 } }, "💬 ", r.memo))); })),
+          h("tfoot", null,
+            [["ランチに出られる", "L"], ["ディナーに出られる", "D"], ["休み", "O"], ["ヘルプ可", "H"]].map(([l, f], i) =>
+              h("tr", { key: f, style: { borderTop: i ? `1px solid ${C.lineSoft}` : `1.5px solid ${C.line}`, background: C.paper } },
+                h("td", { style: { padding: "7px 4px 7px 12px", fontSize: 11.5, fontWeight: 800, color: C.sub, whiteSpace: "nowrap" } }, l),
+                cnt.map((c, j) => h("td", { key: j, style: { textAlign: "center", fontSize: 13, fontWeight: 900, fontVariantNumeric: "tabular-nums" } }, c[f]))))))),
+      h("div", { style: { fontSize: 11.5, color: C.subLight, lineHeight: 1.7, padding: "0 4px" } }, "昼＝ランチ　夜＝ディナー　◎＝フリー（ランチ・ディナーどちらも可）　休＝休み。フリーはランチ・ディナーの両方の人数に入ります。名前の行をタップすると回答を直せます。"),
+      notYet.length > 0 && h("div", { style: { ...cardStyle, padding: "12px 14px", marginTop: 12 } },
+        h("div", { style: { fontSize: 12.5, fontWeight: 900, color: C.drop, marginBottom: 6 } }, `まだ回答していない人（${notYet.length}人）`),
+        h("div", { style: { fontSize: 13.5, fontWeight: 700, lineHeight: 1.8 } }, notYet.join("、")))),
+    h(Sheet, { open, onClose: () => setOpen(false), title: "出勤アンケートに回答" }, open && who && h(SurveyForm, { key: who, name: who, cur: a[who], onSave: save })),
+    h(Toast, { text: toast }));
 }
 
 function Placeholder({ page, go }) {
@@ -3074,7 +3193,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/24 10:55版";
+const APP_VER = "11/25 16:00版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
@@ -3984,7 +4103,7 @@ function UpdateBanner() {
 function App() {
   const [, setTick] = useState(0);
   useEffect(() => { const f = () => setTick(t => t + 1); storeBus.add(f); return () => storeBus.delete(f); }, []);
-  const valid = ["home", "staff", "vorder", ...PAGES.map(p => p.k)];
+  const valid = ["home", "staff", "vorder", "survey", ...PAGES.map(p => p.k)];
   const [mkIn, setMkIn] = useState(() => { const m = /^#mk=([A-Za-z0-9_-]+)/.exec(location.hash || ""); if (!m) return null; const d = mkDecode(m[1]); try { history.replaceState(null, "", location.pathname + location.search + "#shift"); } catch (e) {} return d; });
   const init = (() => { if (mkIn) return "shift"; const s = (location.hash || "").slice(1); return valid.includes(s) ? s : "home"; })();
   const [mode, setMode] = useState(init);
@@ -4065,7 +4184,7 @@ function App() {
       button:focus-visible{outline:2px solid ${C.cyan};outline-offset:2px;}
       @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
     `),
-    h("div", { id: "fk-scroll" }, mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r", go }) : mode === "lost" ? h(LostApp, { go }) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : mode === "order" ? h(OrderApp, { go }) : mode === "vorder" ? h(VendorOrderApp, { go }) : mode === "recipe" ? h(RecipeApp, { go }) : h(Placeholder, { page, go, key: mode })),
+    h("div", { id: "fk-scroll" }, mode === "home" ? h(Home, { go }) : mode === "kinshu" ? h("div", { className: "fk-page" }, h(KinshuApp, null)) : mode === "report" ? h(ReportApp, { key: "r", go }) : mode === "lost" ? h(LostApp, { go }) : mode === "shift" ? h(ShiftApp, { incoming: mkIn, onIncomingDone: () => setMkIn(null) }) : mode === "clean" ? h(CleanApp, null) : mode === "board" ? h(BoardApp, { go }) : mode === "staff" ? h(StaffPage, { go }) : mode === "order" ? h(OrderApp, { go }) : mode === "vorder" ? h(VendorOrderApp, { go }) : mode === "recipe" ? h(RecipeApp, { go }) : mode === "survey" ? h(SurveyApp, { go }) : h(Placeholder, { page, go, key: mode })),
     h("nav", { style: { flex: "none", display: kbd ? "none" : "block", zIndex: 45, background: "rgba(255,255,255,.94)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: `1px solid ${C.line}`, paddingBottom: "env(safe-area-inset-bottom, 0px)" } },
       h("div", { style: { maxWidth: 640, margin: "0 auto", display: "flex", padding: "6px 6px 4px" } },
         NAV.map(k => { const on = k === navFor; const p = PAGES.find(x => x.k === k);
