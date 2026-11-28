@@ -470,11 +470,11 @@ function Sheet({ open, onClose, title, children }) {
   if (!open) return null;
   return ReactDOM.createPortal(h("div", { style: { position: "fixed", inset: 0, zIndex: 60, display: "flex", flexDirection: "column", justifyContent: "flex-end" } },
     h("div", { onClick: onClose, style: { position: "absolute", inset: 0, background: "rgba(26,24,22,.45)" } }),
-    h("div", { className: "fk-sheet", role: "dialog", "aria-label": title, style: { position: "relative", background: C.paper, borderRadius: "22px 22px 0 0", maxHeight: "92vh", display: "flex", flexDirection: "column", width: "100%", maxWidth: 640, margin: "0 auto" } },
-      h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 12px 10px 18px", borderBottom: `1px solid ${C.line}` } },
+    h("div", { className: "fk-sheet", role: "dialog", "aria-label": title, style: { position: "relative", background: C.paper, borderRadius: "22px 22px 0 0", maxHeight: "calc(100% - 12px - env(safe-area-inset-top, 0px))", minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", width: "100%", maxWidth: 640, margin: "0 auto" } },
+      h("div", { style: { flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 12px 10px 18px", borderBottom: `1px solid ${C.line}` } },
         h("div", { style: { fontSize: 16, fontWeight: 900 } }, title),
         h("button", { type: "button", onClick: onClose, "aria-label": "閉じる", style: { width: 40, height: 40, borderRadius: 999, border: "none", background: C.lineSoft, color: C.ink, display: "grid", placeItems: "center", cursor: "pointer" } }, h(Icon, { name: "x", size: 20, sw: 2 }))),
-      h("div", { style: { overflowY: "auto", WebkitOverflowScrolling: "touch", padding: "16px 16px calc(28px + env(safe-area-inset-bottom, 0px))" } }, children))), document.body);
+      h("div", { style: { flex: "1 1 auto", minHeight: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", padding: "16px 16px calc(28px + env(safe-area-inset-bottom, 0px))" } }, children))), document.body);
 }
 function DRow({ label, value }) {
   if (value == null || value === "") return null;
@@ -1873,8 +1873,9 @@ function PhotoGrid({ photos }) {
   if (!photos.length) return null;
   return h(React.Fragment, null,
     h("div", { style: { display: "grid", gridTemplateColumns: photos.length === 1 ? "1fr" : "repeat(3, 1fr)", gap: 6, marginBottom: 14 } },
-      photos.map((src, i) => h("button", { key: i, type: "button", "aria-label": `写真${i + 1}を大きく表示`, onClick: () => setOpen(i), style: { padding: 0, border: "none", background: "none", cursor: "zoom-in", aspectRatio: photos.length === 1 ? "4 / 3" : "1 / 1", maxWidth: "100%" } },
-        h("img", { src, alt: `写真${i + 1}`, style: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 12, display: "block" } })))),
+      // 11/28 iPhoneで大きい写真が枠をはみ出し、シートの✕が押せなくなる対策：ボタンの縦横比に頼らず、高さを固定した枠の中に写真を収める
+      photos.map((src, i) => h("button", { key: i, type: "button", "aria-label": `写真${i + 1}を大きく表示`, onClick: () => setOpen(i), style: { display: "block", position: "relative", width: "100%", height: photos.length === 1 ? 200 : 96, padding: 0, border: "none", background: C.lineSoft, borderRadius: 12, overflow: "hidden", cursor: "zoom-in" } },
+        h("img", { src, alt: `写真${i + 1}`, style: { position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" } })))),
     open != null && h(PhotoViewer, { photos, start: open, onClose: () => setOpen(null) }));
 }
 function NamePick({ staff, onPick, action }) {
@@ -2454,7 +2455,9 @@ function ShiftApp({ incoming, onIncomingDone }) {
   const [ymd, setYmd] = useState(today);
   const setCm = (v) => { setCmRaw(v); setYmd(today.startsWith(v) ? today : `${v}-01`); };
   const [imp, setImp] = useState(false);
+  const [chg, setChg] = useState(false);
   const [person, setPerson] = useState(null);
+  const staffNames = readStored(STAFF_KEY, seedStaff).names;
   const [mode, setMode] = useState(() => { try { return localStorage.getItem("higo_shift_view") || "list"; } catch (e) { return "list"; } });
   const setModeP = (v) => { setMode(v); try { localStorage.setItem("higo_shift_view", v); } catch (e) {} };
   const [msg, setMsg] = useState("");
@@ -2474,7 +2477,9 @@ function ShiftApp({ incoming, onIncomingDone }) {
     h(Header, null,
       h("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between" } },
         h(AppTitle, { title: "シフト" }),
-        h("button", { type: "button", className: "fk-tap", onClick: () => setImp(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "取り込む"))),
+        h("div", { style: { display: "flex", gap: 6 } },
+          h("button", { type: "button", className: "fk-tap", onClick: () => setChg(true), style: { background: "#fff", color: C.ink, border: "none", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 900, cursor: "pointer" } }, "変更を報告"),
+          h("button", { type: "button", className: "fk-tap", onClick: () => setImp(true), style: { background: "rgba(255,255,255,.14)", color: "#fff", border: "1px solid rgba(255,255,255,.22)", borderRadius: 999, padding: "7px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" } }, "取り込む")))),
     h("div", { style: { maxWidth: 640, margin: "0 auto", padding: "14px 14px calc(104px + env(safe-area-inset-bottom))" } },
       me && mine.length > 0 && h("div", { style: { ...cardStyle, padding: "12px 14px", marginBottom: 14 } },
         h("div", { style: { display: "flex", alignItems: "center", marginBottom: 8 } },
@@ -2502,15 +2507,122 @@ function ShiftApp({ incoming, onIncomingDone }) {
         h("button", { type: "button", "aria-label": "次の日", onClick: () => go(1), style: { ...subBtn, flex: "0 0 auto", width: 40, padding: "8px 0" } }, "›")),
       people.length > 0 && h("div", { style: { display: "flex", gap: 6, marginBottom: 12 } },
         [["list", "一覧"], ["time", "時間の表"]].map(([k, l]) => h("button", { key: k, type: "button", onClick: () => setModeP(k), style: { flex: 1, border: "none", borderRadius: 999, padding: "9px 0", fontSize: 13.5, fontWeight: 800, cursor: "pointer", background: mode === k ? C.ink : C.card, color: mode === k ? "#fff" : C.sub, boxShadow: mode === k ? "none" : `inset 0 0 0 1px ${C.line}` } }, l))),
+      (() => { const all = (data.changes || []).filter(c => c.ymd === ymd); const live = all.filter(c => !(data.mkAt || {})[ymd] || c.t > data.mkAt[ymd]); const latest = live[live.length - 1];
+        return h(ShiftChangeList, { list: live, latestId: latest && latest.id, onUndo: (c) => { save({ ...data, days: { ...days, [ymd]: c.before }, changes: (data.changes || []).filter(x => x.id !== c.id) }); setMsg("変更を取り消しました"); } }); })(),
       people.length ? (mode === "time" ? h(ShiftTimeline, { people, me, onName: setPerson }) : h(ShiftList, { people, me, onName: setPerson })) : h(Empty, { text: "この日のシフトはまだ取り込まれていません" }),
       lastDay && h("div", { style: { fontSize: 12, color: C.subLight, fontWeight: 700, marginTop: 10, padding: "0 4px" } }, `シフトは${fmtYMD(lastDay)}まで入っています`)),
     h(Sheet, { open: !!incoming, onClose: onIncomingDone, title: "まかせてネットから取り込み" },
       incoming && h(MkConfirm, { add: incoming, existing: days, onCancel: onIncomingDone,
         onSave: () => { const at = Date.now(); const mkAt = { ...(data.mkAt || {}) }; Object.keys(incoming).forEach(k => { mkAt[k] = at; }); save({ ...data, days: { ...days, ...incoming }, mkAt }); const ks = Object.keys(incoming).sort(); setYmd(ks[0]); setCmRaw(ks[0].slice(0, 7)); setMsg(`${ks.length}日分を取り込みました`); onIncomingDone(); } })),
+    h(Sheet, { open: chg, onClose: () => setChg(false), title: "シフト変更の報告" },
+      chg && h(ShiftChangeForm, { key: ymd, ymd, people, staff: staffNames,
+        allNames: (() => { const set = new Set(); Object.keys(days).filter(d => d >= addDays(ymd, -31) && d <= addDays(ymd, 31)).forEach(d => days[d].forEach(p => set.add(p.name))); return [...set].sort(); })(),
+        onSubmit: (c) => { save(applyShiftChange(data, ymd, c)); setChg(false); setMsg("シフトを変更しました"); } })),
     h(Sheet, { open: !!person, onClose: () => setPerson(null), title: "個人のシフト" }, person && h(PersonShift, { key: person, name: person })),
     h(Sheet, { open: imp, onClose: () => setImp(false), title: "シフトを取り込む" },
       imp && h(ImportTabs, { onSave: (add) => { save({ ...data, days: { ...days, ...add } }); setImp(false); const ks = Object.keys(add).sort(); setYmd(ks[0]); setCmRaw(ks[0].slice(0, 7)); setMsg(`${ks.length}日分を取り込みました`); } })),
     h(Toast, { text: msg }));
+}
+
+// ───────── シフト変更の報告（11/28 しょーご「シフト変更報告できるように、それ通りにシフト表変えて」） ─────────
+// 報告するとアプリのシフト表をその場で書き換え、data.changes に記録（前の状態も残すので取り消せる）。まかせてネットは変わらない
+const SC_KINDS = [["off", "休みになる"], ["time", "時間が変わる"], ["swap", "代わりに入る"], ["add", "追加で入る"]];
+const SC_TIMES = (() => { const a = []; for (let m = SH_START * 60; m <= SH_END * 60 + 30; m += 15) a.push(m); return a; })();
+const scSegsText = (p) => { if (!p) return "休み"; const sp = shSpan(p); if (!sp) return "休み"; const br = shBreaks(p); return `${shFmt(sp[0])}–${shFmt(sp[1])}${br.length ? `（休憩 ${br.map(b => `${shFmt(b[0])}–${shFmt(b[1])}`).join("・")}）` : ""}`; };
+function scMakeSegs(s, e, bs, be) {
+  if (bs != null && be != null && bs > s && be < e && be > bs) return [{ s, e: bs, label: "肥後橋", type: "work" }, { s: be, e, label: "肥後橋", type: "work" }];
+  return [{ s, e, label: "肥後橋", type: "work" }];
+}
+function scSummary(c) {
+  if (c.kind === "off") return `${c.name}：${c.fromText} → 休み`;
+  if (c.kind === "time") return `${c.name}：${c.fromText} → ${c.toText}`;
+  if (c.kind === "swap") return `${c.name} → ${c.with} に交代（${c.toText}）`;
+  return `${c.name}：追加 ${c.toText}`;
+}
+function TimeSel({ value, onChange, allowNone }) {
+  return h("select", { value: value == null ? "" : String(value), onChange: (e) => onChange(e.target.value === "" ? null : +e.target.value), style: { ...inStyle, padding: "10px 8px", fontVariantNumeric: "tabular-nums" } },
+    allowNone && h("option", { value: "" }, "なし"),
+    !allowNone && value == null && h("option", { value: "" }, "選ぶ"),
+    SC_TIMES.map(m => h("option", { key: m, value: String(m) }, shFmt(m))));
+}
+function ShiftChangeForm({ ymd, people, allNames, staff, onSubmit }) {
+  const [kind, setKind] = useState("off");
+  const [name, setName] = useState("");
+  const [other, setOther] = useState("");
+  const [otherFree, setOtherFree] = useState("");
+  const [s, setS] = useState(null), [e, setE] = useState(null), [bs, setBs] = useState(null), [be, setBe] = useState(null);
+  const [memo, setMemo] = useState("");
+  const [err, setErr] = useState("");
+  const working = people.filter(p => shSpan(p)).sort(shSortFn);
+  const cur = working.find(p => p.name === name);
+  // 人を選んだら今の時間を初期値に
+  useEffect(() => { if (!cur) return; const sp = shSpan(cur); const br = shBreaks(cur); setS(sp[0]); setE(sp[1]); setBs(br[0] ? br[0][0] : null); setBe(br[0] ? br[0][1] : null); }, [name]);
+  useEffect(() => { setErr(""); if (kind === "add") { setName(""); setS(null); setE(null); setBs(null); setBe(null); } }, [kind]);
+  const notWorking = allNames.filter(n => !working.some(p => p.name === n));
+  const personBtns = (list, val, set) => h("div", { style: { display: "flex", flexWrap: "wrap", gap: 7 } },
+    list.map(n => { const on = n === val; const p = working.find(x => x.name === n);
+      return h("button", { key: n, type: "button", onClick: () => set(on ? "" : n), style: { border: `1.5px solid ${on ? C.ink : C.line}`, background: on ? C.ink : C.card, color: on ? "#fff" : C.ink, borderRadius: 12, padding: "8px 12px", fontSize: 13.5, fontWeight: 800, cursor: "pointer", textAlign: "left" } },
+        n, p && h("span", { style: { display: "block", fontSize: 11.5, fontWeight: 700, opacity: .75, fontVariantNumeric: "tabular-nums" } }, scSegsText(p))); }));
+  const needTime = kind === "time" || kind === "add" || kind === "swap";
+  const submit = (by) => {
+    const who = kind === "add" ? (other || otherFree.trim()) : name;
+    if (!who) { setErr(kind === "add" ? "入る人を選んでください" : "誰のシフトか選んでください"); return; }
+    if (kind === "swap" && !(other || otherFree.trim())) { setErr("代わりに入る人を選んでください"); return; }
+    if (needTime && (s == null || e == null || e <= s)) { setErr("入りと上がりの時間を確認してください"); return; }
+    if (needTime && (bs != null) !== (be != null)) { setErr("休憩は始まりと終わりの両方を選んでください（なしなら両方「なし」）"); return; }
+    onSubmit({ kind, name: who, with: kind === "swap" ? (other || otherFree.trim()) : "", segs: needTime ? scMakeSegs(s, e, bs, be) : null, memo: memo.trim(), by });
+  };
+  return h("div", null,
+    h("div", { style: { fontSize: 13, color: C.sub, fontWeight: 700, lineHeight: 1.6, marginBottom: 12 } }, `${fmtYMD(ymd)} のシフトを変更します。報告するとアプリのシフト表がすぐに変わります（まかせてネットは店長が直します）。`),
+    h(Field, { label: "変更の内容" }, h("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 } },
+      SC_KINDS.map(([k, l]) => h("button", { key: k, type: "button", onClick: () => setKind(k), style: { border: `1.5px solid ${kind === k ? C.ink : C.line}`, background: kind === k ? C.ink : C.card, color: kind === k ? "#fff" : C.ink, borderRadius: 12, padding: "11px 6px", fontSize: 14, fontWeight: 800, cursor: "pointer" } }, l)))),
+    kind !== "add" && h(Field, { label: kind === "swap" ? "休む人（元のシフト）" : "誰のシフト" },
+      working.length ? personBtns(working.map(p => p.name), name, setName) : h("div", { style: { fontSize: 13, color: C.subLight, fontWeight: 700 } }, "この日のシフトがまだありません。「追加で入る」を選んでください")),
+    (kind === "swap" || kind === "add") && h(Field, { label: kind === "swap" ? "代わりに入る人" : "入る人", hint: "一覧にいない人は下に名前を入力" },
+      personBtns(notWorking, other, (v) => { setOther(v); if (v) setOtherFree(""); }),
+      h("div", { style: { marginTop: 8 } }, h(TextIn, { id: "sc-free", value: otherFree, onChange: (v) => { setOtherFree(v); if (v) setOther(""); }, placeholder: "名前を入力" }))),
+    needTime && h(Field, { label: kind === "swap" ? "入る時間（元のシフトと同じなら そのまま）" : "新しい時間" },
+      h("div", { style: { display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" } },
+        h(TimeSel, { value: s, onChange: setS }), h("span", { style: { fontWeight: 800, color: C.sub } }, "〜"), h(TimeSel, { value: e, onChange: setE })),
+      h("div", { style: { fontSize: 12, fontWeight: 800, color: C.sub, margin: "10px 0 6px" } }, "休憩"),
+      h("div", { style: { display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" } },
+        h(TimeSel, { value: bs, onChange: setBs, allowNone: true }), h("span", { style: { fontWeight: 800, color: C.sub } }, "〜"), h(TimeSel, { value: be, onChange: setBe, allowNone: true }))),
+    h(Field, { label: "理由・メモ（任意）" }, h(TextIn, { id: "sc-memo", value: memo, onChange: setMemo, placeholder: "例：体調不良、本人同士で交代 など" })),
+    err && h("div", { style: { fontSize: 13, color: C.drop, fontWeight: 800, marginBottom: 10 } }, err),
+    h(NamePick, { staff, action: "報告する", onPick: submit }));
+}
+function applyShiftChange(data, ymd, c) {
+  const days = data.days || {};
+  const before = (days[ymd] || []).map(p => ({ ...p, segs: p.segs.map(x => ({ ...x })) }));
+  let after = before.map(p => ({ ...p, segs: p.segs.map(x => ({ ...x })) }));
+  const old = before.find(p => p.name === c.name);
+  let fromText = old ? scSegsText(old) : "休み", toText = c.segs ? scSegsText({ segs: c.segs }) : "休み";
+  // 他店舗（[他]）の時間は残す
+  const keepOther = (p) => p ? p.segs.filter(x => x.type === "other") : [];
+  if (c.kind === "off") after = after.filter(p => p.name !== c.name || keepOther(p).length).map(p => p.name === c.name ? { ...p, segs: keepOther(p) } : p);
+  else if (c.kind === "time") after = after.map(p => p.name === c.name ? { ...p, segs: [...c.segs, ...keepOther(p)] } : p);
+  else if (c.kind === "swap") {
+    after = after.filter(p => p.name !== c.name || keepOther(p).length).map(p => p.name === c.name ? { ...p, segs: keepOther(p) } : p);
+    const ex = after.find(p => p.name === c.with);
+    if (ex) after = after.map(p => p.name === c.with ? { ...p, segs: [...p.segs.filter(x => x.type === "other"), ...c.segs] } : p);
+    else after.push({ name: c.with, tags: [], segs: c.segs });
+  } else {
+    const ex = after.find(p => p.name === c.name);
+    if (ex) after = after.map(p => p.name === c.name ? { ...p, segs: [...p.segs, ...c.segs].sort((a, b) => a.s - b.s) } : p);
+    else after.push({ name: c.name, tags: [], segs: c.segs });
+  }
+  const rec = { id: Date.now().toString(36), ymd, kind: c.kind, name: c.name, with: c.with || "", fromText, toText, memo: c.memo || "", by: c.by, t: Date.now(), before };
+  return { ...data, days: { ...days, [ymd]: after }, changes: [...(data.changes || []).filter(x => x.ymd >= addDays(todayYMD(), -40)), rec].slice(-150) };
+}
+function ShiftChangeList({ list, latestId, onUndo }) {
+  if (!list.length) return null;
+  return h("div", { style: { ...cardStyle, padding: "10px 14px", marginBottom: 12, borderLeft: `4px solid ${C.drop}` } },
+    h("div", { style: { fontSize: 12, fontWeight: 900, color: C.drop, marginBottom: 4 } }, `この日のシフト変更（${list.length}件）`),
+    list.map(c => h("div", { key: c.id, style: { padding: "7px 0", borderTop: `1px solid ${C.lineSoft}` } },
+      h("div", { style: { fontSize: 13.5, fontWeight: 800, lineHeight: 1.5 } }, scSummary(c)),
+      h("div", { style: { display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, fontWeight: 700, color: C.subLight } },
+        h("span", null, `${c.by}さんが報告・${fmtDT(c.t)}${c.memo ? `・${c.memo}` : ""}`),
+        c.id === latestId && h("button", { type: "button", onClick: () => onUndo(c), style: { marginLeft: "auto", border: "none", background: "transparent", color: C.cyanDeep, fontSize: 12, fontWeight: 800, cursor: "pointer", padding: 0, flexShrink: 0 } }, "取り消す")))));
 }
 
 function ImportTabs({ onSave }) {
@@ -3242,7 +3354,7 @@ function Placeholder({ page, go }) {
 // ───────── 発注表（ペルゴ：ファクトリー課・物流課） ─────────
 // 流れ：朝一に在庫を入れる → 届く日の朝の在庫見込みを計算 → 発注数 → ASPITに入力 → 「発注した」で記録（紙の発注表は使わない）
 const OR_MASTER_KEY = "higo_order_master_v1";
-const APP_VER = "11/25 17:45版";
+const APP_VER = "11/28 9:50版";
 const OR_LOG_KEY = "higo_order_log_v1";
 // 並び順はASPITと同じ（商品コード順）。在庫は数えやすい単位（cu）で入れ、per 個で1ロット（エキス1箱＝10袋、タレ1本＝5袋、麺1箱＝80玉。前の「ぺルゴ発注」シートと同じ）。rate＝売上10万円（税抜）あたりの使用量（2026/10/1〜11/12 の納品書と売上から）。point/pq＝「在庫が point 以下なら pq 頼む」品目
 const OR_HIST = {"2026-11-18": {"qty": {"grill": 8, "ekisu": 6, "tare": 1, "seabura": 5, "men": 9, "gyoza": 7, "kome": 6, "akanegi": 1, "takana": 4}, "by": "納品書", "t": 0}, "2026-10-26": {"qty": {"gyoza": 5, "kome": 5, "takana": 2, "grill": 4, "ekisu": 6, "seabura": 5, "men": 8}, "by": "納品書", "t": 0}, "2026-10-28": {"qty": {"gyoza": 8, "kome": 5, "akanegi": 1, "takana": 4, "grill": 9, "ekisu": 5, "tare": 2, "seabura": 2, "men": 9}, "by": "納品書", "t": 0}, "2026-10-30": {"qty": {"grill": 6, "ekisu": 4, "seabura": 4, "men": 6, "gyoza": 5, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-10-31": {"qty": {"grill": 5, "ekisu": 2, "tare": 1, "seabura": 2, "men": 3, "gyoza": 4, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-01": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 2, "kome": 6, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-02": {"qty": {"grill": 6, "ekisu": 5, "tare": 1, "seabura": 6, "men": 7, "gyoza": 6, "kome": 5, "takana": 3}, "by": "納品書", "t": 0}, "2026-11-03": {"qty": {"grill": 1, "ekisu": 2, "men": 2}, "by": "納品書", "t": 0}, "2026-11-04": {"qty": {"gyoza": 5, "kome": 4, "takana": 4, "grill": 6, "ekisu": 5, "tare": 2, "seabura": 3, "men": 10}, "by": "納品書", "t": 0}, "2026-11-06": {"qty": {"grill": 4, "ekisu": 3, "tare": 1, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-07": {"qty": {"gyoza": 4, "takana": 2, "grill": 5, "ekisu": 3, "tare": 1, "seabura": 2, "men": 4}, "by": "納品書", "t": 0}, "2026-11-08": {"qty": {"grill": 5, "ekisu": 4, "seabura": 3, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-09": {"qty": {"grill": 5, "ekisu": 6, "tare": 1, "seabura": 5, "men": 7, "gyoza": 4, "kome": 5, "akanegi": 1, "takana": 5}, "by": "納品書", "t": 0}, "2026-11-11": {"qty": {"gyoza": 4, "kome": 3, "takana": 4, "grill": 5, "ekisu": 5, "tare": 1, "seabura": 4, "men": 10}, "by": "納品書", "t": 0}, "2026-11-13": {"qty": {"grill": 5, "ekisu": 4, "men": 5, "gyoza": 4, "kome": 3, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-14": {"qty": {"grill": 5, "ekisu": 3, "tare": 1, "seabura": 3, "men": 5, "gyoza": 4, "kome": 6, "goma": 1, "akanegi": 1, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-15": {"qty": {"grill": 3, "ekisu": 4, "tare": 1, "men": 5, "gyoza": 1, "kome": 2, "takana": 2}, "by": "納品書", "t": 0}, "2026-11-16": {"qty": {"grill": 5, "ekisu": 6, "tare": 2, "seabura": 6, "men": 9, "gyoza": 6, "kome": 7, "takana": 3}, "by": "納品書", "t": 0}};
